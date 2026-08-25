@@ -11,7 +11,7 @@ export function Onboarding() {
     <div className="ob-shell ob-meet">
       <div className="ob-meet-hero">
         <i className="ob-glow" aria-hidden />
-        <img src="/tulkey-hi.png" alt="Tulkey" />
+        <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="Tulkey" />
         <p className="overline">MoneyMitra · your guide</p>
         <h1>Namaste. I’m Tulkey.</h1>
         <p className="t-body-m muted">
@@ -172,7 +172,7 @@ function PickStep({
           </article>
         ) : (
           <div className="ob-guide-empty">
-            <img src="/tulkey-hi.png" alt="" />
+            <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
             <p>Tap someone above. This space becomes their place in the market, and what Home will actually do.</p>
           </div>
         )}
@@ -196,7 +196,7 @@ function Chat({ line }: { line: string }) {
   return (
     <div className="ob-chat">
       <span className="ob-chat-tulkey">
-        <img src="/tulkey-hi.png" alt="" />
+        <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
         <i />
       </span>
       <p className="ob-bubble" key={line}>{line}</p>

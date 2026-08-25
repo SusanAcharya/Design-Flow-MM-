@@ -78,7 +78,7 @@ export function TulkeyScreen() {
   return (
     <div>
       <div className="tulkey-ai-head">
-        <img src="/tulkey-hi.png" alt="Tulkey" />
+        <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="Tulkey" />
         <div>
           <p className="overline">Tulkey AI</p>
           <h1 className="t-h-xl">Ask about Nepal’s market</h1>

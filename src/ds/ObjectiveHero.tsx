@@ -24,7 +24,7 @@ export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
   return (
     <button type="button" className={`objective-strip ${compact ? "compact" : ""}`} onClick={() => go("objective")}>
       <span className="objective-tulkey">
-        <img src="/tulkey-hi.png" alt="" />
+        <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
         <i />
       </span>
       <span className="objective-copy">
