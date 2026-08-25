@@ -608,7 +608,7 @@ export function StockScreen() {
       )}
 
       <p className="disclaimer">
-        Prices are at session close. MoneyMitra does not place orders — trading happens in TMS at your broker.
+        Last print at the close. Trading still happens in TMS — we don’t place orders.
       </p>
       <div className={`float-actions stock-actions ${tab === "Analysis" ? "stock-actions-min" : ""}`}>
         <button

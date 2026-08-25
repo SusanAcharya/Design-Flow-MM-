@@ -231,7 +231,7 @@ export function DiscoverScreen() {
           );
         })
       )}
-      <p className="disclaimer">Hold a tool to pin it here. Plans never include a stock pick.</p>
+      <p className="disclaimer">Hold a tool to pin it. Plans never include a stock pick.</p>
     </div>
   );
 }

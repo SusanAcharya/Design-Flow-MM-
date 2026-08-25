@@ -1,5 +1,5 @@
 export type Theme = "light" | "dark";
-export type UiFont = "satoshi" | "jakarta" | "geist" | "subjectivity" | "chillax" | "america";
+export type UiFont = "plex" | "inter" | "satoshi" | "jakarta" | "geist" | "subjectivity" | "chillax" | "america";
 export type Viewport = "mobile" | "web";
 export type Stage = "base" | "explorer" | "primary" | "secondary" | "value" | "active";
 export type Circuit = "off" | "index5" | "index8" | "stock15";

@@ -33,15 +33,15 @@ export const movers = [
 ];
 
 export const holdings = [
-  { symbol: "NABIL", name: "Nabil Bank", kitta: 790, avg: 462.4, value: 393420, returnPct: 7.7, ltp: 498, dayPct: -2.71 },
-  { symbol: "UPPER", name: "Upper Tamakoshi", kitta: 420, avg: 540, value: 257208, returnPct: 13.4, ltp: 612.4, dayPct: 0.33 },
-  { symbol: "NICA", name: "NIC Asia Bank", kitta: 500, avg: 438, value: 206300, returnPct: -5.8, ltp: 412.6, dayPct: -0.4 },
-  { symbol: "SHIVM", name: "Shivam Cements", kitta: 300, avg: 512.6, value: 164430, returnPct: 6.9, ltp: 548.1, dayPct: 1.1 },
-  { symbol: "HDL", name: "Himalayan Distillery", kitta: 60, avg: 2180, value: 144720, returnPct: 10.6, ltp: 2412, dayPct: 3.4 },
-  { symbol: "SOHL", name: "Shivam Holdings", kitta: 120, avg: 640, value: 82536, returnPct: 7.2, ltp: 687.8, dayPct: 1.2 },
-  { symbol: "CHCL", name: "Chilime Hydropower", kitta: 180, avg: 580, value: 110160, returnPct: 5.5, ltp: 612, dayPct: 0.33 },
-  { symbol: "GBIME", name: "Global IME Bank", kitta: 200, avg: 268, value: 51200, returnPct: -4.5, ltp: 256, dayPct: -0.8 },
-  { symbol: "RIDI", name: "Ridi Hydropower", kitta: 150, avg: 210, value: 33750, returnPct: 7.1, ltp: 225, dayPct: 0.9 },
+  { symbol: "NABIL", name: "Nabil Bank", sector: "Banking", kitta: 790, avg: 462.4, value: 393420, returnPct: 7.7, ltp: 498, dayPct: -2.71 },
+  { symbol: "UPPER", name: "Upper Tamakoshi", sector: "Hydropower", kitta: 420, avg: 540, value: 257208, returnPct: 13.4, ltp: 612.4, dayPct: 0.33 },
+  { symbol: "NICA", name: "NIC Asia Bank", sector: "Banking", kitta: 500, avg: 438, value: 206300, returnPct: -5.8, ltp: 412.6, dayPct: -0.4 },
+  { symbol: "SHIVM", name: "Shivam Cements", sector: "Manufacturing", kitta: 300, avg: 512.6, value: 164430, returnPct: 6.9, ltp: 548.1, dayPct: 1.1 },
+  { symbol: "HDL", name: "Himalayan Distillery", sector: "Manufacturing", kitta: 60, avg: 2180, value: 144720, returnPct: 10.6, ltp: 2412, dayPct: 3.4 },
+  { symbol: "SOHL", name: "Shivam Holdings", sector: "Investment", kitta: 120, avg: 640, value: 82536, returnPct: 7.2, ltp: 687.8, dayPct: 1.2 },
+  { symbol: "CHCL", name: "Chilime Hydropower", sector: "Hydropower", kitta: 180, avg: 580, value: 110160, returnPct: 5.5, ltp: 612, dayPct: 0.33 },
+  { symbol: "GBIME", name: "Global IME Bank", sector: "Banking", kitta: 200, avg: 268, value: 51200, returnPct: -4.5, ltp: 256, dayPct: -0.8 },
+  { symbol: "RIDI", name: "Ridi Hydropower", sector: "Hydropower", kitta: 150, avg: 210, value: 33750, returnPct: 7.1, ltp: 225, dayPct: 0.9 },
 ];
 
 export const investorHoldingsPreview = [
@@ -301,15 +301,35 @@ export const settlements = [
 ];
 
 export const corporateActions = [
-  { title: "NABIL cash dividend 10%", sub: "Ex-date: today", tone: "warn" as const },
-  { title: "SHIVM AGM announced", sub: "Agenda: 8% bonus share", tone: "accent" as const },
+  { symbol: "NABIL", title: "cash dividend 10%", sub: "Ex-date today", tone: "warn" as const },
+  { symbol: "SHIVM", title: "AGM announced", sub: "Agenda: 8% bonus share", tone: "accent" as const },
 ];
 
 export const sectorAlloc = [
-  { name: "Banking", pct: 45, color: "var(--accent-base)" },
-  { name: "Hydro", pct: 30, color: "var(--deco-teal)" },
-  { name: "Manufacturing", pct: 25, color: "var(--deco-saffron)" },
+  { name: "Banks", short: "BANKS", pct: 45, color: "#5b8cff", value: 578070, changePct: -1.52, symbols: ["NABIL", "NICA", "GBIME"] },
+  { name: "Hydropower", short: "HYDRO", pct: 28, color: "#32e36a", value: 359688, changePct: 0.42, symbols: ["UPPER", "CHCL", "RIDI"] },
+  { name: "Manufacturing", short: "MFG", pct: 21, color: "#f08c00", value: 269766, changePct: 2.2, symbols: ["SHIVM", "HDL"] },
+  { name: "Investment", short: "INV", pct: 6, color: "#a78bfa", value: 77076, changePct: 1.2, symbols: ["SOHL"] },
 ];
+
+export const bookNews = [
+  { tag: "Dividend", tone: "teal" as const, title: "NABIL · 10% cash", stock: "NABIL", changePct: -2.71 },
+  { tag: "Tape", tone: "saffron" as const, title: "UPPER trades heavy", stock: "UPPER", changePct: 0.33 },
+  { tag: "Busiest", tone: "violet" as const, title: "HDL led the tape", stock: "HDL", changePct: 3.4 },
+];
+
+export const bookPulse = {
+  values: [28, 36, 32, 44, 40, 52, 48, 61, 55, 70, 64, 58, 72, 66, 80, 74, 68, 76, 62, 54, 60, 48, 42, 50],
+  ticks: [
+    { i: 0, label: "11" },
+    { i: 6, label: "12" },
+    { i: 12, label: "1" },
+    { i: 18, label: "2" },
+    { i: 23, label: "3" },
+  ],
+};
+
+export type BookRange = "1D" | "1W" | "1M" | "6M" | "1Y";
 
 export const compareRows = [
   { id: "pe", label: "P/E", nabil: "12.4", gbime: "14.8" },
@@ -478,6 +498,59 @@ export const nepseSession: Tape = {
     { t: "15:00", v: 2622.48, vol: 26 },
   ],
 };
+
+function seriesTape(
+  last: number,
+  change: number,
+  labels: string[],
+  axis: Tape["axis"] = "days",
+): Tape {
+  const prev = last - change;
+  const n = Math.max(labels.length - 1, 1);
+  const prints = labels.map((t, i) => {
+    const wave = Math.sin(i * 1.18) * change * 0.26;
+    const v = prev + (change * i) / n + (i === 0 || i === labels.length - 1 ? 0 : wave);
+    return { t, v };
+  });
+  const values = prints.map((p) => p.v);
+  return {
+    prevClose: prev,
+    open: prints[0].v,
+    high: Math.max(...values),
+    low: Math.min(...values),
+    last,
+    axis,
+    prints,
+  };
+}
+
+export function bookRangeTape(last: number, today: number, overall: number, range: BookRange): Tape {
+  if (range === "1D") {
+    const prev = last - today;
+    const src = nepseSession.prints;
+    const s0 = src[0].v;
+    const span = src[src.length - 1].v - s0 || 1;
+    const prints = src.map((p, i) => ({
+      t: p.t,
+      v: i === src.length - 1 ? last : prev + ((p.v - s0) / span) * today,
+      vol: p.vol,
+    }));
+    const values = prints.map((p) => p.v);
+    return {
+      prevClose: prev,
+      open: prints[0].v,
+      high: Math.max(...values),
+      low: Math.min(...values),
+      last,
+      axis: "session" as const,
+      prints,
+    };
+  }
+  if (range === "1W") return seriesTape(last, today * 1.6, ["Sun", "Mon", "Tue", "Wed", "Thu"]);
+  if (range === "1M") return seriesTape(last, overall * 0.22, ["3 Shr", "10", "17", "24", "2 Bha"]);
+  if (range === "6M") return seriesTape(last, overall * 0.55, ["Mag", "Fal", "Cha", "Bai", "Jes", "Bha"]);
+  return seriesTape(last, overall, ["Ash", "Kar", "Pou", "Mag", "Cha", "Bai", "Jes", "Bha"]);
+}
 
 export const nabilSession: Tape = {
   prevClose: 511.9,
@@ -684,30 +757,27 @@ export const basketCatalog: {
 
 export const happening = [
   {
-    tag: "Corporate",
-    time: "Last session",
-    title: "NABIL trades ex-dividend today",
-    dek: "The cash left the print. That is not a call to sell.",
+    tag: "Dividend",
+    tone: "teal" as const,
+    icon: "coin" as const,
+    title: "NABIL went ex-div",
     stock: "NABIL",
+    changePct: -2.71,
   },
   {
-    tag: "Turnover",
-    time: "Last session",
-    title: "HDL led the tape at 42.6 Cr",
-    dek: "A session total, not a forecast.",
+    tag: "Busiest",
+    tone: "saffron" as const,
+    icon: "pulse" as const,
+    title: "HDL did 42.6 Cr",
     stock: "HDL",
+    changePct: 3.4,
   },
   {
     tag: "Circuit",
-    time: "Last session",
-    title: "SAPIL closed at the 15% cap",
-    dek: "The daily limit paused the print.",
+    tone: "violet" as const,
+    icon: "alert" as const,
+    title: "SAPIL hit 15%",
     stock: "SAPIL",
-  },
-  {
-    tag: "Sectors",
-    time: "Last session",
-    title: "Hydropower led turnover",
-    dek: "86 Cr of activity. A record, not a forecast.",
+    changePct: 14.99,
   },
 ];

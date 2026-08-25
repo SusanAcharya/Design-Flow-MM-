@@ -66,12 +66,12 @@ function ProfileSheet() {
   const { stage, setStage, setObjectiveId, closeSheet, densityLocked } = useApp();
   return (
     <>
-      <p className="overline">Profile & title</p>
+      <p className="overline">You</p>
       <div className="ob-profile-row">
         <UserAvatar size={48} />
         <div>
           <p className="t-h-l">Sandip</p>
-          <p className="t-body-s muted">{stageMeta[stage].label} · Home follows this title. The people in onboarding were only a way to choose it.</p>
+          <p className="t-body-s muted">{stageMeta[stage].label} · Home follows this title. The people in onboarding were just a way in.</p>
         </div>
       </div>
       {densityLocked && (
@@ -112,7 +112,7 @@ function QuickSheet({ title, body, note }: { title: string; body: string; note?:
   const { closeSheet } = useApp();
   return (
     <>
-      <p className="overline">Quick explanation</p>
+      <p className="overline">In short</p>
       <p className="t-h-l" style={{ margin: "8px 0" }}>{title}</p>
       <p className="t-body-m">{body}</p>
       {note && <p className="t-body-xs muted" style={{ marginTop: 10 }}>{note}</p>}
@@ -164,9 +164,9 @@ function NavigationSheet() {
           <Icon name="discover" size={18} /><span>Explore</span>
         </button>
       </nav>
-      <p className="overline" style={{ margin: "18px 0 6px" }}>Go straight to</p>
+      <p className="overline" style={{ margin: "18px 0 6px" }}>Go here</p>
       <div className="drawer-links">
-        <button type="button" onClick={() => openHomeFeed("watchlist")}><span>Watchlist</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => openHomeFeed("watchlist")}><span>Watching</span><Icon name="chev" size={15} /></button>
         <button type="button" onClick={() => openHomeFeed("brokers")}><span>Brokers</span><Icon name="chev" size={15} /></button>
         <button type="button" onClick={() => openHomeFeed("baskets")}><span>Baskets</span><Icon name="chev" size={15} /></button>
         <button type="button" onClick={() => routeTo("discover")}><span>Tools & screener</span><Icon name="chev" size={15} /></button>

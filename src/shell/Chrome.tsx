@@ -52,7 +52,7 @@ function SessionChip() {
       ) : (
         <span className="live-dot off" />
       )}
-      {session === "open" ? "Market open" : "Market closed · 3:00 PM"}
+      {session === "open" ? "Market open" : "Closed · 3:00 PM"}
     </span>
   );
 }
@@ -93,6 +93,10 @@ function GlobalHeader() {
       ) : route === "discover" ? (
         <div className="header-who compact">
           <p className="t-h-s">Explore</p>
+        </div>
+      ) : route === "portfolio" ? (
+        <div className="header-who compact">
+          <p className="t-h-s">Portfolio</p>
         </div>
       ) : (
         <Identity compact />
@@ -196,7 +200,7 @@ export function DesktopChrome({
             </button>
           ))}
         </nav>
-        <p className="rail-note">Tulkey explains concepts and platforms. It does not recommend trades.</p>
+        <p className="rail-note">Tulkey explains the words and the site. It never picks a stock.</p>
         <button type="button" className="plan-card" onClick={() => openSheet({ kind: "plans" })}>
           <p className="t-label-l">{plan === "free" ? "Free plan" : `${planMeta[plan].label} plan`}</p>
           <p className="t-body-xs muted">

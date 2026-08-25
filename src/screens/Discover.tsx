@@ -62,7 +62,7 @@ export function SearchScreen() {
         </div>
         {hits.length === 0 ? (
           <div className="search-empty">
-            <p className="t-h-s">Nothing matches “{query.trim()}”</p>
+            <p className="t-h-s">Nothing for “{query.trim()}”</p>
             <p className="t-body-s muted">Try a ticker, a broker code, or a word like kitta.</p>
           </div>
         ) : (
@@ -82,7 +82,7 @@ export function SearchScreen() {
           })
         )}
       </div>
-      <p className="disclaimer">Search looks up companies, brokers, IPOs and words. It does not place an order.</p>
+      <p className="disclaimer">Looks up companies, brokers, IPOs and words. Doesn’t place an order.</p>
     </div>
   );
 }
@@ -162,7 +162,7 @@ export function MoreScreen() {
       <button className="row" onClick={() => openSheet({ kind: "profile" })}>
         <span className="avatar" style={{ width: 34, height: 34, borderRadius: 11 }}>SP</span>
         <div className="row-main">
-          <p className="t-h-s">Profile & title</p>
+          <p className="t-h-s">You · Home title</p>
           <p className="row-sub">Currently {stageMeta[stage].label}. Tap to pick another Home.</p>
         </div>
         <Icon name="chev" size={15} />

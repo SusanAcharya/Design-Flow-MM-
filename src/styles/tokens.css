@@ -59,57 +59,57 @@
 }
 
 [data-theme="dark"] {
-  /* Quiet charcoal stack — depth from value, not from borders */
-  --bg-canvas: #121212;
-  --bg-surface: #181818;
-  --bg-raised: #222222;
-  --bg-sunken: #0e0e0e;
-  --bg-inset: #1e1e1e;
-  --bg-inverse: #f4f4f2;
+  /* True black board — cards lift with charcoal, not drop shadows */
+  --bg-canvas: #000000;
+  --bg-surface: #111111;
+  --bg-raised: #1a1a1a;
+  --bg-sunken: #000000;
+  --bg-inset: #141414;
+  --bg-inverse: #ffffff;
 
-  --border-subtle: #242424;
-  --border-default: #2c2c2c;
+  --border-subtle: #1c1c1c;
+  --border-default: #262626;
   --border-strong: #3a3a3a;
-  --border-focus: #81e8ef;
+  --border-focus: #32e36a;
 
-  --text-primary: #f4f4f2;
-  --text-secondary: #a3a3a3;
-  --text-tertiary: #737373;
-  --text-inverse: #121212;
-  --text-on-accent: #062026;
+  --text-primary: #ffffff;
+  --text-secondary: #9a9a9a;
+  --text-tertiary: #6b6b6b;
+  --text-inverse: #000000;
+  --text-on-accent: #05210c;
 
-  /* Site cyan #81E8EF — chrome only, not P/L */
-  --accent-base: #81e8ef;
-  --accent-hover: #a8f2f6;
-  --accent-soft: #123338;
-  --accent-soft-text: #81e8ef;
-  --accent-line: #1e4a50;
+  /* Neon green is chrome and “up” in this dark — matching the casual board */
+  --accent-base: #32e36a;
+  --accent-hover: #54f084;
+  --accent-soft: #0c2414;
+  --accent-soft-text: #32e36a;
+  --accent-line: #163d22;
 
-  --up-base: #3dd68b;
-  --up-soft: #0f2b21;
-  --up-text: #5ee9a4;
+  --up-base: #32e36a;
+  --up-soft: #0c2414;
+  --up-text: #4aff80;
 
-  --down-base: #ff6b6b;
-  --down-soft: #2a1416;
-  --down-text: #ff8a8a;
+  --down-base: #c45c5c;
+  --down-soft: #241111;
+  --down-text: #e07878;
 
-  --flat-base: #737373;
+  --flat-base: #6b6b6b;
 
-  --warn-base: #f5b33c;
-  --warn-soft: #2b2113;
-  --warn-text: #f5c46b;
+  --warn-base: #d4a84a;
+  --warn-soft: #241c0e;
+  --warn-text: #e8c56a;
 
   --deco-violet: #a188ff;
   --deco-violet-soft: #1c1730;
-  --deco-saffron: #ffb43d;
-  --deco-saffron-soft: #2a1e0c;
-  --deco-teal: #81e8ef;
-  --deco-teal-soft: #123338;
+  --deco-saffron: #d4a84a;
+  --deco-saffron-soft: #241c0e;
+  --deco-teal: #32e36a;
+  --deco-teal-soft: #0c2414;
 
   --shadow-card: none;
   --shadow-raised: none;
   --shadow-nav: none;
-  --shadow-accent: 0 8px 24px -8px rgba(129, 232, 239, 0.28);
+  --shadow-accent: 0 8px 24px -8px rgba(50, 227, 106, 0.28);
 }
 
 :root {
@@ -130,8 +130,8 @@
   --space-10: 40px;
   --space-12: 48px;
 
-  --font-sans: "Satoshi", "Segoe UI", system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Sans", ui-monospace, "SF Mono", Menlo, monospace;
 
   --mobile-w: 390px;
   --mobile-h: 844px;

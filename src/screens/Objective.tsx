@@ -124,9 +124,9 @@ export function ObjectiveScreen() {
         <div className="card warn">
           <span className="ico-warn"><Icon name="shield" size={18} /></span>
           <div>
-            <p className="t-h-s" style={{ color: "var(--warn-text)" }}>This is not a recommendation</p>
+            <p className="t-h-s" style={{ color: "var(--warn-text)" }}>Not a pick — just the words</p>
             <p className="t-body-xs muted" style={{ marginTop: 4 }}>
-              MoneyMitra does not tell you what to buy or sell. Tulkey explains the words, the dates, and which site does the work.
+              We don’t tell you what to buy or sell. Tulkey explains the words, the dates, and which site does the work.
             </p>
           </div>
         </div>

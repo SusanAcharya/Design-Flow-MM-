@@ -541,7 +541,6 @@ export function Sparkline({
   width?: number;
   height?: number;
 }) {
-  const uid = useId().replace(/:/g, "");
   const count = 14;
   const start = 42;
   const end = 42 + changePct * 1.15;
@@ -560,22 +559,304 @@ export function Sparkline({
     height - 2 - ((v - (min - pad)) / (max - min + 2 * pad)) * (height - 4);
   const pts = values.map((v, i) => ({ x: xAt(i), y: yAt(v) }));
   const line = smoothLine(pts, 1, height - 1);
-  const last = values[values.length - 1];
   const up = changePct >= 0;
   const stroke = up ? "var(--up-base)" : "var(--down-base)";
-  const area = `${line} L${xAt(count - 1).toFixed(1)} ${height} L0 ${height} Z`;
-  const gid = `spark-${uid}`;
   return (
     <svg className={`sparkline ${up ? "up" : "down"}`} viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-hidden>
+      <path d={line} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function BookChart({
+  values,
+  positive,
+  height = 96,
+  ghost = false,
+}: {
+  values: number[];
+  positive?: boolean;
+  height?: number;
+  ghost?: boolean;
+}) {
+  const uid = useId().replace(/:/g, "");
+  if (values.length < 2) return null;
+  const W = 320;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = (max - min) * 0.22 || 1;
+  const xAt = (i: number) => (i / (values.length - 1)) * W;
+  const yAt = (v: number) =>
+    height - 4 - ((v - (min - pad)) / (max - min + 2 * pad)) * (height - 10);
+  const pts = values.map((v, i) => ({ x: xAt(i), y: yAt(v) }));
+  const line = smoothLine(pts, 2, height - 2);
+  const last = values[values.length - 1];
+  const up = positive ?? last >= values[0];
+  const stroke = ghost ? "var(--text-tertiary)" : up ? "var(--up-base)" : "var(--down-base)";
+  const area = `${line} L${W} ${height} L0 ${height} Z`;
+  const gid = `book-chart-${uid}`;
+  const lastTop = (yAt(last) / height) * 100;
+
+  return (
+    <div className={`book-chart-wrap${ghost ? " ghost" : ""}`}>
+      <svg
+        className={`book-chart ${up ? "up" : "down"}`}
+        viewBox={`0 0 ${W} ${height}`}
+        preserveAspectRatio="none"
+        aria-hidden
+      >
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={stroke} stopOpacity={ghost ? "0.12" : "0.32"} />
+            <stop offset="100%" stopColor={stroke} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {[0.28, 0.54, 0.8].map((t) => (
+          <line
+            key={t}
+            x1="0"
+            x2={W}
+            y1={height * t}
+            y2={height * t}
+            stroke="var(--border-subtle)"
+            strokeWidth="1"
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+        <line
+          x1="0"
+          x2={W}
+          y1={yAt(values[0])}
+          y2={yAt(values[0])}
+          stroke="var(--border-default)"
+          strokeWidth="1"
+          strokeDasharray="3 5"
+          vectorEffect="non-scaling-stroke"
+        />
+        <path d={area} fill={`url(#${gid})`} />
+        <path
+          d={line}
+          fill="none"
+          stroke={stroke}
+          strokeWidth="2.4"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <i className="book-chart-dot" style={{ top: `${lastTop}%`, background: stroke }} />
+    </div>
+  );
+}
+
+export function SectorDonut({
+  rows,
+  size = 68,
+  label,
+  sub,
+}: {
+  rows: { name: string; pct: number; color: string }[];
+  size?: number;
+  label?: string;
+  sub?: string;
+}) {
+  const stroke = label ? 18 : 11;
+  const r = size / 2 - stroke / 2 - 1;
+  const circ = 2 * Math.PI * r;
+  let acc = 0;
+  return (
+    <svg className="sector-donut" width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border-subtle)" strokeWidth={stroke} />
+      {rows.map((row) => {
+        const dash = (row.pct / 100) * circ;
+        const rot = (acc / 100) * 360 - 90;
+        acc += row.pct;
+        return (
+          <circle
+            key={row.name}
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke={row.color}
+            strokeWidth={stroke}
+            strokeDasharray={`${dash} ${circ - dash}`}
+            transform={`rotate(${rot} ${size / 2} ${size / 2})`}
+          />
+        );
+      })}
+      {label && (
+        <>
+          <text
+            x={size / 2}
+            y={sub ? size / 2 - 4 : size / 2 + 5}
+            textAnchor="middle"
+            fill="var(--text-primary)"
+            fontSize={sub ? 18 : 13}
+            fontWeight="700"
+            fontFamily="var(--font-sans)"
+          >
+            {label}
+          </text>
+          {sub && (
+            <text
+              x={size / 2}
+              y={size / 2 + 14}
+              textAnchor="middle"
+              fill="var(--text-tertiary)"
+              fontSize="9"
+              fontWeight="600"
+              fontFamily="var(--font-sans)"
+            >
+              {sub}
+            </text>
+          )}
+        </>
+      )}
+    </svg>
+  );
+}
+
+export function SectorSplit({
+  rows,
+}: {
+  rows: { name: string; pct: number; color: string }[];
+}) {
+  return (
+    <div className="sector-split">
+      <SectorDonut rows={rows} />
+      <ul className="sector-legend">
+        {rows.map((row) => (
+          <li key={row.name}>
+            <i style={{ background: row.color }} />
+            <span>{row.name}</span>
+            <b>{row.pct}%</b>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function TapeSpark({
+  values,
+  width = 96,
+  height = 32,
+  positive,
+}: {
+  values: number[];
+  width?: number;
+  height?: number;
+  positive?: boolean;
+}) {
+  if (values.length < 2) return null;
+  const uid = useId().replace(/:/g, "");
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const pad = (max - min) * 0.22 || 1;
+  const xAt = (i: number) => (i / (values.length - 1)) * width;
+  const yAt = (v: number) =>
+    height - 2 - ((v - (min - pad)) / (max - min + 2 * pad)) * (height - 4);
+  const pts = values.map((v, i) => ({ x: xAt(i), y: yAt(v) }));
+  const line = smoothLine(pts, 1, height - 1);
+  const last = values[values.length - 1];
+  const up = positive ?? last >= values[0];
+  const stroke = up ? "var(--up-base)" : "var(--down-base)";
+  const area = `${line} L${xAt(values.length - 1).toFixed(1)} ${height} L0 ${height} Z`;
+  const gid = `tape-spark-${uid}`;
+  return (
+    <svg className={`sparkline ${up ? "up" : "down"}`} viewBox={`0 0 ${width} ${height}`} width={width} height={height} preserveAspectRatio="none" aria-hidden>
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={stroke} stopOpacity="0.35" />
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.32" />
           <stop offset="100%" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
       <path d={area} fill={`url(#${gid})`} />
-      <path d={line} fill="none" stroke={stroke} strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" />
-      <circle cx={xAt(count - 1)} cy={yAt(last)} r="2.2" fill={stroke} />
+      <path d={line} fill="none" stroke={stroke} strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={xAt(values.length - 1)} cy={yAt(last)} r="2.1" fill={stroke} />
     </svg>
+  );
+}
+
+export function PulseBars({
+  values,
+  ticks,
+  height = 88,
+  ghost = false,
+}: {
+  values: number[];
+  ticks?: { i: number; label: string }[];
+  height?: number;
+  ghost?: boolean;
+}) {
+  if (values.length === 0) return null;
+  const W = 360;
+  const max = Math.max(...values, 1);
+  const n = values.length;
+  const gap = 3.2;
+  const plotW = W - 2;
+  const barW = (plotW - gap * (n - 1)) / n;
+  const plotH = height - 4;
+
+  return (
+    <div className={`pulse-bars-wrap${ghost ? " ghost" : ""}`}>
+      <svg
+        className="pulse-bars"
+        viewBox={`0 0 ${W} ${height}`}
+        preserveAspectRatio="none"
+        style={{ height }}
+        aria-hidden
+      >
+        {values.map((v, i) => {
+          const h = Math.max((v / max) * plotH, 4);
+          const x = i * (barW + gap);
+          return (
+            <rect
+              key={i}
+              className="pulse-bar"
+              x={x}
+              y={plotH - h}
+              width={barW}
+              height={h}
+              rx={Math.min(3.2, barW / 2)}
+            />
+          );
+        })}
+      </svg>
+      {ticks && ticks.length > 0 && (
+        <div className="pulse-bar-axis" aria-hidden>
+          {ticks.map((tick) => (
+            <span key={tick.label + tick.i}>{tick.label}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function AllocStrip({
+  rows,
+  ghost = false,
+}: {
+  rows: { short: string; pct: number; color: string }[];
+  ghost?: boolean;
+}) {
+  return (
+    <div className={`alloc-strip${ghost ? " ghost" : ""}`}>
+      <div className="alloc-bar" aria-hidden>
+        {rows.map((row) => (
+          <i key={row.short} style={{ flexGrow: row.pct, background: row.color }} />
+        ))}
+      </div>
+      <ul className="alloc-legend">
+        {rows.map((row) => (
+          <li key={row.short}>
+            <i style={{ background: row.color }} />
+            {row.short} {ghost ? "—" : `${row.pct}%`}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

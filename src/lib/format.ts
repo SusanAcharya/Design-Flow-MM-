@@ -1,3 +1,17 @@
+export function compactNpr(value: number) {
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "−" : "";
+  if (abs >= 1e7) {
+    const n = abs / 1e7;
+    return `${sign}${n.toFixed(n >= 10 ? 1 : 2)} Cr`;
+  }
+  if (abs >= 1e5) {
+    const n = abs / 1e5;
+    return `${sign}${n.toFixed(2)} L`;
+  }
+  return npr(value);
+}
+
 export function npr(value: number, digits = 0) {
   const abs = Math.abs(value);
   const formatted = abs.toLocaleString("en-IN", {

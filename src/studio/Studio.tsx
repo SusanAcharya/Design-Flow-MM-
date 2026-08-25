@@ -36,6 +36,8 @@ const circuits: { id: Circuit; label: string }[] = [
 ];
 
 const fonts: { id: UiFont; label: string }[] = [
+  { id: "plex", label: "IBM Plex Sans" },
+  { id: "inter", label: "Inter" },
   { id: "satoshi", label: "Satoshi" },
   { id: "jakarta", label: "Plus Jakarta Sans" },
   { id: "geist", label: "Geist Mono" },

@@ -87,7 +87,7 @@ export function showsHoldings(stage: Stage) {
 
 export const homeTabs: { id: HomeFeed; label: string }[] = [
   { id: "home", label: "Home" },
-  { id: "watchlist", label: "Watchlist" },
+  { id: "watchlist", label: "Watching" },
   { id: "brokers", label: "Brokers" },
   { id: "baskets", label: "Baskets" },
 ];

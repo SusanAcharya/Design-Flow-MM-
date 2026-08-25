@@ -96,8 +96,8 @@ type AppState = {
 const Ctx = createContext<AppState | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [uiFont, setUiFont] = useState<UiFont>("satoshi");
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [uiFont, setUiFont] = useState<UiFont>("plex");
   const [viewport, setViewport] = useState<Viewport>("mobile");
   const [stage, setStageState] = useState<Stage>("base");
   const [route, setRoute] = useState<Route>("onboarding");

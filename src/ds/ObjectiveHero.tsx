@@ -1,6 +1,7 @@
-import { Icon } from "./Icon";
 import { getObjective, nextOnPath } from "../lib/objectives";
 import { useApp } from "../lib/state";
+
+const tulkey = `${import.meta.env.BASE_URL}tulkey-hi.png`;
 
 export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
   const { go, objectiveId } = useApp();
@@ -8,13 +9,15 @@ export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
 
   if (!o) {
     return (
-      <button type="button" className={`objective-strip ${compact ? "compact" : ""}`} onClick={() => go("learn")}>
-        <span className="objective-orb"><Icon name="learn" size={16} /></span>
-        <span className="objective-copy">
-          <span className="overline">Tulkey · Learn when needed</span>
-          <strong>No objective assigned</strong>
+      <button type="button" className="tulkey-card empty" onClick={() => go("learn")}>
+        <span className="tulkey-card-mascot">
+          <img src={tulkey} alt="" />
         </span>
-        <Icon name="chev" size={15} />
+        <span className="tulkey-card-copy">
+          <span className="tulkey-card-kicker">Tulkey</span>
+          <strong>Nothing pinned</strong>
+          <small>If a word comes up, I’m in the tab.</small>
+        </span>
       </button>
     );
   }
@@ -22,20 +25,24 @@ export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
   const next = nextOnPath(o.id);
 
   return (
-    <button type="button" className={`objective-strip ${compact ? "compact" : ""}`} onClick={() => go("objective")}>
-      <span className="objective-tulkey">
-        <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
-        <i />
+    <button
+      type="button"
+      className={`tulkey-card${compact ? " compact" : ""}`}
+      onClick={() => go("objective")}
+    >
+      <span className="tulkey-card-mascot">
+        <img src={tulkey} alt="" />
       </span>
-      <span className="objective-copy">
-        <span className="overline">Your objective · {o.duration}</span>
+      <span className="tulkey-card-copy">
+        <span className="tulkey-card-kicker">
+          {compact ? o.duration : `A tiny lesson · ${o.duration}`}
+        </span>
         <strong>{o.title}</strong>
-        {!compact && <small>{next ? `Next: ${next.title}` : o.level}</small>}
+        <small>{compact ? (next ? `Next: ${next.title}` : o.tulkeyLine) : o.tulkeyLine}</small>
       </span>
-      <span className="objective-progress" aria-hidden>
+      <span className="tulkey-card-bar" aria-hidden>
         <i style={{ width: `${Math.min(100, (o.n / 7) * 100)}%` }} />
       </span>
-      <Icon name="chev" size={15} />
     </button>
   );
 }

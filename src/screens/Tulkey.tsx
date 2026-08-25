@@ -157,7 +157,7 @@ export function TulkeyScreen() {
             <p className="overline">Tulkey AI</p>
             <h1 className="t-h-xl">Ask about Nepal’s market</h1>
             <p className="t-body-s muted">
-              Words, dates, and which platform does the work. Never a stock pick.
+              A word, a date, which site does the work. Not a pick.
             </p>
             <div className="tulkey-prompts">
               {prompts.map((prompt) => (
@@ -241,7 +241,7 @@ export function TulkeyScreen() {
             </button>
           )}
         </form>
-        <p className="tulkey-note">Tulkey explains. It does not recommend trades.</p>
+        <p className="tulkey-note">I explain. I don’t pick stocks.</p>
       </div>
     </div>
   );

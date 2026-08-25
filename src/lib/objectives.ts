@@ -22,7 +22,7 @@ export const curriculum: Objective[] = [
     duration: "60s",
     title: "What is a share?",
     cardSub: "Ownership in a company, in plain words.",
-    tulkeyLine: "We’ll start at the beginning. Nothing to buy — just the words.",
+    tulkeyLine: "We’ll start at the beginning. Nothing to buy.",
     know: [
       "A share is a slice of ownership in a company — not a loan to it, and not a bet MoneyMitra is making for you.",
       "If you hold kitta of a company, you own a tiny part of that company. Price going up or down changes the value of that slice.",

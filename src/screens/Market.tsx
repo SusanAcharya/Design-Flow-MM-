@@ -318,7 +318,7 @@ export function MarketScreen() {
       {tab === "Movers" && (
         <>
           <p className="market-intro">
-            Movers are the biggest price changes today. A large move is information, not a recommendation — check why it moved before acting.
+            Biggest moves today. A jump is a fact, not a cue to chase it.
           </p>
           <div className="market-filters">
             {moverViews.map((item) => (
@@ -610,7 +610,7 @@ export function MarketScreen() {
       )}
 
       <p className="disclaimer">
-        Prices refresh from the last official print. Trading happens in TMS at your broker; MoneyMitra does not place orders.
+        Last official print. Trading still happens in TMS — we don’t place orders.
       </p>
     </div>
   );

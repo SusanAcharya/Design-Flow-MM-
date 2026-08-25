@@ -1,21 +1,19 @@
 import { Children, useMemo, useState, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import { ObjectiveHero } from "../ds/ObjectiveHero";
+import { BookNudge } from "../ds/BookNudge";
 import {
   Button,
   Chip,
   Delta,
-  Figure,
-  MovePill,
   SearchField,
   SectionHead,
   StatTable,
 } from "../ds/primitives";
-import { SessionWalk } from "../ds/charts";
+import { AllocStrip, Sparkline, TapeSpark } from "../ds/charts";
 import {
   allotments,
   basketCatalog,
-  bookTape,
   brokerHighlights,
   brokerTable,
   corporateActions,
@@ -23,19 +21,17 @@ import {
   happening,
   holdings,
   ipoPipeline,
-  liveIpo,
   moverBoards,
   nepse,
+  nepseSession,
   portfolio,
   secondaryBook,
+  sectorAlloc,
   settlements,
-  traderBook,
   watchlist,
   type MoverRow,
-  type TapePrint,
 } from "../lib/data";
-import { npr, pct, signed } from "../lib/format";
-import { getObjective } from "../lib/objectives";
+import { npr, pct } from "../lib/format";
 import { homeTabsFor, isBaseHome, isLearningHome, showsHoldings } from "../lib/stage";
 import { useApp } from "../lib/state";
 
@@ -80,177 +76,112 @@ function FeedGroup({
   );
 }
 
-function QuoteTable({
+function QuoteList({
   rows,
   onRow,
+  spark = true,
 }: {
   rows: { symbol: string; name: string; price: number; changePct: number }[];
   onRow: (symbol: string) => void;
+  spark?: boolean;
 }) {
   return (
-    <div className="sheet-wrap">
-      <table className="sheet-table">
-        <thead>
-          <tr>
-            <th>Symbol</th>
-            <th className="num">Last</th>
-            <th className="num">Today</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr
-              key={row.symbol}
-              tabIndex={0}
-              onClick={() => onRow(row.symbol)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onRow(row.symbol);
-                }
-              }}
-            >
-              <td>
-                <span className="t-ticker">{row.symbol}</span>
-                <small>{row.name}</small>
-              </td>
-              <td className="num">{npr(row.price, 2)}</td>
-              <td className="num">
-                <b className={row.changePct < 0 ? "c-down" : "c-up"}>{pct(row.changePct)}</b>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className={`quote-list${spark ? " has-spark" : ""}`}>
+      {rows.map((row) => (
+        <button
+          key={row.symbol}
+          type="button"
+          className="quote-list-row"
+          onClick={() => onRow(row.symbol)}
+        >
+          <span className="ticker-mark" aria-hidden>{row.symbol.slice(0, 2)}</span>
+          <span className="quote-id">
+            <span className="t-ticker">{row.symbol}</span>
+            <small>{row.name}</small>
+          </span>
+          {spark && (
+            <Sparkline changePct={row.changePct} seed={row.symbol} width={56} height={24} />
+          )}
+          <span className="quote-list-meta">
+            <b>{npr(row.price, 2)}</b>
+            <em className={row.changePct < 0 ? "c-down" : "c-up"}>{pct(row.changePct)}</em>
+          </span>
+        </button>
+      ))}
     </div>
   );
 }
 
-function PulseModule() {
-  const { session, go, flash } = useApp();
-  const [refreshing, setRefreshing] = useState(false);
-  const [updated, setUpdated] = useState(false);
-
-  const refresh = (event: { stopPropagation: () => void }) => {
-    event.stopPropagation();
-    if (refreshing) return;
-    setRefreshing(true);
-    setUpdated(false);
-    window.setTimeout(() => {
-      setRefreshing(false);
-      setUpdated(true);
-      window.setTimeout(() => setUpdated(false), 480);
-      flash({
-        message: session === "open"
-          ? "NEPSE prints updated."
-          : "NEPSE is still the last session close.",
-      });
-    }, 1100);
-  };
+function NepseHero() {
+  const { go } = useApp();
+  const down = nepse.changePct < 0;
+  const spark = nepseSession.prints.map((print) => print.v);
 
   return (
-    <div
-      className={`pulse-glance${refreshing ? " is-refreshing" : ""}`}
-      role="link"
-      tabIndex={0}
-      onClick={() => go("market")}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          go("market");
-        }
-      }}
-    >
-      <div className="pulse-glance-top">
-        <span className="pulse-glance-kicker">NEPSE</span>
-        <span className={`pulse-glance-value${updated ? " just-updated" : ""}${refreshing ? " is-loading" : ""}`}>
-          {npr(nepse.value, 2)}
+    <button type="button" className={`nepse-hero ${down ? "down" : "up"}`} onClick={() => go("market")}>
+      <span className="nepse-hero-line">
+        <span className="nepse-hero-kicker">NEPSE</span>
+        <b className="nepse-hero-value">{npr(nepse.value, 2)}</b>
+        <TapeSpark values={spark} width={140} height={28} positive={!down} />
+        <em className={down ? "c-down" : "c-up"}>{pct(nepse.changePct)}</em>
+      </span>
+      <span className="nepse-stats">
+        <span className="nepse-stat">
+          <small>Turnover</small>
+          <b>{npr(nepse.turnoverCr, 2)} Cr</b>
         </span>
-        <MovePill amount={nepse.change} pct={nepse.changePct} />
-        <button
-          type="button"
-          className={`refresh-btn icon-only${refreshing ? " is-loading" : ""}`}
-          onClick={refresh}
-          disabled={refreshing}
-          aria-busy={refreshing}
-          aria-label="Refresh NEPSE"
-        >
-          <Icon name="refresh" size={14} />
-        </button>
-      </div>
-      <p className="pulse-glance-meta">
-        {refreshing
-          ? "Updating last prints…"
-          : session === "open"
-            ? `Live ${nepse.liveAt}`
-            : `Closed ${nepse.closedAt}`}
-        {" · "}
-        {npr(nepse.turnoverCr, 1)} Cr turn
-        {" · "}
-        {nepse.volume} vol
-      </p>
-    </div>
+        <span className="nepse-stat">
+          <small>Volume</small>
+          <b>{nepse.volume}</b>
+        </span>
+      </span>
+    </button>
   );
 }
 
-function PortfolioBook() {
+function BookCard() {
   const { stage, go } = useApp();
-  const [scrub, setScrub] = useState<TapePrint | null>(null);
-  if (stage === "primary") {
-    return (
-      <button type="button" className="book-block" onClick={() => go("portfolio")}>
-        <Figure
-          kicker="IPO pipeline"
-          value={ipoPipeline.value}
-          note={`${ipoPipeline.kitta} kitta across ${ipoPipeline.count} issues · par Rs 100`}
-        />
-      </button>
-    );
-  }
-
   const value = stage === "value" ? portfolio.investorValue : stage === "secondary" ? secondaryBook.value : portfolio.value;
   const today = stage === "value" ? portfolio.investorToday : stage === "secondary" ? secondaryBook.today : portfolio.today;
-  const todayPct = stage === "value" ? portfolio.investorTodayPct : stage === "secondary" ? secondaryBook.todayPct : portfolio.todayPct;
-  const overall = stage === "value" ? portfolio.investorOverall : stage === "secondary" ? secondaryBook.today : portfolio.unrealised;
-  const cash = stage === "secondary" ? secondaryBook.cash : stage === "value" ? portfolio.investorCash : portfolio.cashNoted;
-
-  const prev = value - today;
-  const shown = scrub?.v ?? value;
-  const shownChange = shown - prev;
-  const shownPct = prev ? (shownChange / prev) * 100 : todayPct;
+  const down = today < 0;
 
   return (
-    <div
-      className="book-block"
-      role="link"
-      tabIndex={0}
-      onClick={() => go("portfolio")}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          go("portfolio");
-        }
-      }}
-    >
-      <Figure
-        kicker="Your portfolio"
-        value={shown}
-        amount={shownChange}
-        pct={shownPct}
-        amountDigits={0}
-        note={scrub ? `At ${scrub.t}` : `Today · valued at ${nepse.closedAt}`}
-      />
-      <SessionWalk tape={bookTape(value, today)} mark="columns" compact showVolume={false} onScrub={setScrub} />
-      <StatTable
-        columns={[
-          { label: "Today", value: signed(today), tone: today < 0 ? "down" : "up" },
-          { label: "Overall", value: signed(overall), tone: overall < 0 ? "down" : "up" },
-          { label: "Cash noted", value: npr(cash) },
-        ]}
-      />
-      {stage === "active" && (
-        <p className="figure-note">Buying power {npr(traderBook.buyingPower)} · Margin {traderBook.marginUsed}%</p>
-      )}
+    <button type="button" className="book-card" onClick={() => go("portfolio")}>
+      <span className="book-card-head">
+        <span>Your portfolio</span>
+        <span className="book-card-open">Open ›</span>
+      </span>
+      <span className="book-card-figures">
+        <b>Rs {npr(value)}</b>
+        <em className={down ? "c-down" : "c-up"}>
+          {down ? "−" : "+"}Rs {npr(Math.abs(today))}
+        </em>
+      </span>
+      <AllocStrip rows={sectorAlloc} />
+    </button>
+  );
+}
+
+function HomeTop() {
+  const { stage, go } = useApp();
+
+  return (
+    <div className="home-top">
+      <NepseHero />
+      {stage === "primary" ? (
+        <button type="button" className="book-card" onClick={() => go("portfolio")}>
+          <span className="book-card-head">
+            <span>IPO pipeline</span>
+            <span className="book-card-open">Open ›</span>
+          </span>
+          <span className="book-card-figures">
+            <b>Rs {npr(ipoPipeline.value)}</b>
+            <em className="muted">{ipoPipeline.kitta} kitta · {ipoPipeline.count} issues</em>
+          </span>
+        </button>
+      ) : stage !== "explorer" ? (
+        <BookCard />
+      ) : null}
     </div>
   );
 }
@@ -258,21 +189,10 @@ function PortfolioBook() {
 function AddPortfolioCta() {
   const { go } = useApp();
   return (
-    <div className="cta-well">
-      <p className="overline">Your next step</p>
-      <p className="t-h-s">Start tracking what you own</p>
-      <p className="t-body-s muted">
-        Paste one broker message and MoneyMitra builds the rest — what you paid, what it is worth now.
-      </p>
-      <div className="btn-row">
-        <Button variant="primary" size="md" onClick={() => go("holding", { holdingMode: "add" })}>
-          Create a portfolio
-        </Button>
-        <Button variant="secondary" size="md" onClick={() => go("portfolio")}>
-          Later
-        </Button>
-      </div>
-    </div>
+    <BookNudge
+      onPaste={() => go("holding", { holdingMode: "add" })}
+      onType={() => go("holding", { holdingMode: "add" })}
+    />
   );
 }
 
@@ -282,35 +202,29 @@ function HoldingsModule({ force = false }: { force?: boolean }) {
   const rows = holdings.slice(0, 4);
 
   return (
-    <QuoteTable
-      rows={rows.map((row) => ({
-        symbol: row.symbol,
-        name: `${row.kitta} kitta`,
-        price: row.ltp,
-        changePct: row.dayPct,
-      }))}
-      onRow={(symbol) => go("stock", { stock: symbol })}
-    />
+      <QuoteList
+        rows={rows.map((row) => ({
+          symbol: row.symbol,
+          name: `${row.kitta} kitta`,
+          price: row.ltp,
+          changePct: row.dayPct,
+        }))}
+        onRow={(symbol) => go("stock", { stock: symbol })}
+      />
   );
 }
 
 function ObjectivesModule({ compact = false }: { compact?: boolean }) {
-  const { stage, objectiveId } = useApp();
-  const current = getObjective(objectiveId);
+  const { stage } = useApp();
   return (
-    <Panel>
+    <div className="home-learn">
       <ObjectiveHero compact={compact} />
-      {current && (
-        <p className="t-body-xs muted" style={{ marginTop: 10 }}>
-          {current.tulkeyLine}
-        </p>
-      )}
       {stage === "primary" && allotments.map((a) => (
         <div key={a.name} className="row">
           <span className={`event-bar ${a.status === "allotted" ? "up" : "warn"}`} />
           <div className="row-main">
             <p className="t-h-s">
-              {a.status === "allotted" ? "Allotted" : "Awaiting allotment"} · {a.name}
+              {a.status === "allotted" ? "Allotted" : "Still waiting"} · {a.name}
             </p>
             <p className="row-sub">
               {a.status === "allotted" ? `${a.kitta} kitta · check CDSC / MeroShare` : "Result not out yet"}
@@ -318,64 +232,115 @@ function ObjectivesModule({ compact = false }: { compact?: boolean }) {
           </div>
         </div>
       ))}
-    </Panel>
+    </div>
   );
 }
 
 function AlertsModule() {
   const { stage, go } = useApp();
+  const rows: {
+    key: string;
+    tone: "up" | "down" | "warn" | "accent";
+    symbol: string;
+    title: string;
+    at?: string;
+  }[] = [];
+
+  if (stage === "secondary" || stage === "base") {
+    for (const s of settlements) {
+      rows.push({
+        key: `set-${s.symbol}`,
+        tone: "warn",
+        symbol: s.symbol,
+        title: `${s.kitta} kitta · T+2`,
+        at: "Today",
+      });
+    }
+  }
+  for (const a of firedAlerts) {
+    if (rows.length >= 3) break;
+    rows.push({
+      key: a.symbol + a.at,
+      tone: a.tone,
+      symbol: a.symbol,
+      title: a.text,
+      at: a.at,
+    });
+  }
+  for (const e of corporateActions) {
+    if (rows.length >= 3) break;
+    rows.push({
+      key: e.title,
+      tone: e.tone === "accent" ? "accent" : "warn",
+      symbol: e.symbol,
+      title: e.title,
+    });
+  }
+
+  const shown = rows.slice(0, 3);
+  if (shown.length === 0) return null;
+
   return (
-    <div className="alert-well">
-      <p className="overline">Fired today</p>
-      <p className="t-h-s">{firedAlerts.length} alerts</p>
-      {(stage === "secondary" || stage === "base") && settlements.map((s) => (
-        <div key={s.symbol} className="alert-item">
-          <i className="warn" />
-          <p><b>{s.kitta} kitta {s.symbol}</b> T+2 · {s.note}</p>
-        </div>
-      ))}
-      {firedAlerts.map((a) => (
-        <button key={a.symbol + a.at} type="button" className="alert-item" onClick={() => go("alerts")}>
-          <i className={a.tone} />
-          <p><b>{a.symbol}</b> {a.text}</p>
-          <time>{a.at}</time>
+    <div className="alert-board">
+      {shown.map((row) => (
+        <button key={row.key} type="button" className={`alert-card ${row.tone}`} onClick={() => go("alerts")}>
+          <span className="ticker-mark sm" aria-hidden>{row.symbol.slice(0, 2)}</span>
+          <span className="alert-card-line">
+            <span className="t-ticker">{row.symbol}</span>
+            <span>{row.title}</span>
+          </span>
+          {row.at && <time>{row.at}</time>}
         </button>
       ))}
-      {corporateActions.slice(0, 1).map((e) => (
-        <button key={e.title} type="button" className="alert-item" onClick={() => go("alerts")}>
-          <i className={e.tone} />
-          <p>{e.title}</p>
-        </button>
-      ))}
-      <div className="btn-row" style={{ marginTop: 12 }}>
-        <Button variant="primary" size="sm" onClick={() => go("alerts")}>Manage alerts</Button>
-        <Button variant="secondary" size="sm" onClick={() => go("alerts")}>Dismiss</Button>
-      </div>
     </div>
+  );
+}
+
+function HappenTick({ stock, changePct }: { stock?: string; changePct?: number }) {
+  if (!stock) return null;
+  const down = (changePct ?? 0) < 0;
+  return (
+    <span className="happen-tick">
+      <span className="ticker-mark sm">{stock.slice(0, 2)}</span>
+      <b>{stock}</b>
+      {changePct != null && <em className={down ? "c-down" : "c-up"}>{pct(changePct)}</em>}
+    </span>
   );
 }
 
 function HappeningModule() {
   const { go } = useApp();
-  const toneFor: Record<string, string> = {
-    Corporate: "teal",
-    Turnover: "saffron",
-    Circuit: "warn",
-    Sectors: "violet",
-  };
+  const items = happening.slice(0, 3);
+  const [lead, ...rest] = items;
+  const open = (stock?: string) => (stock ? go("stock", { stock }) : go("market"));
+
   return (
-    <div className="home-news">
-      {happening.map((item) => (
-        <button
-          key={item.title}
-          type="button"
-          onClick={() => item.stock ? go("stock", { stock: item.stock }) : go("market")}
-        >
-          <span className={`happen-meta happen-${toneFor[item.tag] ?? "accent"}`}>{item.tag} · {item.time}</span>
-          <strong>{item.title}</strong>
-          <small>{item.dek}</small>
-        </button>
-      ))}
+    <div className="happen-board">
+      <button type="button" className={`happen-lead ${lead.tone}`} onClick={() => open(lead.stock)}>
+        <span className="happen-lead-top">
+          <span className="happen-tag">{lead.tag}</span>
+          <HappenTick stock={lead.stock} changePct={lead.changePct} />
+        </span>
+        <strong>{lead.title}</strong>
+      </button>
+      <div className="happen-grid">
+        {rest.map((item) => (
+          <button
+            key={item.title}
+            type="button"
+            className={`happen-tile ${item.tone}`}
+            onClick={() => open(item.stock)}
+          >
+            <span className="happen-tile-top">
+              <span className="happen-tag">{item.tag}</span>
+              {item.changePct != null && (
+                <em className={item.changePct < 0 ? "c-down" : "c-up"}>{pct(item.changePct)}</em>
+              )}
+            </span>
+            <strong>{item.title}</strong>
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -402,7 +367,7 @@ function MoversModule() {
           </Chip>
         ))}
       </div>
-      <QuoteTable
+      <QuoteList
         rows={rows.map((row: MoverRow) => ({
           symbol: row.symbol,
           name: row.name,
@@ -415,38 +380,16 @@ function MoversModule() {
   );
 }
 
-function IpoModule() {
-  const { go } = useApp();
-  return (
-    <Panel>
-      <SectionHead title="Open IPO" action="All ›" onAction={() => go("ipo")} />
-      <button type="button" className="ipo-compact" onClick={() => go("ipo")}>
-        <span className="row-main">
-          <strong>{liveIpo.name}</strong>
-          <small>Rs {liveIpo.price} each · closes in {liveIpo.closesIn}</small>
-        </span>
-        <span className="chip">How to apply</span>
-      </button>
-    </Panel>
-  );
-}
-
 function HomeFeedStack() {
   const { stage, go } = useApp();
   const base = isBaseHome(stage);
   const learning = isLearningHome(stage);
-  const showBook = base || (stage !== "explorer");
   const showAdd = base || stage === "explorer";
 
   return (
     <div className="home-you">
-      <FeedGroup label="Market" hideLabel tone="market">
-        <PulseModule />
-      </FeedGroup>
-      <FeedGroup label="Your book" hideLabel tone="book">
-        {showBook && <PortfolioBook />}
-        {showAdd && <AddPortfolioCta />}
-      </FeedGroup>
+      <HomeTop />
+      {showAdd && <AddPortfolioCta />}
       <FeedGroup label="Holdings" tone="list" action="Portfolio ›" onAction={() => go("portfolio")}>
         <HoldingsModule force={base} />
       </FeedGroup>
@@ -456,13 +399,10 @@ function HomeFeedStack() {
       <FeedGroup label="What's happening" tone="news" action="Market ›" onAction={() => go("market")}>
         <HappeningModule />
       </FeedGroup>
-      <FeedGroup label="Alerts" tone="alert">
+      <FeedGroup label="Alerts" tone="alert" action="All ›" onAction={() => go("alerts")}>
         {(base || !learning) && <AlertsModule />}
       </FeedGroup>
-      <FeedGroup label="IPO" hideLabel tone="ipo">
-        <IpoModule />
-      </FeedGroup>
-      <FeedGroup label="Movers" tone="move" action="Market ›" onAction={() => go("market")}>
+      <FeedGroup label="Biggest moves" tone="move" action="Market ›" onAction={() => go("market")}>
         <MoversModule />
       </FeedGroup>
     </div>
@@ -500,8 +440,8 @@ function WatchlistScreen() {
         <div className="cluster">
           <div className="feed-kicker">
             <div>
-              <p className="overline">Your watchlist</p>
-              <p className="t-h-s">{watchlist.length} followed · {session === "open" ? "live prints" : `as of ${nepse.closedAt}`}</p>
+              <p className="overline">Watching</p>
+              <p className="t-h-s">{watchlist.length} names · {session === "open" ? "live prints" : `as of ${nepse.closedAt}`}</p>
             </div>
             <button
               type="button"
@@ -546,7 +486,7 @@ function WatchlistScreen() {
         {groups.map(([name, list]) => (
           <Panel nested key={name}>
             <SectionHead title={name} />
-            <QuoteTable
+            <QuoteList
               rows={list.map((row) => ({
                 symbol: row.symbol,
                 name: row.kitta ? `You hold ${row.kitta} kitta` : row.name,
@@ -563,7 +503,7 @@ function WatchlistScreen() {
       </FeedGroup>
       <FeedGroup label="Follow another" tone="book">
         <div className="cta-well">
-          <p className="t-h-s">Add a company to this list</p>
+          <p className="t-h-s">Add a name to this list</p>
           <p className="t-body-s muted">Search the tape. Following never buys kitta.</p>
           <Button variant="primary" size="md" onClick={() => go("search")}>Find a scrip</Button>
         </div>
@@ -690,7 +630,7 @@ function BasketsScreen() {
           <div className="feed-kicker">
             <div>
               <p className="overline">Baskets</p>
-              <p className="t-h-s">Thematic groups · same session</p>
+              <p className="t-h-s">A few names, same session</p>
             </div>
           </div>
           <SearchField placeholder="Search for baskets" value={query} onChange={setQuery} />
@@ -765,7 +705,7 @@ export function HomeScreen() {
       {homeFeed === "watchlist" && <WatchlistScreen />}
       {homeFeed === "brokers" && <BrokersScreen />}
       {homeFeed === "baskets" && <BasketsScreen />}
-      <p className="disclaimer">Prices are from the last session. MoneyMitra does not place orders.</p>
+      <p className="disclaimer">Last session’s prints. We don’t place orders.</p>
     </div>
   );
 }
