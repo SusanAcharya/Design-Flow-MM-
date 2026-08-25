@@ -4,46 +4,46 @@
 
 :root,
 [data-theme="light"] {
-  /* Clean paper — MoneyMitra light, not tea-stained beige */
-  --bg-canvas: #f5f2eb;
+  /* Cash App-inspired light: hard white, neutral depth, no warm paper cast */
+  --bg-canvas: #ffffff;
   --bg-surface: #ffffff;
   --bg-raised: #ffffff;
-  --bg-sunken: #ebe7de;
-  --bg-inset: #f0ece4;
-  --bg-inverse: #1a1916;
+  --bg-sunken: #eeeeec;
+  --bg-inset: #f4f4f2;
+  --bg-inverse: #050505;
 
-  --border-subtle: #e6e1d6;
-  --border-default: #d5cfc2;
-  --border-strong: #b8af9e;
-  --border-focus: #026ba4;
+  --border-subtle: #ececea;
+  --border-default: #d9d9d6;
+  --border-strong: #a7a7a2;
+  --border-focus: #006bff;
 
-  --text-primary: #1a1916;
-  --text-secondary: #4a4640;
-  --text-tertiary: #6f6a62;
-  --text-inverse: #f7f5f0;
+  --text-primary: #050505;
+  --text-secondary: #464644;
+  --text-tertiary: #737370;
+  --text-inverse: #ffffff;
   --text-on-accent: #ffffff;
 
-  /* Chirfaar blue from moneymitra.com — never used for P/L */
-  --accent-base: #026ba4;
-  --accent-hover: #025a8a;
-  --accent-soft: #e3f2fa;
-  --accent-soft-text: #025a8a;
-  --accent-line: #9dcee8;
+  /* One electric MoneyMitra accent; green remains reserved for market movement */
+  --accent-base: #006bff;
+  --accent-hover: #0057d6;
+  --accent-soft: #eaf2ff;
+  --accent-soft-text: #004fbd;
+  --accent-line: #bfd5ff;
 
   /* Gurumantra green from moneymitra.com */
-  --up-base: #35b14f;
-  --up-soft: #e8f7ec;
-  --up-text: #1f6138;
+  --up-base: #00a53c;
+  --up-soft: #e8f8ed;
+  --up-text: #087b31;
 
-  --down-base: #e11d2e;
-  --down-soft: #fdeced;
-  --down-text: #b01222;
+  --down-base: #e3273e;
+  --down-soft: #fff0f2;
+  --down-text: #b41429;
 
-  --flat-base: #6f6a62;
+  --flat-base: #737370;
 
   --warn-base: #e08700;
-  --warn-soft: #fbf1df;
-  --warn-text: #825000;
+  --warn-soft: #fff4dc;
+  --warn-text: #744800;
 
   --deco-violet: #7c5cf0;
   --deco-violet-soft: #f0ebfe;
@@ -52,10 +52,10 @@
   --deco-teal: #0f9c9c;
   --deco-teal-soft: #e2f5f4;
 
-  --shadow-card: 0 1px 2px rgba(26, 25, 22, 0.04), 0 8px 20px -8px rgba(26, 25, 22, 0.06);
-  --shadow-raised: 0 12px 32px -8px rgba(26, 25, 22, 0.08);
-  --shadow-nav: 0 -2px 24px -6px rgba(26, 25, 22, 0.08);
-  --shadow-accent: 0 8px 20px -6px rgba(2, 107, 164, 0.28);
+  --shadow-card: none;
+  --shadow-raised: none;
+  --shadow-nav: none;
+  --shadow-accent: none;
 }
 
 [data-theme="dark"] {

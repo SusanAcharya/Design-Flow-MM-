@@ -27,7 +27,7 @@ export const personas: Persona[] = [
     tone: "saffron",
     stage: "explorer",
     objectiveId: "share",
-    tulkey: "You’re at the beginning. I’ll put the first explanation on Home — nothing to buy.",
+    tulkey: "You’re at the start. Home teaches first — nothing to buy.",
     where: "NEPSE is still a word, not a habit. You haven’t owned kitta, and names like Demat or MeroShare can wait. Home should teach first.",
     gives: [
       { title: "A first objective on Home", detail: "What a share is, in about 60s. Plain words. Not a pick." },
@@ -45,7 +45,7 @@ export const personas: Persona[] = [
     tone: "teal",
     stage: "primary",
     objectiveId: "ipo",
-    tulkey: "You’re in the primary market. I’ll put allotments first, and how an IPO actually works beside them.",
+    tulkey: "Primary market. Allotments first, then how an IPO works.",
     where: "You apply for new issues. Allotment is the wait that matters. Listed trading can come later — TMS doesn’t have to be first.",
     gives: [
       { title: "How an IPO actually works", detail: "Apply → allotment → listing, and which site does each step." },
@@ -63,7 +63,7 @@ export const personas: Persona[] = [
     tone: "violet",
     stage: "value",
     objectiveId: "read",
-    tulkey: "You already hold. I’ll open on your ledger, then how to read a company — not what to sell.",
+    tulkey: "You already hold. Home opens on your ledger.",
     where: "You own listed kitta. The job is reading what you hold: cost, return, dividends, events. You don’t need the alphabet of the market on Home.",
     gives: [
       { title: "Your ledger first", detail: "Value, today’s move, and the companies you actually own — with cost basis, not a decoration." },
@@ -81,7 +81,7 @@ export const personas: Persona[] = [
     tone: "accent",
     stage: "active",
     objectiveId: null,
-    tulkey: "You watch the session. I’ll skip the lesson card and lead with breadth and the floor sheet.",
+    tulkey: "You watch the session. I’ll skip the lesson card.",
     where: "You live in market hours. Breadth, the floor sheet, broker flow. A beginner card on Home would get in the way.",
     gives: [
       { title: "Breadth and the tape", detail: "Who rose, who fell, prints that already happened — always with a time." },

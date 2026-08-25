@@ -10,9 +10,11 @@ import {
   nabilLedger,
 } from "../lib/data";
 import { npr, signed } from "../lib/format";
+import { planFeatures, planMeta } from "../lib/explore";
+import { activeTab } from "../lib/nav";
 import { stageMeta, stageOrder, titleObjective } from "../lib/stage";
 import { useApp } from "../lib/state";
-import type { HomeFeed, Stage } from "../lib/types";
+import type { HomeFeed, Plan, PlanCycle, Stage } from "../lib/types";
 
 export function MetricLink({
   id,
@@ -32,19 +34,28 @@ export function MetricLink({
 function SheetFrame({
   children,
   onClose,
+  tall,
+  from = "bottom",
 }: {
   children: ReactNode;
   onClose: () => void;
+  tall?: boolean;
+  from?: "bottom" | "left";
 }) {
+  const drawer = from === "left";
   return (
-    <div className="sheet-backdrop" onClick={onClose} role="presentation">
+    <div
+      className={`sheet-backdrop${drawer ? " from-left" : ""}`}
+      onClick={onClose}
+      role="presentation"
+    >
       <div
-        className="sheet"
+        className={`sheet${tall ? " sheet-tall" : ""}${drawer ? " sheet-drawer" : ""}`}
         role="dialog"
         aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="sheet-handle" />
+        {!drawer && <div className="sheet-handle" />}
         {children}
       </div>
     </div>
@@ -113,10 +124,11 @@ function QuickSheet({ title, body, note }: { title: string; body: string; note?:
 }
 
 function NavigationSheet() {
-  const { go, closeSheet, setHomeFeed, openSheet, stage } = useApp();
-  const routeTo = (route: "home" | "market" | "ai" | "portfolio" | "discover") => {
+  const { go, closeSheet, setHomeFeed, openSheet, stage, route } = useApp();
+  const current = activeTab(route);
+  const routeTo = (next: "home" | "market" | "ai" | "portfolio" | "discover") => {
     closeSheet();
-    go(route);
+    go(next);
   };
   const openHomeFeed = (feed: HomeFeed) => {
     setHomeFeed(feed);
@@ -131,22 +143,33 @@ function NavigationSheet() {
           <strong className="t-h-s">Sandip</strong>
           <small>{stageMeta[stage].label}</small>
         </span>
-        <button className="icon-btn" onClick={() => openSheet({ kind: "profile" })}><Icon name="chev" size={16} /></button>
+        <button type="button" className="icon-btn" onClick={() => openSheet({ kind: "profile" })} aria-label="Profile">
+          <Icon name="chev" size={16} />
+        </button>
       </div>
-      <p className="overline" style={{ margin: "16px 0 8px" }}>Navigation</p>
-      <div className="drawer-grid">
-        <button onClick={() => routeTo("home")}><Icon name="home" /><span>Home</span></button>
-        <button onClick={() => routeTo("market")}><Icon name="market" /><span>Market</span></button>
-        <button onClick={() => routeTo("ai")}><Icon name="learn" /><span>Tulkey AI</span></button>
-        <button onClick={() => routeTo("portfolio")}><Icon name="wallet" /><span>Portfolio</span></button>
-        <button onClick={() => routeTo("discover")}><Icon name="discover" /><span>Explore</span></button>
-      </div>
-      <p className="overline" style={{ margin: "18px 0 8px" }}>Go straight to</p>
+      <nav className="drawer-nav" aria-label="Primary">
+        <button type="button" className={current === "home" ? "on" : ""} onClick={() => routeTo("home")}>
+          <Icon name="home" size={18} /><span>Home</span>
+        </button>
+        <button type="button" className={current === "market" ? "on" : ""} onClick={() => routeTo("market")}>
+          <Icon name="market" size={18} /><span>Market</span>
+        </button>
+        <button type="button" className={current === "ai" ? "on" : ""} onClick={() => routeTo("ai")}>
+          <Icon name="tulkey" size={18} /><span>Tulkey</span>
+        </button>
+        <button type="button" className={current === "portfolio" ? "on" : ""} onClick={() => routeTo("portfolio")}>
+          <Icon name="wallet" size={18} /><span>Portfolio</span>
+        </button>
+        <button type="button" className={current === "discover" ? "on" : ""} onClick={() => routeTo("discover")}>
+          <Icon name="discover" size={18} /><span>Explore</span>
+        </button>
+      </nav>
+      <p className="overline" style={{ margin: "18px 0 6px" }}>Go straight to</p>
       <div className="drawer-links">
-        <button onClick={() => openHomeFeed("watchlist")}><span>Watchlist</span><Icon name="chev" size={15} /></button>
-        <button onClick={() => openHomeFeed("brokers")}><span>Brokers</span><Icon name="chev" size={15} /></button>
-        <button onClick={() => openHomeFeed("baskets")}><span>Baskets</span><Icon name="chev" size={15} /></button>
-        <button onClick={() => routeTo("discover")}><span>Tools & screener</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => openHomeFeed("watchlist")}><span>Watchlist</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => openHomeFeed("brokers")}><span>Brokers</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => openHomeFeed("baskets")}><span>Baskets</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => routeTo("discover")}><span>Tools & screener</span><Icon name="chev" size={15} /></button>
       </div>
     </>
   );
@@ -250,6 +273,62 @@ function OrderSheet({ symbol }: { symbol: string }) {
   );
 }
 
+function StockToolsSheet({ symbol }: { symbol: string }) {
+  const { closeSheet, flash, openSheet, setStockTab } = useApp();
+  const openTab = (tab: "Overview" | "Financials" | "Analysis" | "Floor sheet" | "Events") => {
+    setStockTab(tab);
+    closeSheet();
+  };
+  const tools = [
+    { label: "Highlights", icon: "star" as const, onClick: () => openTab("Overview") },
+    { label: "Technicals", icon: "market" as const, onClick: () => openTab("Analysis") },
+    { label: "Fundamentals", icon: "learn" as const, onClick: () => openTab("Financials") },
+    { label: "Floor sheet", icon: "compare" as const, onClick: () => openTab("Floor sheet") },
+    { label: "Share holding", icon: "wallet" as const, onClick: () => openTab("Financials") },
+    { label: "Dividends & AGM", icon: "cal" as const, onClick: () => openTab("Events") },
+    {
+      label: "Compare",
+      icon: "compare" as const,
+      onClick: () => openSheet({ kind: "compare" }),
+    },
+    {
+      label: "Reports",
+      icon: "more" as const,
+      onClick: () => {
+        closeSheet();
+        flash({ message: `${symbol} reports will open from the company filing source.` });
+      },
+    },
+    {
+      label: "Announcements",
+      icon: "alert" as const,
+      onClick: () => openTab("Events"),
+    },
+  ];
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l">{symbol} tools</p>
+          <p className="t-body-xs muted">Jump to company, trading and disclosure views.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="stock-tools-grid">
+        {tools.map((tool) => (
+          <button key={tool.label} onClick={tool.onClick}>
+            <span><Icon name={tool.icon} size={19} /></span>
+            {tool.label}
+          </button>
+        ))}
+      </div>
+      <p className="t-body-xs muted" style={{ marginTop: 14 }}>
+        Readings explain published data. They do not rate the stock or recommend a trade.
+      </p>
+    </>
+  );
+}
+
 function CompareSheet() {
   const { closeSheet, openSheet } = useApp();
   return (
@@ -326,6 +405,112 @@ function CorrectSheet() {
   );
 }
 
+function PlansSheet() {
+  const { plan, setPlan, closeSheet, flash } = useApp();
+  const [cycle, setCycle] = useState<PlanCycle>("annual");
+  const [pick, setPick] = useState<Plan>(plan);
+  const [pay, setPay] = useState<"esewa" | "khalti" | "connectips">("esewa");
+  const paid = pick !== "free";
+  const price = cycle === "annual" ? planMeta[pick].annual : planMeta[pick].monthly;
+
+  const confirm = () => {
+    setPlan(pick);
+    closeSheet();
+    if (pick === "free") {
+      flash({ message: "You’re on Free. Screeners and alerts stay off this plan." });
+      return;
+    }
+    flash({ message: `Demo ${planMeta[pick].label} via ${pay === "connectips" ? "ConnectIPS" : pay === "esewa" ? "eSewa" : "Khalti"}. No payment is taken.` });
+  };
+
+  return (
+    <div className="plans-sheet">
+      <p className="overline">Subscription</p>
+      <p className="t-h-l" style={{ margin: "6px 0 4px" }}>Plans</p>
+      <p className="t-body-s muted">Paid tiers unlock tools. They never unlock a stock pick.</p>
+
+      <div className="plans-cycle">
+        <button type="button" className={cycle === "monthly" ? "on" : ""} onClick={() => setCycle("monthly")}>Monthly</button>
+        <button type="button" className={cycle === "annual" ? "on" : ""} onClick={() => setCycle("annual")}>Annual · save ~30%</button>
+      </div>
+
+      <div className="plans-list">
+        {(["free", "pro", "guru"] as Plan[]).map((id) => {
+          const item = planMeta[id];
+          const on = pick === id;
+          const amount = cycle === "annual" ? item.annual : item.monthly;
+          return (
+            <button
+              key={id}
+              type="button"
+              className={`plans-card ${id} ${on ? "on" : ""}`}
+              onClick={() => setPick(id)}
+            >
+              <span>
+                <strong>{item.label}</strong>
+                {plan === id && <em>Current</em>}
+              </span>
+              <b>{amount === 0 ? "Rs 0" : `Rs ${amount.toLocaleString("en-IN")}${cycle === "annual" ? " / yr" : " / mo"}`}</b>
+            </button>
+          );
+        })}
+      </div>
+
+      <table className="plans-table">
+        <thead>
+          <tr>
+            <th>Includes</th>
+            <th>Free</th>
+            <th>Pro</th>
+            <th>Guru</th>
+          </tr>
+        </thead>
+        <tbody>
+          {planFeatures.map((row) => (
+            <tr key={row.name}>
+              <td>{row.name}</td>
+              <td>{row.free ? "Yes" : "—"}</td>
+              <td>{row.pro ? "Yes" : "—"}</td>
+              <td>{row.guru ? "Yes" : "—"}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {paid && (
+        <>
+          <p className="overline" style={{ marginTop: 16 }}>Pay with</p>
+          <div className="plans-pay">
+            {([
+              ["esewa", "eSewa"],
+              ["khalti", "Khalti"],
+              ["connectips", "ConnectIPS"],
+            ] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={pay === id ? "on" : ""}
+                onClick={() => setPay(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div style={{ marginTop: 16 }}>
+        <Button variant="primary" size="lg" block onClick={confirm}>
+          {paid ? `Continue · Rs ${price.toLocaleString("en-IN")}` : "Stay on Free"}
+        </Button>
+      </div>
+      <p className="t-body-xs muted" style={{ marginTop: 10, textAlign: "center" }}>
+        Prototype only. eSewa, Khalti and ConnectIPS are shown as the handoff. No charge is made.
+      </p>
+    </div>
+  );
+}
+
 export function Overlays() {
   const { sheet, closeSheet, toast, dismissToast, undoStage, circuit, openSheet, route } = useApp();
   const alert = circuit !== "off" ? circuitCopy[circuit] : null;
@@ -359,7 +544,7 @@ export function Overlays() {
         <SheetFrame onClose={closeSheet}><ProfileSheet /></SheetFrame>
       )}
       {sheet?.kind === "navigation" && (
-        <SheetFrame onClose={closeSheet}><NavigationSheet /></SheetFrame>
+        <SheetFrame from="left" onClose={closeSheet}><NavigationSheet /></SheetFrame>
       )}
       {sheet?.kind === "quick" && (
         <SheetFrame onClose={closeSheet}>
@@ -375,8 +560,14 @@ export function Overlays() {
       {sheet?.kind === "order" && (
         <SheetFrame onClose={closeSheet}><OrderSheet symbol={sheet.symbol} /></SheetFrame>
       )}
+      {sheet?.kind === "stock-tools" && (
+        <SheetFrame onClose={closeSheet}><StockToolsSheet symbol={sheet.symbol} /></SheetFrame>
+      )}
       {sheet?.kind === "compare" && (
         <SheetFrame onClose={closeSheet}><CompareSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "plans" && (
+        <SheetFrame tall onClose={closeSheet}><PlansSheet /></SheetFrame>
       )}
       {sheet?.kind === "correct" && (
         <SheetFrame onClose={closeSheet}><CorrectSheet /></SheetFrame>

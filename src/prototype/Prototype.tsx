@@ -1,5 +1,6 @@
 import { useApp } from "../lib/state";
-import { AlertsScreen, DiscoverScreen, IpoScreen, LearnScreen, LessonScreen, MoreScreen, SearchScreen, TulkeyScreen } from "../screens/Discover";
+import { AlertsScreen, DiscoverScreen, IpoScreen, LearnScreen, LessonScreen, MoreScreen, SearchScreen } from "../screens/Discover";
+import { TulkeyScreen } from "../screens/Tulkey";
 import { HomeScreen } from "../screens/Home";
 import { MarketScreen } from "../screens/Market";
 import { ObjectiveScreen } from "../screens/Objective";

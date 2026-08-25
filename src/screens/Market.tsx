@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import {
   Badge,
@@ -8,7 +8,6 @@ import {
   Explain,
   MovePill,
   Overline,
-  SectionHead,
 } from "../ds/primitives";
 import { SessionWalk } from "../ds/charts";
 import {
@@ -25,9 +24,9 @@ import {
 } from "../lib/data";
 import { npr, pct, signed } from "../lib/format";
 import { useApp } from "../lib/state";
+import type { MarketTab } from "../lib/types";
 
-const tabs = ["Overview", "Movers", "Sectors", "Floor sheet", "Events"] as const;
-type MarketTab = (typeof tabs)[number];
+const tabs: MarketTab[] = ["Overview", "Movers", "Sectors", "Floor sheet", "Events"];
 type MoverView = keyof typeof moverBoards;
 
 const moverViews: { id: MoverView; label: string }[] = [
@@ -71,9 +70,34 @@ function QuoteRow({
   );
 }
 
+function MarketBlock({
+  title,
+  action,
+  onAction,
+  children,
+}: {
+  title?: string;
+  action?: string;
+  onAction?: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="market-block">
+      {(title || action) && (
+        <header className="market-block-head">
+          {title ? <h2>{title}</h2> : <span />}
+          {action && (
+            <button type="button" className="text-link" onClick={onAction}>{action}</button>
+          )}
+        </header>
+      )}
+      <div className="market-block-body">{children}</div>
+    </section>
+  );
+}
+
 export function MarketScreen() {
-  const { flash, go, openSheet, session, viewport } = useApp();
-  const [tab, setTab] = useState<MarketTab>("Overview");
+  const { flash, go, openSheet, session, viewport, marketTab: tab, setMarketTab } = useApp();
   const [index, setIndex] = useState("NEPSE");
   const [moverView, setMoverView] = useState<MoverView>("gainers");
   const [sectorSort, setSectorSort] = useState<(typeof sectorSorts)[number]>("By change");
@@ -110,7 +134,7 @@ export function MarketScreen() {
           <button
             key={item}
             className={tab === item ? "on" : ""}
-            onClick={() => setTab(item)}
+            onClick={() => setMarketTab(item)}
           >
             {item}
           </button>
@@ -211,78 +235,83 @@ export function MarketScreen() {
             </p>
           </div>
 
-          <SectionHead
+          <MarketBlock
             title="Top gainers"
             action="All movers ›"
             onAction={() => {
               setMoverView("gainers");
-              setTab("Movers");
+              setMarketTab("Movers");
             }}
-          />
-          {moverBoards.gainers.slice(0, 3).map((row) => (
-            <QuoteRow key={row.symbol} row={row} onOpen={(symbol) => go("stock", { stock: symbol })} />
-          ))}
+          >
+            {moverBoards.gainers.slice(0, 3).map((row) => (
+              <QuoteRow key={row.symbol} row={row} onOpen={(symbol) => go("stock", { stock: symbol })} />
+            ))}
+          </MarketBlock>
 
-          <SectionHead
+          <MarketBlock
             title="Top losers"
             action="All movers ›"
             onAction={() => {
               setMoverView("losers");
-              setTab("Movers");
+              setMarketTab("Movers");
             }}
-          />
-          {moverBoards.losers.slice(0, 3).map((row) => (
-            <QuoteRow
-              key={row.symbol}
-              row={row}
-              note={row.symbol === "NABIL"
-                ? "Ex-dividend today — part of the fall is the dividend."
-                : row.name}
-              onOpen={(symbol) => go("stock", { stock: symbol })}
-            />
-          ))}
+          >
+            {moverBoards.losers.slice(0, 3).map((row) => (
+              <QuoteRow
+                key={row.symbol}
+                row={row}
+                note={row.symbol === "NABIL"
+                  ? "Ex-dividend today — part of the fall is the dividend."
+                  : row.name}
+                onOpen={(symbol) => go("stock", { stock: symbol })}
+              />
+            ))}
+          </MarketBlock>
 
-          <SectionHead title="Sectors" action="See all ›" onAction={() => setTab("Sectors")} />
-          {sectors.slice(0, 4).map((sector) => (
-            <div className="row" key={sector.name}>
-              <div className="row-main">
-                <p className="t-h-s">{sector.name}</p>
-                <p className="row-sub">Turnover {sector.turnover}</p>
+          <MarketBlock title="Sectors" action="See all ›" onAction={() => setMarketTab("Sectors")}>
+            {sectors.slice(0, 4).map((sector) => (
+              <div className="row" key={sector.name}>
+                <div className="row-main">
+                  <p className="t-h-s">{sector.name}</p>
+                  <p className="row-sub">Turnover {sector.turnover}</p>
+                </div>
+                <ChangeText value={sector.changePct} />
               </div>
-              <ChangeText value={sector.changePct} />
-            </div>
-          ))}
+            ))}
+          </MarketBlock>
 
-          <SectionHead title="Floor sheet" action="Full sheet ›" onAction={() => setTab("Floor sheet")} />
-          {floorBrokers.slice(0, 3).map((broker) => (
-            <div className="row" key={broker.code}>
-              <div className="row-main">
-                <p className="t-h-s">Broker {broker.code}</p>
-                <p className="row-sub">Most active in {broker.active}</p>
+          <MarketBlock title="Floor sheet" action="Full sheet ›" onAction={() => setMarketTab("Floor sheet")}>
+            {floorBrokers.slice(0, 3).map((broker) => (
+              <div className="row" key={broker.code}>
+                <div className="row-main">
+                  <p className="t-h-s">Broker {broker.code}</p>
+                  <p className="row-sub">Most active in {broker.active}</p>
+                </div>
+                <span className={`badge ${broker.net < 0 ? "badge-down" : "badge-teal"}`}>
+                  <span className="badge-dot" />
+                  {broker.net < 0 ? "Net seller" : "Net buyer"}
+                </span>
+                <b className={broker.net < 0 ? "c-down t-mono-s" : "c-up t-mono-s"}>
+                  {signed(broker.net)}
+                </b>
               </div>
-              <span className={`badge ${broker.net < 0 ? "badge-down" : "badge-teal"}`}>
-                <span className="badge-dot" />
-                {broker.net < 0 ? "Net seller" : "Net buyer"}
-              </span>
-              <b className={broker.net < 0 ? "c-down t-mono-s" : "c-up t-mono-s"}>
-                {signed(broker.net)}
-              </b>
-            </div>
-          ))}
-          <p className="foot-note">
-            The floor sheet records trades that already happened. It is not the live order book.
-          </p>
+            ))}
+            <p className="foot-note">
+              The floor sheet records trades that already happened. It is not the live order book.
+            </p>
+          </MarketBlock>
 
-          <SectionHead title="Coming up" action="Events ›" onAction={() => setTab("Events")} />
-          {marketEvents.slice(0, 2).map((event) => (
-            <div className="row" key={event.title}>
-              <div className="row-main">
-                <p className="t-h-s">{event.title}</p>
-                <p className="row-sub">{event.sub}</p>
+          <MarketBlock title="Coming up" action="Events ›" onAction={() => setMarketTab("Events")}>
+            {marketEvents.slice(0, 2).map((event) => (
+              <div className="row" key={event.title}>
+                <div className="row-main">
+                  <p className="t-h-s">{event.title}</p>
+                  <p className="row-sub">{event.sub}</p>
+                </div>
+                <span className="t-body-xs muted">{event.date}</span>
               </div>
-              <span className="t-body-xs muted">{event.date}</span>
-            </div>
-          ))}
+            ))}
+          </MarketBlock>
         </>
       )}
 
@@ -307,36 +336,38 @@ export function MarketScreen() {
             <span className="chip chip-quiet">Any price ▾</span>
             <span className="chip chip-quiet">Traded today ▾</span>
           </div>
-          <div className="sheet-wrap market-table">
-            <table className="sheet-table">
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th className="num">LTP</th>
-                  <th className="num">Change</th>
-                  <th className="num">Turnover</th>
-                </tr>
-              </thead>
-              <tbody>
-                {moverBoards[moverView].map((row) => (
-                  <tr key={row.symbol} onClick={() => go("stock", { stock: row.symbol })}>
-                    <td>
-                      <span className="t-ticker">
-                        {row.symbol}
-                        {(row.extra.includes("cap") || row.changePct >= 9.9) && (
-                          <Badge tone="warn">Circuit</Badge>
-                        )}
-                      </span>
-                      <small>{row.name}</small>
-                    </td>
-                    <td className="num">{npr(row.price, 2)}</td>
-                    <td className="num"><ChangeText value={row.changePct} /></td>
-                    <td className="num muted-num">{row.extra}</td>
+          <MarketBlock>
+            <div className="sheet-wrap market-table">
+              <table className="sheet-table">
+                <thead>
+                  <tr>
+                    <th>Company</th>
+                    <th className="num">LTP</th>
+                    <th className="num">Change</th>
+                    <th className="num">Turnover</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {moverBoards[moverView].map((row) => (
+                    <tr key={row.symbol} onClick={() => go("stock", { stock: row.symbol })}>
+                      <td>
+                        <span className="t-ticker">
+                          {row.symbol}
+                          {(row.extra.includes("cap") || row.changePct >= 9.9) && (
+                            <Badge tone="warn">Circuit</Badge>
+                          )}
+                        </span>
+                        <small>{row.name}</small>
+                      </td>
+                      <td className="num">{npr(row.price, 2)}</td>
+                      <td className="num"><ChangeText value={row.changePct} /></td>
+                      <td className="num muted-num">{row.extra}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </MarketBlock>
           <p className="market-intro">
             “Circuit” means the price reached its daily limit. It says nothing about what the company is worth.
           </p>
@@ -369,34 +400,36 @@ export function MarketScreen() {
               </Chip>
             ))}
           </div>
-          <div className="sheet-wrap market-table">
-            <table className="sheet-table sector-table">
-              <thead>
-                <tr>
-                  <th>Sector</th>
-                  <th className="num">Rose / fell</th>
-                  <th className="num">Turnover</th>
-                  <th className="num">Change</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sectorRows.map((sector) => (
-                  <tr key={sector.name}>
-                    <td>
-                      {sector.name}
-                      <i
-                        className={`sector-rail ${sector.changePct < 0 ? "down" : "up"}`}
-                        style={{ width: `${Math.min(92, 28 + Math.abs(sector.changePct) * 24)}%` }}
-                      />
-                    </td>
-                    <td className="num">{sector.rose} / {sector.fell}</td>
-                    <td className="num">{sector.turnover}</td>
-                    <td className="num"><ChangeText value={sector.changePct} /></td>
+          <MarketBlock>
+            <div className="sheet-wrap market-table">
+              <table className="sheet-table sector-table">
+                <thead>
+                  <tr>
+                    <th>Sector</th>
+                    <th className="num">Rose / fell</th>
+                    <th className="num">Turnover</th>
+                    <th className="num">Change</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {sectorRows.map((sector) => (
+                    <tr key={sector.name}>
+                      <td>
+                        {sector.name}
+                        <i
+                          className={`sector-rail ${sector.changePct < 0 ? "down" : "up"}`}
+                          style={{ width: `${Math.min(92, 28 + Math.abs(sector.changePct) * 24)}%` }}
+                        />
+                      </td>
+                      <td className="num">{sector.rose} / {sector.fell}</td>
+                      <td className="num">{sector.turnover}</td>
+                      <td className="num"><ChangeText value={sector.changePct} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </MarketBlock>
           <p className="market-intro">
             Commercial banks moved 1.84 Arba — a large share of the market’s turnover — while the sector itself finished down.
           </p>
@@ -427,20 +460,19 @@ export function MarketScreen() {
             <span className="chip chip-quiet">All symbols ▾</span>
             <span className="chip chip-quiet">All brokers ▾</span>
           </div>
-          <p className="overline pad" style={{ paddingTop: 8, paddingBottom: 4 }}>
-            Today across NEPSE
-          </p>
-          {[
-            ["Trades executed", npr(nepse.transactions)],
-            ["Kitta traded", nepse.kitta],
-            ["Value traded", nepse.traded],
-            ["Companies traded", String(nepse.companies)],
-          ].map(([label, value]) => (
-            <div className="kv" key={label}>
-              <span>{label}</span>
-              <b>{value}</b>
-            </div>
-          ))}
+          <MarketBlock title="Today across NEPSE">
+            {[
+              ["Trades executed", npr(nepse.transactions)],
+              ["Kitta traded", nepse.kitta],
+              ["Value traded", nepse.traded],
+              ["Companies traded", String(nepse.companies)],
+            ].map(([label, value]) => (
+              <div className="kv" key={label}>
+                <span>{label}</span>
+                <b>{value}</b>
+              </div>
+            ))}
+          </MarketBlock>
           <div className="pad" style={{ paddingTop: 12, paddingBottom: 8 }}>
             <Explain onClick={() => explain(
               "What is a floor sheet?",
@@ -459,71 +491,79 @@ export function MarketScreen() {
           </div>
 
           {floorView === "By broker" && (
-            <div className="sheet-wrap market-table">
-              <table className="sheet-table">
-                <thead>
-                  <tr>
-                    <th>Broker</th>
-                    <th className="num">Bought</th>
-                    <th className="num">Sold</th>
-                    <th className="num">Net kitta</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {floorBrokers.map((broker) => (
-                    <tr key={broker.code}>
-                      <td>
-                        Broker {broker.code}
-                        <small>Most active in {broker.active}</small>
-                      </td>
-                      <td className="num">{npr(broker.bought)}</td>
-                      <td className="num">{npr(broker.sold)}</td>
-                      <td className={`num ${broker.net < 0 ? "c-down" : "c-up"}`}>
-                        <b>{signed(broker.net)}</b>
-                      </td>
+            <MarketBlock>
+              <div className="sheet-wrap market-table">
+                <table className="sheet-table">
+                  <thead>
+                    <tr>
+                      <th>Broker</th>
+                      <th className="num">Bought</th>
+                      <th className="num">Sold</th>
+                      <th className="num">Net kitta</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {floorBrokers.map((broker) => (
+                      <tr key={broker.code}>
+                        <td>
+                          Broker {broker.code}
+                          <small>Most active in {broker.active}</small>
+                        </td>
+                        <td className="num">{npr(broker.bought)}</td>
+                        <td className="num">{npr(broker.sold)}</td>
+                        <td className={`num ${broker.net < 0 ? "c-down" : "c-up"}`}>
+                          <b>{signed(broker.net)}</b>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </MarketBlock>
           )}
 
           {floorView === "By symbol" && (
-            <div className="sheet-wrap market-table">
-              <table className="sheet-table">
-                <thead>
-                  <tr>
-                    <th>Symbol</th>
-                    <th className="num">Kitta</th>
-                    <th className="num">Last</th>
-                    <th>Brokers</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...new Set(floorSheet.map((trade) => trade.symbol))].map((symbol) => {
-                    const trades = floorSheet.filter((trade) => trade.symbol === symbol);
-                    return (
-                      <tr key={symbol} onClick={() => go("stock", { stock: symbol })}>
-                        <td className="t-ticker">{symbol}</td>
-                        <td className="num">{npr(trades.reduce((sum, trade) => sum + trade.kitta, 0))}</td>
-                        <td className="num">{npr(trades[0].price, 2)}</td>
-                        <td className="muted-num">{trades[0].from} → {trades[0].to}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <MarketBlock>
+              <div className="sheet-wrap market-table">
+                <table className="sheet-table">
+                  <thead>
+                    <tr>
+                      <th>Symbol</th>
+                      <th className="num">Kitta</th>
+                      <th className="num">Last</th>
+                      <th>Brokers</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...new Set(floorSheet.map((trade) => trade.symbol))].map((symbol) => {
+                      const trades = floorSheet.filter((trade) => trade.symbol === symbol);
+                      return (
+                        <tr key={symbol} onClick={() => go("stock", { stock: symbol })}>
+                          <td className="t-ticker">{symbol}</td>
+                          <td className="num">{npr(trades.reduce((sum, trade) => sum + trade.kitta, 0))}</td>
+                          <td className="num">{npr(trades[0].price, 2)}</td>
+                          <td className="muted-num">{trades[0].from} → {trades[0].to}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </MarketBlock>
           )}
 
-          {floorView === "All trades" && floorSheet.map((trade) => (
-            <div className="floor-row" key={`${trade.time}-${trade.symbol}-${trade.from}`}>
-              <span className="t-mono-s">{trade.time}</span>
-              <span className="t-ticker">{trade.symbol}</span>
-              <span className="t-mono-s">{trade.kitta} @ {npr(trade.price, 2)}</span>
-              <span className="t-body-xs muted">{trade.from} → {trade.to}</span>
-            </div>
-          ))}
+          {floorView === "All trades" && (
+            <MarketBlock>
+              {floorSheet.map((trade) => (
+                <div className="floor-row" key={`${trade.time}-${trade.symbol}-${trade.from}`}>
+                  <span className="t-mono-s">{trade.time}</span>
+                  <span className="t-ticker">{trade.symbol}</span>
+                  <span className="t-mono-s">{trade.kitta} @ {npr(trade.price, 2)}</span>
+                  <span className="t-body-xs muted">{trade.from} → {trade.to}</span>
+                </div>
+              ))}
+            </MarketBlock>
+          )}
 
           <p className="market-intro">
             Brokers appear by their NEPSE code. These are executed trades only, not the live order book.
@@ -548,22 +588,24 @@ export function MarketScreen() {
           <p className="market-intro">
             Corporate actions and primary-market dates. Application still happens on MeroShare / C-ASBA.
           </p>
-          {marketEvents.map((event) => (
-            <div className="row" key={event.title}>
-              <div className="row-main">
-                <p className="t-h-s">{event.title}</p>
-                <p className="row-sub">{event.sub}</p>
+          <MarketBlock>
+            {marketEvents.map((event) => (
+              <div className="row" key={event.title}>
+                <div className="row-main">
+                  <p className="t-h-s">{event.title}</p>
+                  <p className="row-sub">{event.sub}</p>
+                </div>
+                <span className="t-body-xs muted">{event.date}</span>
               </div>
-              <span className="t-body-xs muted">{event.date}</span>
+            ))}
+            <div className="row">
+              <div className="row-main">
+                <p className="t-h-s">{liveIpo.name} IPO</p>
+                <p className="row-sub">Closes in {liveIpo.closesIn} · par Rs {liveIpo.price}</p>
+              </div>
+              <button type="button" className="text-link" onClick={() => go("ipo")}>IPO ›</button>
             </div>
-          ))}
-          <div className="row">
-            <div className="row-main">
-              <p className="t-h-s">{liveIpo.name} IPO</p>
-              <p className="row-sub">Closes in {liveIpo.closesIn} · par Rs {liveIpo.price}</p>
-            </div>
-            <button className="text-link" onClick={() => go("ipo")}>IPO ›</button>
-          </div>
+          </MarketBlock>
         </>
       )}
 

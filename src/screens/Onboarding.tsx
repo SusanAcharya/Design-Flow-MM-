@@ -118,7 +118,7 @@ function PickStep({
   return (
     <>
       <div className="pad" style={{ paddingBottom: 10 }}>
-        <Chat line={selected ? selected.tulkey : "Who’s closest to you? I’ll show where that puts you, and what MoneyMitra will do."} />
+        <Chat line={selected ? selected.tulkey : "Who’s closest? Tap one — I’ll set Home around that."} />
       </div>
 
       <div className="ob-cast pad" role="listbox" aria-label="Who’s closest to you">
@@ -146,34 +146,17 @@ function PickStep({
       <div className="ob-guide pad" aria-live="polite">
         {selected ? (
           <article className="ob-guide-card" key={selected.id}>
-            <header className="ob-guide-head">
-              <span className={`ob-guide-pic ${selected.tone}`}>
-                <img src={selected.img} alt="" />
-              </span>
-              <div>
-                <p className="overline">Where you are</p>
-                <h2>{selected.name} · {selected.role}</h2>
-              </div>
-            </header>
-            <p className="ob-where">{selected.where}</p>
-            <p className="overline" style={{ marginTop: 14 }}>What MoneyMitra gives you</p>
-            <ol className="ob-gives">
-              {selected.gives.map((item, index) => (
-                <li key={item.title}>
-                  <span className="ob-gives-n">{index + 1}</span>
-                  <span>
-                    <strong>{item.title}</strong>
-                    <small>{item.detail}</small>
-                  </span>
-                </li>
+            <p className="ob-prompt">{selected.prompt}</p>
+            <ul className="ob-gives">
+              {selected.gives.map((item) => (
+                <li key={item.title}>{item.title}</li>
               ))}
-            </ol>
-            <p className="ob-limit">{selected.limit}</p>
+            </ul>
           </article>
         ) : (
           <div className="ob-guide-empty">
             <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
-            <p>Tap someone above. This space becomes their place in the market, and what Home will actually do.</p>
+            <p>Tap someone above.</p>
           </div>
         )}
       </div>

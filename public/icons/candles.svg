@@ -1,0 +1,13 @@
+<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="icon/candles">
+<path d="M6 3.5 V7.5" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M6 15.2 V18.5" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round"/>
+<rect x="4.4" y="7.5" width="3.2" height="7.7" rx="0.4" fill="#5C574D"/>
+<path d="M11 4.2 V8.2" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M11 14.6 V18.5" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round"/>
+<rect x="9.4" y="8.2" width="3.2" height="6.4" rx="0.4" fill="#5C574D"/>
+<path d="M16 5.5 V9" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round"/>
+<path d="M16 15.4 V18.5" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round"/>
+<rect x="14.4" y="9" width="3.2" height="6.4" rx="0.4" fill="#5C574D"/>
+</g>
+</svg>

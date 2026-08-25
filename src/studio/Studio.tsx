@@ -1,7 +1,7 @@
 import { useApp } from "../lib/state";
 import { Prototype } from "../prototype/Prototype";
 import { studioObjectives } from "../lib/objectives";
-import type { Circuit, Route, Stage, UiFont } from "../lib/types";
+import type { Circuit, Plan, Route, Stage, UiFont } from "../lib/types";
 
 const screens: { id: Route; label: string }[] = [
   { id: "onboarding", label: "Onboarding" },
@@ -60,6 +60,8 @@ export function Studio() {
     setSession,
     circuit,
     setCircuit,
+    plan,
+    setPlan,
     route,
     go,
     resetDemo,
@@ -149,6 +151,17 @@ export function Studio() {
               <option key={c.id} value={c.id}>{c.label}</option>
             ))}
           </select>
+        </label>
+
+        <label>
+          Plan
+          <div className="seg">
+            {(["free", "pro", "guru"] as Plan[]).map((id) => (
+              <button key={id} className={plan === id ? "on" : ""} onClick={() => setPlan(id)}>
+                {id === "free" ? "Free" : id === "pro" ? "Pro" : "Guru"}
+              </button>
+            ))}
+          </div>
         </label>
 
         <label>

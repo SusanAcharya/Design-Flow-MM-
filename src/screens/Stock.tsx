@@ -6,6 +6,8 @@ import { MetricLink } from "../shell/Overlays";
 import {
   holdings,
   nabil,
+  nabilAnalysis,
+  nabilCompany,
   nabilEvents,
   nabilFinancials,
   nabilFloor,
@@ -18,11 +20,11 @@ import {
 } from "../lib/data";
 import { npr, pct, signed } from "../lib/format";
 import { useApp } from "../lib/state";
+import type { StockTab } from "../lib/types";
 
 const ranges = ["1D", "1W", "1M", "3M", "1Y"] as const;
-const tabs = ["Overview", "Financials", "Floor sheet", "Events"] as const;
+const tabs: StockTab[] = ["Overview", "Financials", "Analysis", "Floor sheet", "Events"];
 type Range = (typeof ranges)[number];
-type StockTab = (typeof tabs)[number];
 
 function CandleChart({ tape }: { tape: Tape }) {
   const candles = useMemo(() => tape.prints.map((point, index) => {
@@ -120,11 +122,11 @@ function StockSection({
 }
 
 export function StockScreen() {
-  const { back, flash, go, openSheet, session, viewport } = useApp();
+  const { back, flash, go, openSheet, session, setStockTab, stockTab: tab, viewport } = useApp();
   const [range, setRange] = useState<Range>("1D");
-  const [tab, setTab] = useState<StockTab>("Overview");
   const [chartMode, setChartMode] = useState<"line" | "candles">("line");
   const [showRsi, setShowRsi] = useState(false);
+  const [showAllReadings, setShowAllReadings] = useState(false);
   const [scrub, setScrub] = useState<TapePrint | null>(null);
   const owned = holdings.find((holding) => holding.symbol === nabil.symbol);
   const tape =
@@ -157,7 +159,13 @@ export function StockScreen() {
           >
             <Icon name="star" />
           </button>
-          <button className="icon-btn" aria-label="More"><Icon name="dots" /></button>
+          <button
+            className="icon-btn"
+            aria-label="More stock tools"
+            onClick={() => openSheet({ kind: "stock-tools", symbol: nabil.symbol })}
+          >
+            <Icon name="dots" />
+          </button>
         </div>
       )}
       {viewport === "web" && (
@@ -229,7 +237,7 @@ export function StockScreen() {
 
       <div className="tabs stock-tabs">
         {tabs.map((item) => (
-          <button key={item} className={tab === item ? "on" : ""} onClick={() => setTab(item)}>
+          <button key={item} className={tab === item ? "on" : ""} onClick={() => setStockTab(item)}>
             {item}
           </button>
         ))}
@@ -296,6 +304,17 @@ export function StockScreen() {
             <div className="kv" key={label}><span>{label}</span><b>{value}</b></div>
           ))}
 
+          <StockSection title="About the company" />
+          <div className="stock-company">
+            <p>{nabilCompany.description}</p>
+            <div className="stock-company-facts">
+              <span><small>Founded</small><b>{nabilCompany.founded}</b></span>
+              <span><small>Exchange</small><b>{nabilCompany.exchange}</b></span>
+              <span><small>Sector</small><b>{nabilCompany.sector}</b></span>
+            </div>
+            <small>Source: {nabilCompany.source}</small>
+          </div>
+
           <StockSection title="Understand this" action="Learn ›" onAction={() => go("learn")} />
           {[
             ["What a dividend does to the price", "Two minutes · why a fall today is not a loss"],
@@ -337,6 +356,13 @@ export function StockScreen() {
               <b className={row.tone === "warn" ? "stock-warn" : ""}>{row.value}</b>
             </div>
           ))}
+          <StockSection title="Balance sheet & efficiency" action="Reported FY 2081–82" />
+          {nabilFinancials.balance.map((row) => (
+            <div className="kv" key={row.label}>
+              <span>{row.label}<Icon name="info" size={11} /></span>
+              <b>{row.value}</b>
+            </div>
+          ))}
           <StockSection title="Who owns it" action="Detail ›" />
           <div className="ownership">
             <div className="ownership-bar">
@@ -357,6 +383,127 @@ export function StockScreen() {
               "Promoter holding is the portion owned by founding or controlling shareholders. It describes ownership, not future performance.",
             )}>
               What is promoter holding?
+            </Explain>
+          </div>
+        </>
+      )}
+
+      {tab === "Analysis" && (
+        <>
+          <div className="analysis-hero">
+            <div className="analysis-hero-top">
+              <div>
+                <Overline>Technical snapshot</Overline>
+                <h2>Mixed picture</h2>
+              </div>
+              <span className="analysis-price">{npr(nabil.ltp, 2)}</span>
+            </div>
+            <p>
+              Short-term momentum is weak, while the price remains above its long-term average.
+              That describes the chart; it does not recommend an action.
+            </p>
+            <div className="analysis-summary">
+              <div><small>Short term</small><b>Below 20d & 50d</b></div>
+              <div><small>Long term</small><b>Above 200d</b></div>
+              <div><small>Activity</small><b>12.19 Cr</b></div>
+            </div>
+            <div className="analysis-asof">
+              <span>{nabilAnalysis.updated}</span>
+              <Explain onClick={() => explain(
+                "What does mixed picture mean?",
+                "Different windows can point in different directions. Here, recent prices are below shorter averages while remaining above the 200-day average.",
+                "This is context, not a buy or sell signal.",
+              )}>
+                Explain this
+              </Explain>
+            </div>
+          </div>
+
+          <StockSection title="Price versus trend" action="Closing prices" />
+          <div className="trend-map">
+            <div className="trend-map-track">
+              {[
+                { label: "200d", value: 487.35, tone: "quiet" },
+                { label: "Price", value: nabil.ltp, tone: "price" },
+                { label: "20d", value: 505.1, tone: "quiet" },
+                { label: "50d", value: 512.4, tone: "quiet" },
+              ].map((point) => (
+                <span
+                  key={point.label}
+                  className={point.tone}
+                  style={{ left: `${Math.max(3, Math.min(97, ((point.value - 484) / 32) * 100))}%` }}
+                >
+                  <i />
+                  <b>{point.label}</b>
+                  <em>{npr(point.value, 2)}</em>
+                </span>
+              ))}
+            </div>
+            <p>
+              The close sits between the 200-day average and the shorter 20- and 50-day averages.
+            </p>
+          </div>
+
+          <StockSection title="Momentum & strength" action="Recent window" />
+          <div className="analysis-metric-grid">
+            {[
+              { label: "RSI (14)", value: "39.23", state: "Lower half", fill: 39.23 },
+              { label: "Stochastic", value: "26.24", state: "Near low band", fill: 26.24 },
+              { label: "MFI", value: "19.30", state: "Low reading", fill: 19.3 },
+              { label: "ADX", value: "36.07", state: "Trend present", fill: 36.07 },
+            ].map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <b>{item.value}</b>
+                <div className="analysis-mini-track"><i style={{ width: `${item.fill}%` }} /></div>
+                <small>{item.state}</small>
+              </div>
+            ))}
+          </div>
+          <div className="analysis-macd">
+            <div><span>MACD</span><b>−0.09</b></div>
+            <p>Below its signal line. This describes recent momentum, not tomorrow’s direction.</p>
+          </div>
+
+          <button
+            type="button"
+            className="analysis-disclosure"
+            onClick={() => setShowAllReadings((current) => !current)}
+            aria-expanded={showAllReadings}
+          >
+            <span>
+              <b>{showAllReadings ? "Hide detailed readings" : "Show all technical readings"}</b>
+              <small>Moving averages, bands and beta</small>
+            </span>
+            <Icon name="chev" size={15} />
+          </button>
+
+          {showAllReadings && (
+            <div className="analysis-details">
+              <StockSection title="Trend levels" action="Same closing date" />
+              <div className="stock-level-grid">
+                {nabilAnalysis.levels.map((item) => (
+                  <div key={item.label}><span>{item.label}</span><b>{item.value}</b></div>
+                ))}
+              </div>
+              <StockSection title="Market sensitivity" action="Beta by window" />
+              {nabilAnalysis.risk.map((item) => (
+                <div className="stock-risk-row" key={item.label}>
+                  <div><span>{item.label}</span><small>{item.note}</small></div>
+                  <b>{item.value}</b>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="analysis-learning">
+            <Overline>Use with care</Overline>
+            <p>Indicators change with the period and source. Check company events and financials before interpreting a price pattern.</p>
+            <Explain onClick={() => explain(
+              "How should I use technical indicators?",
+              "Use them to describe a chosen price window, not to predict one outcome. Confirm the date, period and source, then compare with company events and fundamentals.",
+            )}>
+              How to use these readings
             </Explain>
           </div>
         </>
@@ -463,7 +610,7 @@ export function StockScreen() {
       <p className="disclaimer">
         Prices are at session close. MoneyMitra does not place orders — trading happens in TMS at your broker.
       </p>
-      <div className="float-actions stock-actions">
+      <div className={`float-actions stock-actions ${tab === "Analysis" ? "stock-actions-min" : ""}`}>
         <button
           className="icon-btn"
           aria-label="Alert"

@@ -6,11 +6,12 @@ import {
   Chip,
   Delta,
   Figure,
+  MovePill,
   SearchField,
   SectionHead,
   StatTable,
 } from "../ds/primitives";
-import { SessionWalk, Sparkline } from "../ds/charts";
+import { SessionWalk } from "../ds/charts";
 import {
   allotments,
   basketCatalog,
@@ -25,7 +26,6 @@ import {
   liveIpo,
   moverBoards,
   nepse,
-  nepseSession,
   portfolio,
   secondaryBook,
   settlements,
@@ -47,12 +47,14 @@ type FeedTone = "market" | "book" | "learn" | "news" | "alert" | "ipo" | "move" 
 
 function FeedGroup({
   label,
+  hideLabel = false,
   action,
   onAction,
   tone = "list",
   children,
 }: {
   label: string;
+  hideLabel?: boolean;
   action?: string;
   onAction?: () => void;
   tone?: FeedTone;
@@ -62,13 +64,17 @@ function FeedGroup({
   if (items.length === 0) return null;
   const id = `feed-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
   return (
-    <section className="feed-group" data-tone={tone} aria-labelledby={id}>
-      <header className="feed-group-head">
-        <h2 id={id} className="feed-group-label">{label}</h2>
-        {action && (
-          <button type="button" className="text-link" onClick={onAction}>{action}</button>
-        )}
-      </header>
+    <section className={`feed-group${hideLabel ? " no-label" : ""}`} data-tone={tone} aria-labelledby={id}>
+      {hideLabel ? (
+        <h2 id={id} className="vh">{label}</h2>
+      ) : (
+        <header className="feed-group-head">
+          <h2 id={id} className="feed-group-label">{label}</h2>
+          {action && (
+            <button type="button" className="text-link" onClick={onAction}>{action}</button>
+          )}
+        </header>
+      )}
       <div className="feed-group-body">{items}</div>
     </section>
   );
@@ -77,11 +83,9 @@ function FeedGroup({
 function QuoteTable({
   rows,
   onRow,
-  showReturn = false,
 }: {
-  rows: { symbol: string; name: string; price: number; changePct: number; returnPct?: number }[];
+  rows: { symbol: string; name: string; price: number; changePct: number }[];
   onRow: (symbol: string) => void;
-  showReturn?: boolean;
 }) {
   return (
     <div className="sheet-wrap">
@@ -89,7 +93,6 @@ function QuoteTable({
         <thead>
           <tr>
             <th>Symbol</th>
-            <th className="spark-col"><span className="vh">Session path</span></th>
             <th className="num">Last</th>
             <th className="num">Today</th>
           </tr>
@@ -111,15 +114,9 @@ function QuoteTable({
                 <span className="t-ticker">{row.symbol}</span>
                 <small>{row.name}</small>
               </td>
-              <td className="spark-col">
-                <Sparkline changePct={row.changePct} seed={row.symbol} width={56} height={24} />
-              </td>
               <td className="num">{npr(row.price, 2)}</td>
               <td className="num">
                 <b className={row.changePct < 0 ? "c-down" : "c-up"}>{pct(row.changePct)}</b>
-                {showReturn && row.returnPct != null && (
-                  <small className={row.returnPct < 0 ? "c-down" : "c-up"}>{pct(row.returnPct, 1)} all</small>
-                )}
               </td>
             </tr>
           ))}
@@ -133,13 +130,9 @@ function PulseModule() {
   const { session, go, flash } = useApp();
   const [refreshing, setRefreshing] = useState(false);
   const [updated, setUpdated] = useState(false);
-  const [scrub, setScrub] = useState<TapePrint | null>(null);
-  const total = nepse.rose + nepse.fell || 1;
-  const shown = scrub?.v ?? nepse.value;
-  const shownChange = shown - nepseSession.prevClose;
-  const shownPct = nepseSession.prevClose ? (shownChange / nepseSession.prevClose) * 100 : 0;
 
-  const refresh = () => {
+  const refresh = (event: { stopPropagation: () => void }) => {
+    event.stopPropagation();
     if (refreshing) return;
     setRefreshing(true);
     setUpdated(false);
@@ -156,53 +149,46 @@ function PulseModule() {
   };
 
   return (
-    <div className={`home-card home-card-chart${refreshing ? " is-refreshing" : ""}`}>
-      <Figure
-        kicker="NEPSE"
-        value={shown}
-        digits={2}
-        amount={shownChange}
-        pct={shownPct}
-        loading={refreshing}
-        updated={updated}
-        note={refreshing
-          ? "Updating last prints…"
-          : scrub
-            ? `At ${scrub.t}`
-            : session === "open"
-              ? `Live at ${nepse.liveAt} · ${nepse.date}`
-              : `Closed at ${nepse.closedAt} · ${nepse.date}`}
-        action={
-          <button
-            type="button"
-            className={`refresh-btn${refreshing ? " is-loading" : ""}`}
-            onClick={refresh}
-            disabled={refreshing}
-            aria-busy={refreshing}
-            aria-label="Refresh NEPSE"
-          >
-            <Icon name="refresh" size={14} />
-            {refreshing ? "Updating" : "Refresh"}
-          </button>
+    <div
+      className={`pulse-glance${refreshing ? " is-refreshing" : ""}`}
+      role="link"
+      tabIndex={0}
+      onClick={() => go("market")}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          go("market");
         }
-      />
-      <SessionWalk
-        tape={nepseSession}
-        compact
-        showVolume={false}
-        onScrub={setScrub}
-        onActivate={() => go("market")}
-      />
-      <div className="pulse-breadth">
-        <div className="breadth-bar" aria-hidden>
-          <i style={{ width: `${(nepse.rose / total) * 100}%` }} />
-          <b style={{ width: `${(nepse.fell / total) * 100}%` }} />
-        </div>
-        <div className="breadth-legend">
-          <span><strong className="c-up">{nepse.rose}</strong> up</span>
-          <span><strong className="c-down">{nepse.fell}</strong> down</span>
-        </div>
+      }}
+    >
+      <div className="pulse-glance-top">
+        <span className="pulse-glance-kicker">NEPSE</span>
+        <span className={`pulse-glance-value${updated ? " just-updated" : ""}${refreshing ? " is-loading" : ""}`}>
+          {npr(nepse.value, 2)}
+        </span>
+        <MovePill amount={nepse.change} pct={nepse.changePct} />
+        <button
+          type="button"
+          className={`refresh-btn icon-only${refreshing ? " is-loading" : ""}`}
+          onClick={refresh}
+          disabled={refreshing}
+          aria-busy={refreshing}
+          aria-label="Refresh NEPSE"
+        >
+          <Icon name="refresh" size={14} />
+        </button>
       </div>
+      <p className="pulse-glance-meta">
+        {refreshing
+          ? "Updating last prints…"
+          : session === "open"
+            ? `Live ${nepse.liveAt}`
+            : `Closed ${nepse.closedAt}`}
+        {" · "}
+        {npr(nepse.turnoverCr, 1)} Cr turn
+        {" · "}
+        {nepse.volume} vol
+      </p>
     </div>
   );
 }
@@ -299,12 +285,10 @@ function HoldingsModule({ force = false }: { force?: boolean }) {
     <QuoteTable
       rows={rows.map((row) => ({
         symbol: row.symbol,
-        name: `${row.kitta} kitta · ${row.name}`,
+        name: `${row.kitta} kitta`,
         price: row.ltp,
         changePct: row.dayPct,
-        returnPct: row.returnPct,
       }))}
-      showReturn
       onRow={(symbol) => go("stock", { stock: symbol })}
     />
   );
@@ -456,17 +440,17 @@ function HomeFeedStack() {
 
   return (
     <div className="home-you">
-      <FeedGroup label="Market" tone="market">
+      <FeedGroup label="Market" hideLabel tone="market">
         <PulseModule />
       </FeedGroup>
-      <FeedGroup label="Your book" tone="book">
+      <FeedGroup label="Your book" hideLabel tone="book">
         {showBook && <PortfolioBook />}
         {showAdd && <AddPortfolioCta />}
       </FeedGroup>
       <FeedGroup label="Holdings" tone="list" action="Portfolio ›" onAction={() => go("portfolio")}>
         <HoldingsModule force={base} />
       </FeedGroup>
-      <FeedGroup label="Learn" tone="learn">
+      <FeedGroup label="Learn" hideLabel tone="learn">
         {(base || learning) && <ObjectivesModule compact={stage === "primary" && !base} />}
       </FeedGroup>
       <FeedGroup label="What's happening" tone="news" action="Market ›" onAction={() => go("market")}>
@@ -475,7 +459,7 @@ function HomeFeedStack() {
       <FeedGroup label="Alerts" tone="alert">
         {(base || !learning) && <AlertsModule />}
       </FeedGroup>
-      <FeedGroup label="IPO" tone="ipo">
+      <FeedGroup label="IPO" hideLabel tone="ipo">
         <IpoModule />
       </FeedGroup>
       <FeedGroup label="Movers" tone="move" action="Market ›" onAction={() => go("market")}>

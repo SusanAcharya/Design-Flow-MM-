@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { defaultExploreFavorites } from "./explore";
 import { getObjectiveByTitle, nextOnPath } from "./objectives";
 import type { PersonaId } from "./types";
 import { coerceHomeFeed, stageToast } from "./stage";
@@ -15,17 +16,28 @@ import type {
   HoldingMode,
   HomeFeed,
   MarketSession,
+  MarketTab,
   OnboardingResult,
+  Plan,
   Route,
   Sheet,
   Stage,
+  StockTab,
   Theme,
   Toast,
   UiFont,
   Viewport,
 } from "./types";
 
-type GoExtras = { stock?: string; lesson?: string; holdingMode?: HoldingMode; persona?: PersonaId; objective?: string };
+type GoExtras = {
+  stock?: string;
+  stockTab?: StockTab;
+  marketTab?: MarketTab;
+  lesson?: string;
+  holdingMode?: HoldingMode;
+  persona?: PersonaId;
+  objective?: string;
+};
 
 type AppState = {
   theme: Theme;
@@ -35,6 +47,9 @@ type AppState = {
   route: Route;
   session: MarketSession;
   stock: string;
+  stockTab: StockTab;
+  marketTab: MarketTab;
+  plan: Plan;
   lesson: string;
   onboarded: boolean;
   personaId: PersonaId | null;
@@ -50,6 +65,7 @@ type AppState = {
   holdingMode: HoldingMode;
   correctedKitta: number | null;
   homeFeed: HomeFeed;
+  exploreFavorites: string[];
   setTheme: (theme: Theme) => void;
   setUiFont: (font: UiFont) => void;
   setViewport: (viewport: Viewport) => void;
@@ -59,6 +75,10 @@ type AppState = {
   setDensityLocked: (locked: boolean) => void;
   setObjectiveId: (id: string | null) => void;
   setHomeFeed: (feed: HomeFeed) => void;
+  setStockTab: (tab: StockTab) => void;
+  setMarketTab: (tab: MarketTab) => void;
+  setPlan: (plan: Plan) => void;
+  toggleExploreFavorite: (id: string) => void;
   go: (route: Route, extras?: GoExtras) => void;
   back: () => void;
   finishOnboarding: (result: OnboardingResult) => void;
@@ -83,6 +103,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState<Route>("onboarding");
   const [session, setSession] = useState<MarketSession>("closed");
   const [stock, setStock] = useState("NABIL");
+  const [stockTab, setStockTab] = useState<StockTab>("Overview");
+  const [marketTab, setMarketTab] = useState<MarketTab>("Overview");
+  const [plan, setPlan] = useState<Plan>("free");
   const [lesson, setLesson] = useState("");
   const [onboarded, setOnboarded] = useState(false);
   const [personaId, setPersonaId] = useState<PersonaId | null>(null);
@@ -97,6 +120,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [holdingMode, setHoldingMode] = useState<HoldingMode>("add");
   const [correctedKitta, setCorrectedKitta] = useState<number | null>(null);
   const [homeFeed, setHomeFeed] = useState<HomeFeed>("home");
+  const [exploreFavorites, setExploreFavorites] = useState<string[]>(defaultExploreFavorites);
   const [, setStack] = useState<Route[]>([]);
   const prevStage = useRef<Stage>("base");
   const toastTimer = useRef<number>(0);
@@ -136,6 +160,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const go = useCallback((next: Route, extras?: GoExtras) => {
     setStack((s) => [...s, route]);
     if (extras?.stock) setStock(extras.stock);
+    if (extras?.stockTab) setStockTab(extras.stockTab);
+    else if (next === "stock" && route !== "stock") setStockTab("Overview");
+    if (extras?.marketTab) setMarketTab(extras.marketTab);
+    else if (next === "market" && route !== "market") setMarketTab("Overview");
     if (extras?.lesson) {
       const mapped = getObjectiveByTitle(extras.lesson);
       if (mapped) {
@@ -185,9 +213,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const lookAround = useCallback(() => {
     setOnboarded(true);
-    setStageState("explorer");
-    setObjectiveIdState("share");
-    setViewingObjectiveId("share");
+    setStageState("base");
+    setObjectiveIdState(null);
+    setViewingObjectiveId(null);
     setPathFinished(false);
     setPersonaId(null);
     setOnboardingPersona(null);
@@ -207,6 +235,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setRoute("onboarding");
     setStack([]);
     setStock("NABIL");
+    setStockTab("Overview");
+    setMarketTab("Overview");
+    setPlan("free");
+    setExploreFavorites(defaultExploreFavorites);
     setSheet(null);
     setToast(null);
     setCircuit("off");
@@ -243,6 +275,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSheet(null);
   }, [flash, objectiveId]);
 
+  const toggleExploreFavorite = useCallback((id: string) => {
+    setExploreFavorites((current) => {
+      if (current.includes(id)) return current.filter((item) => item !== id);
+      if (current.length >= 4) return current;
+      return [...current, id];
+    });
+  }, []);
   const openSheet = useCallback((next: Sheet) => setSheet(next), []);
   const closeSheet = useCallback(() => setSheet(null), []);
   const saveCorrection = useCallback((kitta: number) => {
@@ -260,6 +299,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       route,
       session,
       stock,
+      stockTab,
+      marketTab,
+      plan,
       lesson,
       onboarded,
       personaId,
@@ -275,6 +317,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       holdingMode,
       correctedKitta,
       homeFeed,
+      exploreFavorites,
       setTheme,
       setUiFont,
       setViewport,
@@ -284,6 +327,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setDensityLocked,
       setObjectiveId,
       setHomeFeed,
+      setStockTab,
+      setMarketTab,
+      setPlan,
+      toggleExploreFavorite,
       go,
       back,
       finishOnboarding,
@@ -305,6 +352,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       route,
       session,
       stock,
+      stockTab,
+      marketTab,
+      plan,
       lesson,
       onboarded,
       personaId,
@@ -319,7 +369,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       holdingMode,
       correctedKitta,
       homeFeed,
+      exploreFavorites,
       setStage,
+      toggleExploreFavorite,
       go,
       back,
       finishOnboarding,

@@ -24,7 +24,11 @@ export type Route =
   | "holding"
   | "alerts";
 
+export type Plan = "free" | "pro" | "guru";
+export type PlanCycle = "monthly" | "annual";
 export type MarketSession = "open" | "closed";
+export type MarketTab = "Overview" | "Movers" | "Sectors" | "Floor sheet" | "Events";
+export type StockTab = "Overview" | "Financials" | "Analysis" | "Floor sheet" | "Events";
 
 export type Sheet =
   | { kind: "profile" }
@@ -33,8 +37,10 @@ export type Sheet =
   | { kind: "metric"; id: string }
   | { kind: "circuit-rules" }
   | { kind: "order"; symbol: string }
+  | { kind: "stock-tools"; symbol: string }
   | { kind: "correct" }
-  | { kind: "compare" };
+  | { kind: "compare" }
+  | { kind: "plans" };
 
 export type Toast = {
   message: string;

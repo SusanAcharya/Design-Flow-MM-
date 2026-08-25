@@ -1,4 +1,4 @@
-const files: Record<string, string> = {
+const files = {
   search: `${import.meta.env.BASE_URL}icons/search.svg`,
   menu: `${import.meta.env.BASE_URL}icons/menu.svg`,
   bell: `${import.meta.env.BASE_URL}icons/bell.svg`,
@@ -9,6 +9,7 @@ const files: Record<string, string> = {
   wallet: `${import.meta.env.BASE_URL}icons/wallet.svg`,
   more: `${import.meta.env.BASE_URL}icons/more.svg`,
   learn: `${import.meta.env.BASE_URL}icons/learn.svg`,
+  tulkey: `${import.meta.env.BASE_URL}icons/tulkey.svg`,
   chev: `${import.meta.env.BASE_URL}icons/chev.svg`,
   ext: `${import.meta.env.BASE_URL}icons/ext.svg`,
   clock: `${import.meta.env.BASE_URL}icons/clock.svg`,
@@ -22,10 +23,44 @@ const files: Record<string, string> = {
   refresh: `${import.meta.env.BASE_URL}icons/refresh.svg`,
   "triangle-up": `${import.meta.env.BASE_URL}icons/triangle-up.svg`,
   "triangle-down": `${import.meta.env.BASE_URL}icons/triangle-down.svg`,
+  mic: `${import.meta.env.BASE_URL}icons/mic.svg`,
+  send: `${import.meta.env.BASE_URL}icons/send.svg`,
+  pulse: `${import.meta.env.BASE_URL}icons/pulse.svg`,
+  table: `${import.meta.env.BASE_URL}icons/table.svg`,
+  depth: `${import.meta.env.BASE_URL}icons/depth.svg`,
+  candles: `${import.meta.env.BASE_URL}icons/candles.svg`,
+  sliders: `${import.meta.env.BASE_URL}icons/sliders.svg`,
+  split: `${import.meta.env.BASE_URL}icons/split.svg`,
+  gauge: `${import.meta.env.BASE_URL}icons/gauge.svg`,
+  calc: `${import.meta.env.BASE_URL}icons/calc.svg`,
+  index: `${import.meta.env.BASE_URL}icons/index.svg`,
+  pie: `${import.meta.env.BASE_URL}icons/pie.svg`,
+  range: `${import.meta.env.BASE_URL}icons/range.svg`,
+  movers: `${import.meta.env.BASE_URL}icons/movers.svg`,
+  building: `${import.meta.env.BASE_URL}icons/building.svg`,
+  coins: `${import.meta.env.BASE_URL}icons/coins.svg`,
+  percent: `${import.meta.env.BASE_URL}icons/percent.svg`,
+  coin: `${import.meta.env.BASE_URL}icons/coin.svg`,
+  users: `${import.meta.env.BASE_URL}icons/users.svg`,
+  merge: `${import.meta.env.BASE_URL}icons/merge.svg`,
+  ingot: `${import.meta.env.BASE_URL}icons/ingot.svg`,
+  forex: `${import.meta.env.BASE_URL}icons/forex.svg`,
+  bank: `${import.meta.env.BASE_URL}icons/bank.svg`,
+  news: `${import.meta.env.BASE_URL}icons/news.svg`,
+  mail: `${import.meta.env.BASE_URL}icons/mail.svg`,
+  doc: `${import.meta.env.BASE_URL}icons/doc.svg`,
+  megaphone: `${import.meta.env.BASE_URL}icons/megaphone.svg`,
+  book: `${import.meta.env.BASE_URL}icons/book.svg`,
+  terminal: `${import.meta.env.BASE_URL}icons/terminal.svg`,
+  idcard: `${import.meta.env.BASE_URL}icons/idcard.svg`,
+  vault: `${import.meta.env.BASE_URL}icons/vault.svg`,
+  clipboard: `${import.meta.env.BASE_URL}icons/clipboard.svg`,
 };
 
+export type IconName = keyof typeof files;
+
 type Props = {
-  name: keyof typeof files;
+  name: IconName;
   size?: number;
   className?: string;
 };

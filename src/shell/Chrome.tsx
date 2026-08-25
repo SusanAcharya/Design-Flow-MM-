@@ -3,29 +3,21 @@ import { Icon } from "../ds/Icon";
 import { UserAvatar } from "../ds/UserAvatar";
 import { SearchField, StatusBar } from "../ds/primitives";
 import { alerts, user } from "../lib/data";
+import { planMeta } from "../lib/explore";
+import { activeTab } from "../lib/nav";
 import { stageMeta } from "../lib/stage";
 import { useApp } from "../lib/state";
 import type { Route } from "../lib/types";
 
-const tabs: { id: Route; label: string; icon: "home" | "market" | "learn" | "wallet" | "discover" }[] = [
+const tabs: { id: Route; label: string; icon: "home" | "market" | "tulkey" | "wallet" | "discover" }[] = [
   { id: "home", label: "Home", icon: "home" },
   { id: "market", label: "Market", icon: "market" },
-  { id: "ai", label: "Tulkey", icon: "learn" },
+  { id: "ai", label: "Tulkey", icon: "tulkey" },
   { id: "portfolio", label: "Portfolio", icon: "wallet" },
   { id: "discover", label: "Explore", icon: "discover" },
 ];
 
 const tabRoots: Route[] = ["home", "market", "ai", "discover", "portfolio"];
-
-function activeTab(route: Route): Route {
-  if (route === "stock" || route === "ipo") return "market";
-  if (route === "holding") return "portfolio";
-  if (route === "search" || route === "more") return "discover";
-  if (route === "learn" || route === "lesson" || route === "objective") return "ai";
-  if (route === "alerts") return "home";
-  if (tabs.some((t) => t.id === route)) return route;
-  return "home";
-}
 
 function AvatarButton() {
   const { openSheet } = useApp();
@@ -94,6 +86,14 @@ function GlobalHeader() {
         <div className="header-who compact">
           <p className="t-h-s">Market</p>
         </div>
+      ) : route === "ai" ? (
+        <div className="header-who compact">
+          <p className="t-h-s">Tulkey</p>
+        </div>
+      ) : route === "discover" ? (
+        <div className="header-who compact">
+          <p className="t-h-s">Explore</p>
+        </div>
       ) : (
         <Identity compact />
       )}
@@ -125,7 +125,9 @@ export function MobileChrome({ children, showTabs }: { children: ReactNode; show
           {tabs.map((t) => (
             <button
               key={t.id}
+              type="button"
               className={`tab ${current === t.id ? "on" : ""}`}
+              aria-current={current === t.id ? "page" : undefined}
               onClick={() => go(t.id)}
             >
               <Icon name={t.icon} size={22} />
@@ -138,10 +140,10 @@ export function MobileChrome({ children, showTabs }: { children: ReactNode; show
   );
 }
 
-const rail: { id: Route; label: string; icon: "home" | "market" | "discover" | "wallet" | "learn" }[] = [
+const rail: { id: Route; label: string; icon: "home" | "market" | "discover" | "wallet" | "tulkey" }[] = [
   { id: "home", label: "Home", icon: "home" },
   { id: "market", label: "Market", icon: "market" },
-  { id: "ai", label: "Tulkey AI", icon: "learn" },
+  { id: "ai", label: "Tulkey AI", icon: "tulkey" },
   { id: "portfolio", label: "Portfolio", icon: "wallet" },
   { id: "discover", label: "Explore", icon: "discover" },
 ];
@@ -153,7 +155,7 @@ export function DesktopChrome({
   children: ReactNode;
   showNav: boolean;
 }) {
-  const { go, route } = useApp();
+  const { go, route, plan, openSheet } = useApp();
   const current = activeTab(route);
   const searching = route === "search";
 
@@ -184,7 +186,9 @@ export function DesktopChrome({
           {rail.map((t) => (
             <button
               key={t.id}
+              type="button"
               className={`rail-item ${current === t.id ? "on" : ""}`}
+              aria-current={current === t.id ? "page" : undefined}
               onClick={() => go(t.id)}
             >
               <Icon name={t.icon} size={20} />
@@ -193,10 +197,14 @@ export function DesktopChrome({
           ))}
         </nav>
         <p className="rail-note">Tulkey explains concepts and platforms. It does not recommend trades.</p>
-        <div className="plan-card">
-          <p className="t-label-l">Free plan</p>
-          <p className="t-body-xs muted">Screener filters, alerts and signal history come with Bull.</p>
-        </div>
+        <button type="button" className="plan-card" onClick={() => openSheet({ kind: "plans" })}>
+          <p className="t-label-l">{plan === "free" ? "Free plan" : `${planMeta[plan].label} plan`}</p>
+          <p className="t-body-xs muted">
+            {plan === "free"
+              ? "Screener, alerts and compare come with Pro."
+              : planMeta[plan].renew}
+          </p>
+        </button>
       </aside>
       <div className="web-main">
         <header className="top-bar">

@@ -1,5 +1,6 @@
 export const user = {
   name: "Sandip",
+  fullName: "Sandip Sharma",
   initials: "SP",
 };
 
@@ -130,11 +131,60 @@ export const nabilFinancials = {
     { label: "Non-performing loans", value: "3.42%", tone: "warn" },
     { label: "Capital adequacy", value: "12.90%" },
   ],
+  balance: [
+    { label: "Paid-up capital", value: "3,205.7 Cr" },
+    { label: "Interest income", value: "3,795.54 Cr" },
+    { label: "Return on assets", value: "1.08%" },
+    { label: "Cost of funds", value: "3.09%" },
+    { label: "Loan to deposit", value: "0.78" },
+    { label: "Three-year profit CAGR", value: "−3.01%" },
+  ],
   owners: [
     { label: "Promoter", value: 51, color: "var(--accent-base)" },
     { label: "Public", value: 34, color: "var(--deco-violet)" },
     { label: "Institutions", value: 15, color: "var(--deco-teal)" },
   ],
+};
+
+export const nabilAnalysis = {
+  updated: "2 Bhadra 2083 · session close",
+  momentum: [
+    { label: "RSI (14)", value: "39.23", state: "Lower half", explain: "Momentum compared with recent gains and losses." },
+    { label: "Stochastic", value: "26.24", state: "Near low band", explain: "Where the close sits inside its recent range." },
+    { label: "MACD", value: "−0.09", state: "Below signal", explain: "Difference between two trend averages." },
+    { label: "ADX", value: "36.07", state: "Trend present", explain: "Trend strength, not whether it points up or down." },
+    { label: "MFI", value: "19.30", state: "Low reading", explain: "Price and volume pressure over a recent window." },
+  ],
+  levels: [
+    { label: "Bollinger upper", value: "519.20" },
+    { label: "Bollinger middle", value: "505.10" },
+    { label: "Bollinger lower", value: "491.00" },
+    { label: "20-day SMA", value: "505.10" },
+    { label: "50-day SMA", value: "512.40" },
+    { label: "200-day SMA", value: "487.35" },
+    { label: "13-day EMA", value: "501.85" },
+    { label: "20-day EMA", value: "504.75" },
+  ],
+  risk: [
+    { label: "Weekly beta", value: "0.73", note: "Moved less than the market in this sample." },
+    { label: "Quarter beta", value: "0.57", note: "Sensitivity varies with the time window." },
+    { label: "Year beta", value: "0.76", note: "Historical relationship, not a forecast." },
+  ],
+  context: [
+    { label: "Short-term trend", value: 36, state: "Below 20- and 50-day averages" },
+    { label: "Long-term position", value: 62, state: "Above the 200-day average" },
+    { label: "Range position", value: 20, state: "Near the lower end of its 52-week range" },
+    { label: "Trading activity", value: 54, state: "12.19 Cr turnover at the close" },
+  ],
+};
+
+export const nabilCompany = {
+  founded: "1984",
+  exchange: "NEPSE",
+  sector: "Commercial bank",
+  description:
+    "Nabil Bank is a Nepal-based commercial bank serving individuals and businesses through deposits, lending, cards, digital banking and investment-banking subsidiaries. It operates a nationwide branch and ATM network.",
+  source: "Company filings and NEPSE disclosures",
 };
 
 export const nabilFloor = {
