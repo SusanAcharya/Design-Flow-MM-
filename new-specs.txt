@@ -1,0 +1,323 @@
+# MoneyMitra Product Specification: Home Screen UI, Behavioral Adaptation & End-to-End System Flow
+
+**Document Focus**: Architectural specifications for MoneyMitra's behaviorally adaptive Home Screen, persistent layout scaffolding, state transition engines, and contextual micro-interactions across the user lifecycle.
+
+---
+
+## 1. Global Shell & Navigation Scaffolding
+
+MoneyMitra uses a unified screen container with a fixed, persistent 5-tab Bottom Navigation Bar. The viewport uses dynamic layout scaling based on active user stages without altering primary navigation routes.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ GLOBAL HEADER: [Profile / Stage Badge]  [Search] [Alerts]│
+├─────────────────────────────────────────────────────────┤
+│                                                         │
+│                   DYNAMIC HOME VIEWPORT                 │
+│         (Adapts Layout Density via Stage Engine)        │
+│                                                         │
+├─────────────────────────────────────────────────────────┤
+│ PERSISTENT NAVBAR:                                      │
+│ [ Home ]   [ Market ]   [ Discover ]   [ Portfolio ]  [ More ]│
+└─────────────────────────────────────────────────────────┘
+
+```
+
+### Global Header Components (All Stages)
+
+* **Left**: User Profile Avatar with stage-indicator ring (Gray = Stage 0, Blue = Stage 1, Orange = Stage 2, Green = Stage 3/4). Tapping opens **Profile & Level Selection**.
+* **Center/Right**:
+* **Search (`🔍`)**: Global search bar indexing tickers (`NABIL`), broker codes (`Broker 33`), market news, and learning terms (`WACC`).
+* **Notification Bell (`🔔`)**: Contextual alerts (executed orders, dividend credit notifications, circuit warnings).
+
+
+
+### Global Bottom Navigation Bar Targets
+
+1. **Home**: Behaviorally adaptive dashboard (detailed in Section 2).
+2. **Market**: Dedicated market pulse view featuring the full NEPSE index chart, live floor sheet stream, advance/decline breadth indicators, and gainers/losers lists.
+3. **Discover**: Screener engine, sector heatmap, 52-week change filters, and video lesson hub.
+4. **Portfolio**: Transaction ledger, holding breakdown, WACC calculator, CGT tax optimization, and audit trails.
+5. **More**: App settings, TMS broker credentials, tax statement exports, and manual density locks.
+
+---
+
+## 2. Stage-Wise Home Screen Layouts
+
+### Stage 0: Explorer View (Target: Novice / Layman)
+
+*Focus: Psychological safety, core terminology, and primary market access.*
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ NAMASTE, SANDIP                                        │
+│ Welcome to Nepal Stock Exchange (NEPSE)                 │
+├─────────────────────────────────────────────────────────┤
+│ OBJECTIVE CAROUSEL (Level 0: Foundations)               │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ 🎬 Video (60s): What is a Share?                     │ │
+│ │ "Learn how ownership in companies like NABIL works"  │ │
+│ └─────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│ NEPSE MARKET PULSE                                      │
+│ 2,622.48  ▲ +12.40 (+0.47%)                             │
+│ [ Green Line Chart ]  Market Status: OPEN               │
+│ [💡 What is NEPSE?] (Inline Pill)                        │
+├─────────────────────────────────────────────────────────┤
+│ UPCOMING & LIVE IPOs (C-ASBA)                           │
+│ ⚡ Himalayan Hydropower — Closes in 2 Days              │
+│ [ How to Apply via MeroShare ]                          │
+├─────────────────────────────────────────────────────────┤
+│ DAILY DICTIONARY                                        │
+│ "Kitta" = Unit of stock. Minimum IPO apply = 10 Kitta.  │
+└─────────────────────────────────────────────────────────┘
+
+```
+
+#### Layout Structure & Interaction Rules
+
+1. **Objective Progress Card**: Pinned to top. Displays micro-lessons with embedded HTML5 video player (30–90 seconds) or interactive cards.
+2. **Simplified NEPSE Card**: Single smoothed line chart. Strips away RSI, volume bars, and candlestick toggles. Includes inline `[What is NEPSE?]` modal trigger.
+3. **IPO Direct Tracker**: List of active primary issues with direct workflow guidance (*"Apply on MeroShare $\rightarrow$ Track allotment here"*).
+
+---
+
+### Stage 1: Primary Investor View (Target: MeroShare / IPO Applicant)
+
+*Focus: IPO management, listing dates, and secondary market onboarding.*
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ MY IPO PORTFOLIO & PIPELINE                            │
+│ Rs 10,000 (100 Kitta Total Across 10 IPOs)             │
+├─────────────────────────────────────────────────────────┤
+│ LIVE ALLOTMENT CHECKS                                   │
+│ 🎯 Sanima Hydro — Allotted (10 Kitta)                    │
+│ ⏳ Upper Tamakoshi — Awaiting Allotment                  │
+├─────────────────────────────────────────────────────────┤
+│ OBJECTIVE CAROUSEL (Level 1: Primary Mastery)           │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ 🎬 Video (90s): Selling IPOs on Secondary Market     │ │
+│ │ "How your 10 kitta becomes tradable cash"           │ │
+│ └─────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│ SECONDARY MARKET PREVIEW                                │
+│ NEPSE: 2,622.48  │ Top Sector: Hydropower (+3.2%)      │
+│ [ How to Open a TMS Account with a Broker ]             │
+└─────────────────────────────────────────────────────────┘
+
+```
+
+#### Layout Structure & Interaction Rules
+
+1. **IPO Portfolio Card**: Replaces empty main portfolio view with primary market equity value ($10\text{ kitta} \times \text{NPR } 100\text{ par value}$).
+2. **Allotment Status Feed**: Direct integration with CDSC status checks.
+3. **Bridge to Secondary Trading**: Contextual CTA prompting user to register for a TMS account once holdings reach listing status.
+
+---
+
+### Stage 2: Secondary Onboarding View (Target: TMS Beginner)
+
+*Focus: Order types, price tracking, and basic portfolio maintenance.*
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ MY PORTFOLIO                                            │
+│ Rs 1,42,800   ▲ +Rs 3,200 (+2.2%)                      │
+│ Available Cash / Collateral: Rs 25,000                  │
+├─────────────────────────────────────────────────────────┤
+│ ACTIVE WATCHLIST                                        │
+│ NABIL   Rs 498.00  ▼ -2.7%  [ Buy ]                      │
+│ UPPER   Rs 540.00  ▲ +1.4%  [ Buy ]                      │
+├─────────────────────────────────────────────────────────┤
+│ OBJECTIVE CAROUSEL (Level 2: Secondary Trading)         │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ 💡 Guide: Placing Limit Orders vs Market Orders     │ │
+│ │ "Avoid losing money during volatile market hours"   │ │
+│ └─────────────────────────────────────────────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│ PENDING SETTLEMENTS (T+2)                               │
+│ ⚠️ 200 Kitta NABIL bought today — EDIS transfer due     │
+└─────────────────────────────────────────────────────────┘
+
+```
+
+#### Layout Structure & Interaction Rules
+
+1. **Holding & Collateral Summary**: Displays portfolio value alongside available TMS buying power.
+2. **Interactive Watchlist**: Tap row to launch universal Stock Detail page; tap `[Buy]` to launch broker order router modal.
+3. **Settlement Warnings**: $T+2$ alerts reminding users to complete EDIS transfers via MeroShare to prevent $20\%$ closeout penalties.
+
+---
+
+### Stage 3: Value Investor View (Target: Long-Term / Dividend Tracker)
+
+*Focus: Financial ratios, corporate actions, and WACC/CGT integrity.*
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ PORTFOLIO NET WORTH                                     │
+│ Rs 12,84,600  │ Unrealised: +Rs 1,42,300 (+12.5%)       │
+│ Est. Annual Dividend Income: Rs 38,500                  │
+├─────────────────────────────────────────────────────────┤
+│ CORPORATE ACTION ALERTS                                 │
+│ 🔔 NABIL Cash Dividend 10% — Ex-Date: Today             │
+│ 🔔 SHIVM AGM Announced — Agenda: 8% Bonus Share         │
+├─────────────────────────────────────────────────────────┤
+│ SECTOR ALLOCATION                                       │
+│ [ Banking 45% │ Hydro 30% │ Manufacturing 25% ]       │
+├─────────────────────────────────────────────────────────┤
+│ STOCK COMPARISON TOOL                                   │
+│ [ Compare NABIL vs GBIME ] ──► P/E, EPS, NPL Ratios     │
+└─────────────────────────────────────────────────────────┘
+
+```
+
+#### Layout Structure & Interaction Rules
+
+1. **Dividend Yield & P/L Anchor**: Focuses on realized income and tax-adjusted capital growth.
+2. **Corporate Action Tracker**: Automated notifications for book closures, right share eligibilities, and AGM dates.
+3. **Comparative Analysis Card**: Direct access to fundamental comparison screeners.
+
+---
+
+### Stage 4: Active Trader View (Target: TMS Pro / Day & Swing Trader)
+
+*Focus: Real-time risk exposure, market breadth, and execution feeds.*
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ REAL-TIME RISK & PORTFOLIO                             │
+│ Rs 12,84,600 │ Today's P/L: +Rs 18,240 (+1.44%)         │
+│ Buying Power: Rs 1,12,000 │ Margin Used: 28%           │
+├─────────────────────────────────────────────────────────┤
+│ NEPSE INDEX & MARKET BREADTH                            │
+│ 2,622.48  ▼ -19.34 (-0.73%)  Vol: 507.35 Cr             │
+│ [ 1D Candlestick Chart + RSI + Volume ]                 │
+│ Breadth: [ 78 Rose │ 142 Fell │ 6 Unchanged ]          │
+├─────────────────────────────────────────────────────────┤
+│ FIRED ALERTS & UNUSUAL ACTIVITY                         │
+│ ⚡ SAPIL hit upper circuit (+15.00%)                │
+│ 📊 Broker 33 Net Buyer in NABIL (Rs 62.4 Cr)            │
+├─────────────────────────────────────────────────────────┤
+│ LIVE FLOOR SHEET STREAM                                 │
+│ 11:24:02  NABIL  200 kitta @ 498.00  B33 ──► B58        │
+└─────────────────────────────────────────────────────────┘
+
+```
+
+#### Layout Structure & Interaction Rules
+
+1. **High-Density Risk Banner**: Pinned to top. Displays unrealized daily P/L, available collateral, and margin utilization.
+2. **Integrated NEPSE Sentiment Module**: Live intraday chart with technical toggles, volume profile, and market breadth ratio bar.
+3. **Live Floor Sheet Stream**: Real-time ticker feed for large block trades and broker accumulation patterns.
+
+---
+
+## 3. Behavioral Stage Engine & Diagnostic Logic
+
+Transitions between Home Screen layout densities occur automatically based on behavioral thresholds or manual overrides.
+
+```mermaid
+flowchart TD
+    AppStart[User Opens MoneyMitra] --> CheckPortfolio{Imported Holdings?}
+    
+    CheckPortfolio -- 0 Holdings --> CheckBehavior{Analyze Interactions}
+    CheckPortfolio -- 1-4 Holdings --> SetStage1[Stage 1: Primary Investor]
+    CheckPortfolio -- 5+ Holdings --> CheckTradingFreq{Checks Floor Sheet Daily?}
+    
+    CheckBehavior -- Views IPOs / C-ASBA --> SetStage0[Stage 0: Explorer]
+    CheckBehavior -- Searches Tickers / Order Types --> SetStage2[Stage 2: Secondary Beginner]
+    
+    CheckTradingFreq -- No --> SetStage3[Stage 3: Value Investor]
+    CheckTradingFreq -- Yes --> SetStage4[Stage 4: Active Trader]
+    
+    subgraph ManualOverride [User Control]
+        SetStage0 & SetStage1 & SetStage2 & SetStage3 & SetStage4 --> Settings[Settings: App Density Lock]
+    end
+
+```
+
+### Milestone Threshold Specifications
+
+| Transition | Primary Trigger Criteria | Guardrails & Confirmation |
+| --- | --- | --- |
+| **Stage 0 $\rightarrow$ Stage 1** | User applies for an IPO or adds 1 primary holding. | Automatic toast: *"IPO added! Unlocking primary market view."* |
+| **Stage 0/1 $\rightarrow$ Stage 2** | User executes 1+ manual secondary trade or imports 2+ holdings. | Prompt: *"We've updated your home view with live watchlists. [Undo]"* |
+| **Stage 2 $\rightarrow$ Stage 3** | User tracks fundamental metrics (P/E, Financials) across 5+ stocks over 7 days. | Toast notification with direct settings override option. |
+| **Stage 3 $\rightarrow$ Stage 4** | User views Floor Sheets or Technical Charts 3+ times in a single live session ($11\text{ AM}-3\text{ PM}$). | Toast: *"Active Trader view enabled. Live index & broker feeds attached."* |
+
+---
+
+## 4. End-to-End System Navigation & Interaction Diagrams
+
+### Diagram 1: Universal Navigation Flow Architecture
+
+Shows global navigation routing from Home screen sub-elements through detail views and overlays.
+
+```mermaid
+flowchart LR
+    Home[Adaptive Home View] --> StockDetail[Stock Detail View]
+    Market[Market Tab] --> StockDetail
+    Portfolio[Portfolio Tab] --> StockDetail
+    
+    StockDetail --> TabOverview[Tab: Overview]
+    StockDetail --> TabFin[Tab: Financials]
+    StockDetail --> TabFloor[Tab: Floor Sheet]
+    StockDetail --> TabEvents[Tab: Events]
+    
+    TabOverview -. Tap Metric .-> OverlayPE[Modal: Metric Explanation]
+    StockDetail -. Tap Correct .-> CorrectModal[Screen: Correct Transaction]
+    
+    StockDetail -- Tap Back Arrow --> Home
+
+```
+
+### Diagram 2: Order & Transaction Correction Flow
+
+Details the immutable audit trail pattern for editing portfolio entries.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User
+    participant HoldingView as Holding Detail View
+    participant Ledger as Transaction History List
+    participant EditScreen as Edit Transaction Modal
+    participant Engine as Portfolio Engine
+    
+    User->>HoldingView: Taps "Something look wrong? Correct this holding"
+    HoldingView->>EditScreen: Opens Edit Form with pre-filled parameters
+    User->>EditScreen: Adjusts Kitta (e.g., 180 -> 200)
+    EditScreen->>EditScreen: Calculates real-time preview (Impact on WACC & P/L)
+    User->>EditScreen: Taps "Save Correction"
+    EditScreen->>Engine: Appends new dated correction record (Original entry preserved)
+    Engine->>Ledger: Renders updated ledger with audit badge ("Superseded")
+    Ledger-->>User: Displays updated holdings without deleting history
+
+```
+
+---
+
+## 5. Micro-Interactions & Contextual Modals
+
+MoneyMitra uses contextual bottom sheets rather than full-screen takeovers for secondary data entry and learning modules.
+
+### 1. Metric Explanation Modal (Tap-to-Learn)
+
+* **Trigger**: Tapping any underlined metric badge (`P/E 18.4`, `WACC 462.40`, `EPS 27.85`) across any screen.
+* **UI Specs**: A 40% height bottom sheet featuring:
+* **Title**: Metric Name + Current Raw Value.
+* **Plain Language Translation**: One-sentence operational definition (*"You are paying NPR 18.40 for every NPR 1 of profit generated by NABIL"*).
+* **Contextual Benchmarking**: Horizontal slider comparing the stock's value against sector average and overall NEPSE index average.
+* **CTA Button**: `[ Open 2-Min Micro Lesson ]` or `[ Got It ]`.
+
+
+
+### 2. Market Fluctuation Circuit Breaker Alert Overlay
+
+* **Trigger**: When the NEPSE Index hits $5\%$ or $8\%$ volatility thresholds or an individual stock reaches its daily $15\%$ cap.
+* **UI Specs**: A banner floating over the active Home screen:
+* **Color Code**: Amber warning for $5\%$ index halts (15-minute suspension); Red warning for $8\%$ halts (market suspended for the remainder of the session).
+* **Text**: Explicit status explanation (*"NEPSE Index down -5.02%. Continuous trading suspended for 15 minutes."*).
+* **Action Button**: `[ View Circuit Rules ]` opening a brief rule summary sheet.

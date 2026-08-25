@@ -1,0 +1,140 @@
+/* MoneyMitra Design System v1.0 — extracted read-only from Figma
+   File: Money Mitra App · page Design System v1.0
+   Theme collection: Light / Dark. Do not invent a second palette. */
+
+:root,
+[data-theme="light"] {
+  /* Clean paper — MoneyMitra light, not tea-stained beige */
+  --bg-canvas: #f5f2eb;
+  --bg-surface: #ffffff;
+  --bg-raised: #ffffff;
+  --bg-sunken: #ebe7de;
+  --bg-inset: #f0ece4;
+  --bg-inverse: #1a1916;
+
+  --border-subtle: #e6e1d6;
+  --border-default: #d5cfc2;
+  --border-strong: #b8af9e;
+  --border-focus: #026ba4;
+
+  --text-primary: #1a1916;
+  --text-secondary: #4a4640;
+  --text-tertiary: #6f6a62;
+  --text-inverse: #f7f5f0;
+  --text-on-accent: #ffffff;
+
+  /* Chirfaar blue from moneymitra.com — never used for P/L */
+  --accent-base: #026ba4;
+  --accent-hover: #025a8a;
+  --accent-soft: #e3f2fa;
+  --accent-soft-text: #025a8a;
+  --accent-line: #9dcee8;
+
+  /* Gurumantra green from moneymitra.com */
+  --up-base: #35b14f;
+  --up-soft: #e8f7ec;
+  --up-text: #1f6138;
+
+  --down-base: #e11d2e;
+  --down-soft: #fdeced;
+  --down-text: #b01222;
+
+  --flat-base: #6f6a62;
+
+  --warn-base: #e08700;
+  --warn-soft: #fbf1df;
+  --warn-text: #825000;
+
+  --deco-violet: #7c5cf0;
+  --deco-violet-soft: #f0ebfe;
+  --deco-saffron: #f08c00;
+  --deco-saffron-soft: #fdf0dc;
+  --deco-teal: #0f9c9c;
+  --deco-teal-soft: #e2f5f4;
+
+  --shadow-card: 0 1px 2px rgba(26, 25, 22, 0.04), 0 8px 20px -8px rgba(26, 25, 22, 0.06);
+  --shadow-raised: 0 12px 32px -8px rgba(26, 25, 22, 0.08);
+  --shadow-nav: 0 -2px 24px -6px rgba(26, 25, 22, 0.08);
+  --shadow-accent: 0 8px 20px -6px rgba(2, 107, 164, 0.28);
+}
+
+[data-theme="dark"] {
+  /* Quiet charcoal stack — depth from value, not from borders */
+  --bg-canvas: #121212;
+  --bg-surface: #181818;
+  --bg-raised: #222222;
+  --bg-sunken: #0e0e0e;
+  --bg-inset: #1e1e1e;
+  --bg-inverse: #f4f4f2;
+
+  --border-subtle: #242424;
+  --border-default: #2c2c2c;
+  --border-strong: #3a3a3a;
+  --border-focus: #81e8ef;
+
+  --text-primary: #f4f4f2;
+  --text-secondary: #a3a3a3;
+  --text-tertiary: #737373;
+  --text-inverse: #121212;
+  --text-on-accent: #062026;
+
+  /* Site cyan #81E8EF — chrome only, not P/L */
+  --accent-base: #81e8ef;
+  --accent-hover: #a8f2f6;
+  --accent-soft: #123338;
+  --accent-soft-text: #81e8ef;
+  --accent-line: #1e4a50;
+
+  --up-base: #3dd68b;
+  --up-soft: #0f2b21;
+  --up-text: #5ee9a4;
+
+  --down-base: #ff6b6b;
+  --down-soft: #2a1416;
+  --down-text: #ff8a8a;
+
+  --flat-base: #737373;
+
+  --warn-base: #f5b33c;
+  --warn-soft: #2b2113;
+  --warn-text: #f5c46b;
+
+  --deco-violet: #a188ff;
+  --deco-violet-soft: #1c1730;
+  --deco-saffron: #ffb43d;
+  --deco-saffron-soft: #2a1e0c;
+  --deco-teal: #81e8ef;
+  --deco-teal-soft: #123338;
+
+  --shadow-card: none;
+  --shadow-raised: none;
+  --shadow-nav: none;
+  --shadow-accent: 0 8px 24px -8px rgba(129, 232, 239, 0.28);
+}
+
+:root {
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 999px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --font-sans: "Satoshi", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  --mobile-w: 390px;
+  --mobile-h: 844px;
+  --rail-w: 248px;
+  --context-w: 344px;
+}
