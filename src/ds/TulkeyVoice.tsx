@@ -89,9 +89,9 @@ export function TulkeyVoiceOverlay() {
         settle = window.setTimeout(() => {
           setListening(false);
           askTulkey(sample);
-        }, 380);
+        }, 520);
       }
-    }, 210);
+    }, 300);
     return () => {
       window.clearInterval(id);
       if (settle) window.clearTimeout(settle);
@@ -119,7 +119,7 @@ export function TulkeyVoiceOverlay() {
         window.clearInterval(id);
         setTyping(false);
       }
-    }, 48);
+    }, 72);
     return () => window.clearInterval(id);
   }, [tulkeyVoiceOpen, listening, tulkeyThinking, lastTulkeyId, lastTulkeyText]);
 
@@ -169,12 +169,6 @@ export function TulkeyVoiceOverlay() {
 
       <div className="tulkey-voice-stage">
         <div className={`tulkey-siri ${phase}`}>
-          <span className="tulkey-siri-aura" aria-hidden>
-            <span className="tulkey-siri-blob" />
-          </span>
-          <span className="tulkey-siri-ring" aria-hidden />
-          <span className="tulkey-siri-ring" aria-hidden />
-          <span className="tulkey-siri-ring" aria-hidden />
           <div className="tulkey-siri-face">
             <img src={tulkey} alt="" />
           </div>

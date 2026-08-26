@@ -1,5 +1,6 @@
 import { Children, useState, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
+import { HappenIco } from "../ds/HappenList";
 import { BookNudge } from "../ds/BookNudge";
 import {
   Button,
@@ -93,29 +94,6 @@ function NepseHero() {
 }
 
 const emptyAlloc = [{ short: "EMPTY", pct: 100, color: "var(--border-strong)" }];
-
-function HappenIco({ kind }: { kind: (typeof bookHappen)[number]["kind"] }) {
-  return (
-    <span className={`happen-ico ${kind}`}>
-      {kind === "ipo" ? (
-        "IPO"
-      ) : kind === "up" ? (
-        <svg width="11" height="9" viewBox="0 0 11 9" aria-hidden>
-          <path d="M5.5 0L11 9H0L5.5 0Z" fill="currentColor" />
-        </svg>
-      ) : kind === "down" ? (
-        <svg width="11" height="9" viewBox="0 0 11 9" aria-hidden>
-          <path d="M5.5 9L0 0h11L5.5 9Z" fill="currentColor" />
-        </svg>
-      ) : (
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
-          <circle cx="8" cy="8" r="5.4" stroke="currentColor" strokeWidth="1.7" />
-          <path d="M8 5.2V8l2 1.15" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
-      )}
-    </span>
-  );
-}
 
 function BookSummary({ empty = false }: { empty?: boolean }) {
   return (
@@ -686,7 +664,7 @@ export function HomeScreen() {
   return (
     <div className="home-screen">
       <HomeFeedStack />
-      <p className="disclaimer">Last session’s prints. We don’t place orders.</p>
+      {/* <p className="disclaimer">Last session’s prints. We don’t place orders.</p> */}
     </div>
   );
 }

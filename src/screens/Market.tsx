@@ -9,12 +9,14 @@ import {
   Overline,
 } from "../ds/primitives";
 import { SessionWalk } from "../ds/charts";
+import { HappenList } from "../ds/HappenList";
 import { QuoteList } from "../ds/QuoteList";
 import {
   floorBrokers,
   floorSheet,
   liveIpo,
   marketEvents,
+  marketHappen,
   moverBoards,
   nepse,
   nepseSession,
@@ -284,6 +286,16 @@ export function MarketScreen() {
               More fell than rose, and the index followed — this was a broad decline, not a few names dragging the average.
             </p>
           </div>
+
+          <MarketBlock title="Market update">
+            <HappenList
+              items={marketHappen}
+              onOpen={(item) => {
+                if (item.stock) go("stock", { stock: item.stock });
+                else if (item.kind === "ipo") go("ipo");
+              }}
+            />
+          </MarketBlock>
 
           <MarketBlock
             title="Top gainers"

@@ -364,7 +364,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           },
         ]);
         setTulkeyThinking(false);
-      }, 1100);
+      }, 1500);
       return true;
     });
   }, []);

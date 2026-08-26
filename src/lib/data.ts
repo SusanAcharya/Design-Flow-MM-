@@ -871,29 +871,39 @@ export const basketCatalog: {
   { id: "list", audience: "investors", title: "Recent listings", count: 6, changePct: 0.88, icon: "learn", tone: "accent", members: ["SAPIL", "MEPDL"] },
 ];
 
-export const happening = [
+export const marketHappen = [
   {
-    tag: "Dividend",
-    tone: "teal" as const,
-    icon: "coin" as const,
+    kind: "down" as const,
     title: "NABIL went ex-div",
+    sub: "The print dropped as the cash left the price. Not a sudden change in the bank.",
+    context: "NABIL",
     stock: "NABIL",
-    changePct: -2.71,
   },
   {
-    tag: "Busiest",
-    tone: "saffron" as const,
-    icon: "pulse" as const,
+    kind: "up" as const,
     title: "HDL did 42.6 Cr",
+    sub: "Busiest name by turnover this session.",
+    context: "HDL",
     stock: "HDL",
-    changePct: 3.4,
   },
   {
-    tag: "Circuit",
-    tone: "violet" as const,
-    icon: "alert" as const,
-    title: "SAPIL hit 15%",
+    kind: "event" as const,
+    title: "SAPIL hit the 15% circuit",
+    sub: "A daily limit. It is a trading rule, not a verdict on the company.",
+    context: "SAPIL",
     stock: "SAPIL",
-    changePct: 14.99,
+  },
+  {
+    kind: "down" as const,
+    title: "More names fell than rose",
+    sub: "48 rose, 92 fell. A broad session — not a few names dragging the index.",
+    context: "NEPSE",
+  },
+  {
+    kind: "ipo" as const,
+    title: "Sanima Middle Tamor still open",
+    sub: "Primary issue. Application is on MeroShare / C-ASBA.",
+    context: "IPO",
   },
 ];
+
