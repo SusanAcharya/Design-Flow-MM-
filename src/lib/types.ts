@@ -4,7 +4,6 @@ export type Viewport = "mobile" | "web";
 export type Stage = "base" | "explorer" | "primary" | "secondary" | "value" | "active";
 export type Circuit = "off" | "index5" | "index8" | "stock15";
 export type HoldingMode = "add" | "detail";
-export type HomeFeed = "home" | "watchlist" | "brokers" | "baskets";
 export type PersonaId = "maya" | "prakash" | "sita" | "anil";
 export type Route =
   | "onboarding"
@@ -21,8 +20,12 @@ export type Route =
   | "ipo"
   | "lesson"
   | "objective"
+  | "objectives"
   | "holding"
-  | "alerts";
+  | "alerts"
+  | "watchlist"
+  | "brokers"
+  | "baskets";
 
 export type Plan = "free" | "pro" | "guru";
 export type PlanCycle = "monthly" | "annual";

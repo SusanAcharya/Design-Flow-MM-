@@ -85,7 +85,7 @@ function NewsPulse() {
 }
 
 export function PortfolioScreen() {
-  const { go, stage, openSheet } = useApp();
+  const { go, stage, openSheet, bookNudgeDismissed, dismissBookNudge } = useApp();
   const [hidden, setHidden] = useState(false);
   const [range, setRange] = useState<BookRange>("1W");
   const tape = useMemo(
@@ -95,18 +95,54 @@ export function PortfolioScreen() {
   const profitUp = portfolio.unrealisedPct >= 0;
 
   if (stage === "explorer") {
+    if (!bookNudgeDismissed) {
+      return (
+        <div className="port-screen">
+          <div className="pad" style={{ paddingTop: 12 }}>
+            <BookNudge
+              kicker="Nothing here yet"
+              onAdd={() => go("holding", { holdingMode: "add" })}
+              onDismiss={dismissBookNudge}
+            />
+            <p className="t-body-xs muted" style={{ marginTop: 14 }}>
+              We can’t read your broker, and every edit keeps its history.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="port-screen">
-        <div className="pad" style={{ paddingTop: 12 }}>
-          <BookNudge
-            kicker="Nothing here yet"
-            onPaste={() => go("holding", { holdingMode: "add" })}
-            onType={() => go("holding", { holdingMode: "add" })}
-          />
-          <p className="t-body-xs muted" style={{ marginTop: 14 }}>
-            We can’t read your broker, and every edit keeps its history.
+        <section className="port-hero">
+          <div className="port-value-row">
+            <p className="port-value">{veil("Rs 0", hidden)}</p>
+            <EyeBtn hidden={hidden} onClick={() => setHidden((v) => !v)} />
+          </div>
+          <p className="port-profit muted">
+            Your profit <b>{veil("Rs 0 0.0%", hidden)}</b>
           </p>
-        </div>
+          <div className="port-acts">
+            <button type="button" className="port-act" onClick={() => go("holding", { holdingMode: "add" })}>
+              <span className="port-act-ico" aria-hidden>↓</span>
+              Add kitta
+            </button>
+            <button
+              type="button"
+              className="port-act"
+              onClick={() => openSheet({
+                kind: "quick",
+                title: "Cash noted",
+                body: "Nothing sitting beside this book yet. MoneyMitra does not hold cash, and it is not a TMS balance.",
+                note: "We don’t place orders or move cash.",
+              })}
+            >
+              <span className="port-act-ico" aria-hidden>↑</span>
+              Cash noted
+            </button>
+          </div>
+        </section>
+        <p className="pad t-body-xs muted">Nothing in the book yet. Add kitta when you’re ready.</p>
       </div>
     );
   }
@@ -246,7 +282,7 @@ export function PortfolioScreen() {
 
       <section className="port-block">
         <div className="port-block-head">
-          <h2>Latest on your names</h2>
+          <h2>What's happening</h2>
         </div>
         <div className="news-stack">
           <NewsPulse />
@@ -307,9 +343,15 @@ export function PortfolioScreen() {
 }
 
 export function HoldingScreen() {
-  const { back, holdingMode, openSheet, correctedKitta } = useApp();
+  const { back, go, holdingMode, openSheet, correctedKitta, fulfillObjective, flash } = useApp();
   const kitta = correctedKitta ?? nabilLedger.kitta;
   const superseded = correctedKitta !== null && correctedKitta !== nabilLedger.kitta;
+
+  const saveHolding = () => {
+    fulfillObjective("book");
+    flash({ message: "Holding saved. We don’t place orders." });
+    go("portfolio");
+  };
 
   if (holdingMode === "detail") {
     return (
@@ -355,14 +397,14 @@ export function HoldingScreen() {
       </div>
       <div className="pad stack" style={{ gap: 10 }}>
         <p className="t-body-m muted">Choose how. Nothing is written until you confirm.</p>
-        <button className="choice">
+        <button className="choice" onClick={saveHolding}>
           <span className="ico-soft"><Icon name="wallet" size={19} /></span>
           <div>
             <p className="t-h-s">Paste a contract note</p>
             <p className="t-body-xs muted">Photo or text. You review every field.</p>
           </div>
         </button>
-        <button className="choice">
+        <button className="choice" onClick={saveHolding}>
           <span className="ico-soft"><Icon name="cal" size={19} /></span>
           <div>
             <p className="t-h-s">Enter it yourself</p>

@@ -37,7 +37,7 @@ export const holdings = [
   { symbol: "UPPER", name: "Upper Tamakoshi", sector: "Hydropower", kitta: 420, avg: 540, value: 257208, returnPct: 13.4, ltp: 612.4, dayPct: 0.33 },
   { symbol: "NICA", name: "NIC Asia Bank", sector: "Banking", kitta: 500, avg: 438, value: 206300, returnPct: -5.8, ltp: 412.6, dayPct: -0.4 },
   { symbol: "SHIVM", name: "Shivam Cements", sector: "Manufacturing", kitta: 300, avg: 512.6, value: 164430, returnPct: 6.9, ltp: 548.1, dayPct: 1.1 },
-  { symbol: "HDL", name: "Himalayan Distillery", sector: "Manufacturing", kitta: 60, avg: 2180, value: 144720, returnPct: 10.6, ltp: 2412, dayPct: 3.4 },
+  { symbol: "HDL", name: "Himalayan Distillery", sector: "Distillery", kitta: 60, avg: 2180, value: 144720, returnPct: 10.6, ltp: 2412, dayPct: 3.4 },
   { symbol: "SOHL", name: "Shivam Holdings", sector: "Investment", kitta: 120, avg: 640, value: 82536, returnPct: 7.2, ltp: 687.8, dayPct: 1.2 },
   { symbol: "CHCL", name: "Chilime Hydropower", sector: "Hydropower", kitta: 180, avg: 580, value: 110160, returnPct: 5.5, ltp: 612, dayPct: 0.33 },
   { symbol: "GBIME", name: "Global IME Bank", sector: "Banking", kitta: 200, avg: 268, value: 51200, returnPct: -4.5, ltp: 256, dayPct: -0.8 },
@@ -249,6 +249,40 @@ export const watchlist = [
   { symbol: "SHIVM", name: "Shivam Cements", sector: "Manufacturing", price: 548.1, changePct: 1.1, pe: 19.6, kitta: 300 },
 ];
 
+export const watchLists = [
+  {
+    id: "main",
+    label: "Main",
+    blurb: "Names you check after close",
+    symbols: ["NABIL", "NICA", "GBIME", "UPPER", "CHCL", "HDL", "SHIVM"],
+  },
+  {
+    id: "banks",
+    label: "Banks",
+    blurb: "Commercial banks on this list",
+    symbols: ["NABIL", "NICA", "GBIME"],
+  },
+  {
+    id: "hydro",
+    label: "Hydro",
+    blurb: "Power names after the rains",
+    symbols: ["UPPER", "CHCL"],
+  },
+  {
+    id: "reads",
+    label: "Weekend reads",
+    blurb: "Not a buy list — names to sit with",
+    symbols: ["HDL", "SHIVM"],
+  },
+];
+
+export function namesOnWatchList(id: string) {
+  const list = watchLists.find((item) => item.id === id) ?? watchLists[0];
+  return list.symbols
+    .map((symbol) => watchlist.find((row) => row.symbol === symbol))
+    .filter((row): row is (typeof watchlist)[number] => Boolean(row));
+}
+
 export const discover = [
   { kind: "Stock", title: "NABIL", sub: "Nabil Bank · you own 790 kitta" },
   { kind: "IPO", title: ipo.name, sub: `Rs ${ipo.price} · closes ${ipo.closes}` },
@@ -305,17 +339,84 @@ export const corporateActions = [
   { symbol: "SHIVM", title: "AGM announced", sub: "Agenda: 8% bonus share", tone: "accent" as const },
 ];
 
-export const sectorAlloc = [
+export type SectorRow = {
+  name: string;
+  short: string;
+  pct: number;
+  color: string;
+  value: number;
+  changePct: number;
+  symbols: string[];
+};
+
+export const sectorAlloc: SectorRow[] = [
   { name: "Banks", short: "BANKS", pct: 45, color: "#5b8cff", value: 578070, changePct: -1.52, symbols: ["NABIL", "NICA", "GBIME"] },
   { name: "Hydropower", short: "HYDRO", pct: 28, color: "#32e36a", value: 359688, changePct: 0.42, symbols: ["UPPER", "CHCL", "RIDI"] },
-  { name: "Manufacturing", short: "MFG", pct: 21, color: "#f08c00", value: 269766, changePct: 2.2, symbols: ["SHIVM", "HDL"] },
+  { name: "Manufacturing", short: "MFG", pct: 11, color: "#f08c00", value: 141401, changePct: 1.1, symbols: ["SHIVM"] },
+  { name: "Distillery", short: "DIST", pct: 10, color: "#d4a84a", value: 128365, changePct: 3.4, symbols: ["HDL"] },
   { name: "Investment", short: "INV", pct: 6, color: "#a78bfa", value: 77076, changePct: 1.2, symbols: ["SOHL"] },
 ];
 
+/** Home strip: four named slices, remainder folded into Other. */
+export function stripAlloc(rows: SectorRow[], named = 4): SectorRow[] {
+  const sorted = [...rows].sort((a, b) => b.pct - a.pct);
+  if (sorted.length <= named) return sorted;
+  const head = sorted.slice(0, named);
+  const tail = sorted.slice(named);
+  const value = tail.reduce((sum, row) => sum + row.value, 0);
+  const pctTotal = tail.reduce((sum, row) => sum + row.pct, 0);
+  const changePct = value === 0
+    ? 0
+    : tail.reduce((sum, row) => sum + row.changePct * row.value, 0) / value;
+  return [
+    ...head,
+    {
+      name: "Other",
+      short: "OTHER",
+      pct: pctTotal,
+      color: "#8b8b8b",
+      value,
+      changePct: Math.round(changePct * 100) / 100,
+      symbols: tail.flatMap((row) => row.symbols),
+    },
+  ];
+}
+
+export const bookHappen = [
+  {
+    kind: "up" as const,
+    title: "Hydropower led today",
+    sub: "UPPER +6.4%, API +9.8%. Sector up 2.4%.",
+    context: "You hold 2",
+    stock: "UPPER",
+  },
+  {
+    kind: "event" as const,
+    title: "NABIL book close Tuesday",
+    sub: "Hold till Bhadra 12 to get Rs 11,770.",
+    context: "Yours",
+    stock: "NABIL",
+  },
+  {
+    kind: "down" as const,
+    title: "Insurance down a third week",
+    sub: "NLIC −3.2%. No company news behind it.",
+    context: "You hold 1",
+    stock: "NICA",
+  },
+  {
+    kind: "ipo" as const,
+    title: "Sanima Middle Tamor closes Thursday",
+    sub: "You applied for 10 kitta.",
+    context: "Applied",
+    stock: "SAPIL",
+  },
+];
+
 export const bookNews = [
-  { tag: "Dividend", tone: "teal" as const, title: "NABIL · 10% cash", stock: "NABIL", changePct: -2.71 },
-  { tag: "Tape", tone: "saffron" as const, title: "UPPER trades heavy", stock: "UPPER", changePct: 0.33 },
-  { tag: "Busiest", tone: "violet" as const, title: "HDL led the tape", stock: "HDL", changePct: 3.4 },
+  { tag: "Ex-div", tone: "teal" as const, title: "NABIL went ex-div in your book", stock: "NABIL", changePct: -2.71 },
+  { tag: "Quiet", tone: "saffron" as const, title: "UPPER barely moved today", stock: "UPPER", changePct: 0.33 },
+  { tag: "Best day", tone: "violet" as const, title: "HDL is your biggest move", stock: "HDL", changePct: 3.4 },
 ];
 
 export const bookPulse = {
@@ -708,6 +809,21 @@ export const brokerHighlights = [
   { label: "Top selling broker", mark: "45", value: "Global IME", sub: "Net sell · 33.2 Cr", tone: "down" as const },
   { label: "Top bought scrip", mark: "NB", value: "NABIL", sub: "Most kitta bought", tone: "up" as const },
   { label: "Top sold scrip", mark: "CF", value: "CFCL", sub: "Most kitta sold", tone: "down" as const },
+];
+
+export const freeBrokers = [
+  { code: "33", name: "NIBL Ace Capital", short: "NIBL Ace", mark: "NA", tone: "accent" as const },
+  { code: "58", name: "Nabil Investment", short: "Nabil", mark: "NI", tone: "teal" as const },
+  { code: "45", name: "Global IME Capital", short: "Global IME", mark: "GI", tone: "violet" as const },
+  { code: "17", name: "Himalayan Capital", short: "Himalayan", mark: "HC", tone: "saffron" as const },
+  { code: "22", name: "Prabhu Capital", short: "Prabhu", mark: "PC", tone: "accent" as const },
+  { code: "12", name: "Laxmi Capital", short: "Laxmi", mark: "LC", tone: "teal" as const },
+  { code: "9", name: "Sanima Capital", short: "Sanima", mark: "SC", tone: "violet" as const },
+  { code: "4", name: "NIDC Capital", short: "NIDC", mark: "ND", tone: "saffron" as const },
+  { code: "49", name: "NIC Asia Capital", short: "NIC Asia", mark: "NC", tone: "accent" as const },
+  { code: "26", name: "Siddhartha Capital", short: "Siddhartha", mark: "SD", tone: "teal" as const },
+  { code: "21", name: "Sunrise Capital", short: "Sunrise", mark: "SR", tone: "violet" as const },
+  { code: "34", name: "Machhapuchchhre Capital", short: "MPCL", mark: "MC", tone: "saffron" as const },
 ];
 
 export const brokerTable = [

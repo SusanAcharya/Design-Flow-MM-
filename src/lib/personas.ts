@@ -35,7 +35,7 @@ export const personas: Persona[] = [
     img: `${import.meta.env.BASE_URL}characters/prakash.png`,
     tone: "teal",
     stage: "primary",
-    objectiveId: "ipo",
+    objectiveId: "terms",
     youIf: [
       "you apply for IPOs on MeroShare",
       "you’re waiting to see if you got kitta",
@@ -49,7 +49,7 @@ export const personas: Persona[] = [
     img: `${import.meta.env.BASE_URL}characters/sita.png`,
     tone: "violet",
     stage: "value",
-    objectiveId: "read",
+    objectiveId: "book",
     youIf: [
       "you already hold some companies",
       "you want to know what it’s worth today",
@@ -63,11 +63,11 @@ export const personas: Persona[] = [
     img: `${import.meta.env.BASE_URL}characters/anil.png`,
     tone: "accent",
     stage: "active",
-    objectiveId: null,
+    objectiveId: "book",
     youIf: [
       "you watch the session while it’s open",
       "the floor sheet is the interesting bit",
-      "you don’t need a lesson on Home",
+      "you can hide Next steps if you don’t want a path on Home",
     ],
   },
 ];

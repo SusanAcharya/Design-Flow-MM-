@@ -225,12 +225,39 @@ export function MoreScreen() {
 }
 
 export function AlertsScreen() {
-  const { back, openSheet } = useApp();
+  const { back, openSheet, fulfillObjective, flash } = useApp();
+  const [draft, setDraft] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const saveAlert = () => {
+    setSaved(true);
+    setDraft(false);
+    fulfillObjective("alert");
+    flash({ message: "Alert saved. It never places an order." });
+  };
+
   return (
     <div>
       <div className="app-bar">
         <button className="icon-btn" onClick={back} aria-label="Back"><Icon name="back" /></button>
         <h1>Alerts</h1>
+      </div>
+      <div className="pad stack" style={{ gap: 10, paddingTop: 12, paddingBottom: 8 }}>
+        {saved ? (
+          <p className="t-body-s muted">NABIL below Rs 480 is on. We’ll remind. We won’t place an order.</p>
+        ) : draft ? (
+          <div className="cta-well">
+            <p className="t-h-s">NABIL below Rs 480</p>
+            <p className="t-body-s muted">A reminder you wrote. Not a cue to sell.</p>
+            <Button variant="primary" size="md" onClick={saveAlert}>Save this alert</Button>
+          </div>
+        ) : (
+          <div className="cta-well">
+            <p className="t-h-s">Create an alert</p>
+            <p className="t-body-s muted">Price, event, or IPO close. You set the rule.</p>
+            <Button variant="primary" size="md" onClick={() => setDraft(true)}>Create an alert</Button>
+          </div>
+        )}
       </div>
       {alerts.map((a) => (
         <button

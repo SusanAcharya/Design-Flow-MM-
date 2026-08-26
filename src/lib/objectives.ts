@@ -1,8 +1,14 @@
-import type { Stage } from "./types";
+import type { PersonaId, Stage } from "./types";
+import { getPersona } from "./personas";
+import { titleObjective } from "./stage";
+
+export type ObjectiveKind = "learn" | "do";
+export type DoAction = "book" | "alert" | "watch";
 
 export type Objective = {
   id: string;
   n: number;
+  kind: ObjectiveKind;
   level: string;
   duration: string;
   title: string;
@@ -11,145 +17,133 @@ export type Objective = {
   know: string[];
   how: { step: string; platform: string }[];
   videoLabel: string;
+  doAction?: DoAction;
+  cta?: string;
 };
 
-/** Linear track. People enter at different points; they do not jump around. */
+/** Linear track. Learn first, then things you do in the app. */
 export const curriculum: Objective[] = [
   {
     id: "share",
     n: 1,
-    level: "The basics",
+    kind: "learn",
+    level: "The market",
     duration: "60s",
-    title: "What is a share?",
-    cardSub: "Ownership in a company, in plain words.",
+    title: "Understanding the share market",
+    cardSub: "What NEPSE is, and what a share actually is.",
     tulkeyLine: "We’ll start at the beginning. Nothing to buy.",
     know: [
-      "A share is a slice of ownership in a company — not a loan to it, and not a bet MoneyMitra is making for you.",
-      "If you hold kitta of a company, you own a tiny part of that company. Price going up or down changes the value of that slice.",
-      "MoneyMitra explains this. It never tells you which company to own.",
+      "NEPSE is Nepal’s stock exchange. The number on Home is an index of many companies together — not a company you can buy.",
+      "A share is a slice of ownership in a listed company. Kitta is the unit. Price going up or down changes the value of that slice.",
+      "MoneyMitra explains this. It never tells you which company to own, and it never places an order.",
     ],
     how: [
-      { step: "Owning listed shares later means an order at a broker, in TMS — not in this app.", platform: "TMS · your broker" },
-      { step: "A brand-new issue is applied for on MeroShare or C-ASBA.", platform: "MeroShare / C-ASBA" },
-    ],
-    videoLabel: "What is a share?",
-  },
-  {
-    id: "nepse-kitta",
-    n: 2,
-    level: "The basics",
-    duration: "60s",
-    title: "NEPSE, kitta, and the market",
-    cardSub: "The index, the unit, and what you cannot buy.",
-    tulkeyLine: "Two words you’ll see everywhere. Here’s what they actually are.",
-    know: [
-      "NEPSE is Nepal’s stock exchange index — a picture of many companies together. It is not a company you can buy.",
-      "Nepal trades in kitta. One kitta is one unit. An IPO application is usually counted in kitta, often with a 10-kitta minimum.",
-      "A price on a screen is a last traded print, with a time. It is not a live promise and not a recommendation.",
-    ],
-    how: [
-      { step: "Index, movers and breadth are on the Market tab here. They are a record, not a call.", platform: "MoneyMitra" },
+      { step: "Index, movers and breadth live on Market. They are a record, not a call.", platform: "MoneyMitra" },
       { step: "Buying or selling a listed company still happens in TMS at a licensed broker.", platform: "TMS · your broker" },
     ],
-    videoLabel: "NEPSE and kitta",
+    videoLabel: "What the share market is",
   },
   {
-    id: "ipo",
-    n: 3,
-    level: "Primary market",
+    id: "terms",
+    n: 2,
+    kind: "learn",
+    level: "The words",
     duration: "90s",
-    title: "How an IPO actually works",
-    cardSub: "Apply, allotment, listing — who does each step.",
-    tulkeyLine: "This is your first objective: how a new issue becomes kitta you might hold.",
+    title: "The terms you’ll keep seeing",
+    cardSub: "Kitta, LTP, book close, circuit — in plain words.",
+    tulkeyLine: "These words show up a lot. Here’s what they actually are.",
     know: [
-      "An IPO is a company offering new shares to the public for the first time (or a further issue). You apply for a number of kitta at a stated price.",
-      "Who gets kitta is decided at CDSC allotment. Tracking a result here does not change the result.",
-      "After listing on NEPSE, those kitta can be sold on the secondary market — only if you choose to, and only in TMS.",
+      "Kitta is one unit of a share. IPO applications are usually counted in kitta, often with a 10-kitta minimum.",
+      "LTP is the last traded print, with a time. It is not a live promise and not a recommendation.",
+      "Book close is the company’s record date for a dividend or AGM. After the ex-date the share usually trades without that cash.",
+      "A circuit is the maximum a share may rise or fall in one session. Hitting it is a trading rule, not a verdict on the company.",
     ],
     how: [
-      { step: "Fill and submit the application.", platform: "MeroShare / C-ASBA" },
-      { step: "See allotted or not when CDSC publishes it.", platform: "MeroShare · CDSC" },
-      { step: "If you later place an order in a listed stock, that is TMS at your broker — not here.", platform: "TMS · your broker" },
+      { step: "Tap a word with an info mark when it shows up. The sheet uses the same definition as the lesson.", platform: "MoneyMitra" },
+      { step: "Orders, if you place them later, still go through TMS.", platform: "TMS · your broker" },
     ],
-    videoLabel: "IPO apply → allotment → listing",
-  },
-  {
-    id: "meroshare",
-    n: 4,
-    level: "Primary market",
-    duration: "90s",
-    title: "Demat, MeroShare and C-ASBA",
-    cardSub: "The accounts behind an application — not this app.",
-    tulkeyLine: "Where the paperwork actually lives.",
-    know: [
-      "A Demat account holds your kitta electronically. MeroShare is the usual way you see it and apply for issues.",
-      "C-ASBA is the bank-side path to block application money. MoneyMitra does not block or release that money.",
-      "Having MeroShare does not mean an order was placed. Trading listed shares still needs TMS at a broker.",
-    ],
-    how: [
-      { step: "Open or use Demat / MeroShare with a capital / depository participant.", platform: "MeroShare" },
-      { step: "Apply for an issue and block funds.", platform: "MeroShare / C-ASBA" },
-      { step: "MoneyMitra can remind you of dates. It cannot submit the form.", platform: "MoneyMitra" },
-    ],
-    videoLabel: "Demat and MeroShare",
-  },
-  {
-    id: "orders",
-    n: 5,
-    level: "Secondary market",
-    duration: "2 min",
-    title: "Limit orders, market orders, and EDIS",
-    cardSub: "What the words mean, and which site does the work.",
-    tulkeyLine: "Useful before you use TMS — not a suggestion to trade.",
-    know: [
-      "A market order fills at whatever price is available. A limit order waits for your price — it may not fill.",
-      "Both are placed in TMS at your broker. MoneyMitra does not send the order.",
-      "After a buy, kitta is transferred via EDIS on MeroShare before T+2. Missing that can trigger an exchange closeout. That is a settlement rule, not advice.",
-    ],
-    how: [
-      { step: "Place or cancel a limit or market order.", platform: "TMS · your broker" },
-      { step: "Transfer bought kitta (EDIS) so settlement can complete.", platform: "MeroShare" },
-      { step: "MoneyMitra can show the T+2 window. It cannot complete EDIS.", platform: "MoneyMitra" },
-    ],
-    videoLabel: "Limit vs market · then EDIS",
+    videoLabel: "Kitta, LTP, book close, circuit",
   },
   {
     id: "read",
-    n: 6,
-    level: "Reading a company",
-    duration: "2 min",
-    title: "Dividends, ex-date, and P/E",
-    cardSub: "How to read the figures. Not a verdict on any stock.",
-    tulkeyLine: "These numbers show up a lot. Here’s what they are — not what to do.",
+    n: 3,
+    kind: "learn",
+    level: "The words",
+    duration: "90s",
+    title: "What book close actually means",
+    cardSub: "Dividends, ex-date, and P/E — not a verdict.",
+    tulkeyLine: "Using a name you already know as the example. Not a pick.",
     know: [
       "On the ex-date the share usually trades without the cash dividend. The price often drops by about that amount. That is the cash leaving the price, not a sudden change in the company.",
+      "Book close is the date the company freezes its list for that dividend or AGM. Holding through it is a fact about the register, not advice.",
       "P/E compares price with earnings per share. It describes valuation. It is not a buy or sell signal.",
-      "WACC (average cost) is your own cost basis after fees — for records and tax maths, not a target we recommend.",
     ],
     how: [
       { step: "Companies announce dividends, book closure and AGMs. We surface dates; the company is the source.", platform: "Company / NEPSE notices" },
       { step: "Capital-gains tax uses your actual cost if you sell. We can show inputs; we do not file tax.", platform: "IRD rules · your records" },
     ],
-    videoLabel: "Ex-date, dividend, P/E",
+    videoLabel: "Book close, dividend, P/E",
   },
   {
-    id: "tape",
-    n: 7,
-    level: "Live session",
-    duration: "90s",
-    title: "Floor sheet and circuit rules",
-    cardSub: "What a print and a halt are. Observed activity, not a call.",
-    tulkeyLine: "Only if you want it — busy-day language, unpacked.",
+    id: "book",
+    n: 4,
+    kind: "do",
+    doAction: "book",
+    cta: "Add a holding",
+    level: "Your book",
+    duration: "Your move",
+    title: "Add a holding to your portfolio",
+    cardSub: "Paste a note or enter kitta. Completes when you save.",
+    tulkeyLine: "This one isn’t a lesson. It completes when the holding is in your book.",
     know: [
-      "The floor sheet is a list of trades that already happened. It is not the live order book and not a recommendation.",
-      "A 10% or 15% daily cap is an exchange rule. Hitting it is a fact about the rule, not a reason to buy or sell.",
-      "“Broker 33 net buyer” is observed flow. It is not a rating of that broker or of the stock.",
+      "A holding here is a record of kitta you already have. It is not an order, and MoneyMitra cannot read your broker.",
+      "Paste a contract note or type symbol, kitta, price and date. You review every field before it is saved.",
     ],
     how: [
-      { step: "Live orders still go through TMS during market hours.", platform: "TMS · your broker" },
-      { step: "Circuit and halt rules sit with NEPSE / SEBON. We summarise them in plain words.", platform: "NEPSE rules" },
+      { step: "Add what you already hold. Nothing is bought or sold.", platform: "MoneyMitra" },
+      { step: "Listed trades still happen in TMS.", platform: "TMS · your broker" },
     ],
-    videoLabel: "Floor sheet and circuits",
+    videoLabel: "How a holding is recorded",
+  },
+  {
+    id: "alert",
+    n: 5,
+    kind: "do",
+    doAction: "alert",
+    cta: "Create an alert",
+    level: "Your book",
+    duration: "Your move",
+    title: "Create an alert",
+    cardSub: "Price, event, or IPO. Completes when you save the rule.",
+    tulkeyLine: "You set the rule. We remind. We never place an order off the back of it.",
+    know: [
+      "An alert is a reminder you wrote — a price, a date, or an IPO close. It is not a recommendation to act.",
+      "Turning one on does not buy or sell kitta.",
+    ],
+    how: [
+      { step: "Pick a name, a rule, and save it. Completes this objective.", platform: "MoneyMitra" },
+    ],
+    videoLabel: "What an alert is",
+  },
+  {
+    id: "watch",
+    n: 6,
+    kind: "do",
+    doAction: "watch",
+    cta: "Add to a watchlist",
+    level: "Your book",
+    duration: "Your move",
+    title: "Add a name to a watchlist",
+    cardSub: "Follow a scrip. Completes when the name is on a list.",
+    tulkeyLine: "Watching is not buying. The list is yours to check after close.",
+    know: [
+      "A watchlist is names you want to see again. Following never buys kitta.",
+      "You can keep more than one list — banks, hydro, weekend reads.",
+    ],
+    how: [
+      { step: "Add a name that isn’t on the list yet. That completes this objective.", platform: "MoneyMitra" },
+    ],
+    videoLabel: "What a watchlist is",
   },
 ];
 
@@ -180,31 +174,28 @@ export function pathOptions(q1: Knowledge): PathPick[] {
   switch (q1) {
     case "nothing":
       return [
-        { id: "start", title: "From the very first thing", sub: "What is a share? Then NEPSE and kitta.", objectiveId: "share", stage: "explorer" },
-        { id: "skip-kitta", title: "I know what a share is", sub: "Start at NEPSE, kitta, and the index.", objectiveId: "nepse-kitta", stage: "explorer" },
+        { id: "start", title: "From the very first thing", sub: "The share market, then the words.", objectiveId: "share", stage: "explorer" },
+        { id: "skip-kitta", title: "I know what a share is", sub: "Start at the terms you’ll keep seeing.", objectiveId: "terms", stage: "explorer" },
       ];
     case "terms":
       return [
-        { id: "ipo", title: "Start at how IPOs work", sub: "Your first objective — apply, allotment, listing.", objectiveId: "ipo", stage: "explorer" },
-        { id: "review", title: "From the very beginning anyway", sub: "What is a share? Useful if the words are shaky.", objectiveId: "share", stage: "explorer" },
+        { id: "words", title: "Start at the terms", sub: "Kitta, book close, circuit — then your book.", objectiveId: "terms", stage: "explorer" },
+        { id: "review", title: "From the very beginning anyway", sub: "Understanding the share market first.", objectiveId: "share", stage: "explorer" },
       ];
     case "demat":
       return [
-        { id: "ipo", title: "How an IPO actually works", sub: "First objective: apply → allotment → listing.", objectiveId: "ipo", stage: "primary" },
-        { id: "accounts", title: "I already apply — explain the accounts", sub: "Demat, MeroShare, C-ASBA, then secondary.", objectiveId: "meroshare", stage: "primary" },
-        { id: "review", title: "From the very beginning anyway", sub: "Start at what a share is.", objectiveId: "share", stage: "explorer" },
+        { id: "read", title: "Book close and dividends", sub: "Then add a holding, an alert, a watchlist.", objectiveId: "read", stage: "primary" },
+        { id: "review", title: "From the very beginning anyway", sub: "Start at the share market.", objectiveId: "share", stage: "explorer" },
       ];
     case "tms":
       return [
-        { id: "orders", title: "Keep an objective: orders and EDIS", sub: "First on Home: limit vs market, then T+2.", objectiveId: "orders", stage: "secondary" },
-        { id: "read", title: "Skip orders — reading dividends and P/E", sub: "If TMS is already familiar.", objectiveId: "read", stage: "value" },
-        { id: "none", title: "No objective on Home", sub: "Learn stays in the library if a term comes up.", objectiveId: null, stage: "secondary" },
+        { id: "book", title: "Add what you already hold", sub: "Then an alert and a watchlist.", objectiveId: "book", stage: "secondary" },
+        { id: "alert", title: "Alert and watchlist", sub: "If the book is already in.", objectiveId: "alert", stage: "secondary" },
       ];
     case "regular":
       return [
-        { id: "none", title: "No objective on Home", sub: "You’re far enough along. Dashboard first.", objectiveId: null, stage: "active" },
-        { id: "read", title: "One objective: dividends and P/E", sub: "If you hold more than you trade.", objectiveId: "read", stage: "value" },
-        { id: "tape", title: "One objective: floor sheet and circuits", sub: "If you watch the session closely.", objectiveId: "tape", stage: "active" },
+        { id: "book", title: "Holdings, then alerts and a watchlist", sub: "Skip the lessons. Set the book up.", objectiveId: "book", stage: "active" },
+        { id: "alert", title: "Just the last two: alert and watchlist", sub: "If the book is already in.", objectiveId: "alert", stage: "active" },
       ];
   }
 }
@@ -212,6 +203,18 @@ export function pathOptions(q1: Knowledge): PathPick[] {
 export function getObjective(id: string | null | undefined): Objective | null {
   if (!id) return null;
   return curriculum.find((o) => o.id === id) ?? null;
+}
+
+/** Current sitting on Home. Never empty unless the path is finished — hide is a separate flag. */
+export function homeObjectiveId(
+  currentId: string | null,
+  stage: Stage,
+  personaId: PersonaId | null,
+): string {
+  if (getObjective(currentId)) return currentId as string;
+  const fromPersona = getPersona(personaId)?.objectiveId;
+  if (fromPersona && getObjective(fromPersona)) return fromPersona;
+  return titleObjective[stage];
 }
 
 export function nextOnPath(id: string): Objective | null {
@@ -225,21 +228,14 @@ export function getObjectiveByTitle(title: string): Objective | null {
   if (!t) return null;
   const exact = curriculum.find((o) => o.title.toLowerCase() === t);
   if (exact) return exact;
-  if (t.includes("p/e") || t.includes("ex-dividend") || t.includes("dividend")) {
+  if (t.includes("p/e") || t.includes("ex-dividend") || t.includes("dividend") || t.includes("book close")) {
     return getObjective("read");
   }
-  if (t.includes("ipo") || t.includes("allotment")) return getObjective("ipo");
-  if (t.includes("meroshare") || t.includes("demat") || t.includes("c-asba")) {
-    return getObjective("meroshare");
-  }
-  if (t.includes("edis") || t.includes("limit") || t.includes("market order")) {
-    return getObjective("orders");
-  }
-  if (t.includes("floor") || t.includes("circuit") || t.includes("15%")) {
-    return getObjective("tape");
-  }
-  if (t.includes("kitta") || t.includes("nepse")) return getObjective("nepse-kitta");
-  if (t.includes("share")) return getObjective("share");
+  if (t.includes("alert")) return getObjective("alert");
+  if (t.includes("watch")) return getObjective("watch");
+  if (t.includes("holding") || t.includes("portfolio")) return getObjective("book");
+  if (t.includes("kitta") || t.includes("circuit") || t.includes("ltp")) return getObjective("terms");
+  if (t.includes("nepse") || t.includes("share") || t.includes("market")) return getObjective("share");
   return null;
 }
 
@@ -267,7 +263,7 @@ export function pathProgress(currentId: string | null, finished = false) {
   };
 }
 
-export const studioObjectives: { id: string; label: string }[] = [
-  { id: "", label: "None (no Home card)" },
-  ...curriculum.map((o) => ({ id: o.id, label: `${o.n} · ${o.title}` })),
-];
+export const studioObjectives: { id: string; label: string }[] = curriculum.map((o) => ({
+  id: o.id,
+  label: `${o.n} · ${o.title}`,
+}));

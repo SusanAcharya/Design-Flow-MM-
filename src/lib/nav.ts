@@ -7,7 +7,7 @@ export function activeTab(route: Route): Route {
   if (route === "holding") return "portfolio";
   if (route === "search" || route === "more") return "discover";
   if (route === "learn" || route === "lesson" || route === "objective") return "ai";
-  if (route === "alerts") return "home";
+  if (route === "alerts" || route === "watchlist" || route === "brokers" || route === "baskets" || route === "objectives") return "home";
   if (tabIds.includes(route)) return route;
   return "home";
 }

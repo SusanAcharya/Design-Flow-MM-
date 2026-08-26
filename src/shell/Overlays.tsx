@@ -12,9 +12,9 @@ import {
 import { npr, signed } from "../lib/format";
 import { planFeatures, planMeta } from "../lib/explore";
 import { activeTab } from "../lib/nav";
-import { stageMeta, stageOrder, titleObjective } from "../lib/stage";
+import { stageMeta, stageOrder } from "../lib/stage";
 import { useApp } from "../lib/state";
-import type { HomeFeed, Plan, PlanCycle, Stage } from "../lib/types";
+import type { Plan, PlanCycle, Route, Stage } from "../lib/types";
 
 export function MetricLink({
   id,
@@ -63,7 +63,7 @@ function SheetFrame({
 }
 
 function ProfileSheet() {
-  const { stage, setStage, setObjectiveId, closeSheet, densityLocked } = useApp();
+  const { stage, setStage, closeSheet, densityLocked } = useApp();
   return (
     <>
       <p className="overline">You</p>
@@ -90,7 +90,6 @@ function ProfileSheet() {
               className={`choice ${on ? "on" : ""}`}
               onClick={() => {
                 setStage(id as Stage);
-                setObjectiveId(titleObjective[id]);
                 closeSheet();
               }}
             >
@@ -124,16 +123,11 @@ function QuickSheet({ title, body, note }: { title: string; body: string; note?:
 }
 
 function NavigationSheet() {
-  const { go, closeSheet, setHomeFeed, openSheet, stage, route } = useApp();
+  const { go, closeSheet, openSheet, stage, route } = useApp();
   const current = activeTab(route);
-  const routeTo = (next: "home" | "market" | "ai" | "portfolio" | "discover") => {
+  const routeTo = (next: Route) => {
     closeSheet();
     go(next);
-  };
-  const openHomeFeed = (feed: HomeFeed) => {
-    setHomeFeed(feed);
-    closeSheet();
-    go("home");
   };
   return (
     <>
@@ -166,9 +160,10 @@ function NavigationSheet() {
       </nav>
       <p className="overline" style={{ margin: "18px 0 6px" }}>Go here</p>
       <div className="drawer-links">
-        <button type="button" onClick={() => openHomeFeed("watchlist")}><span>Watching</span><Icon name="chev" size={15} /></button>
-        <button type="button" onClick={() => openHomeFeed("brokers")}><span>Brokers</span><Icon name="chev" size={15} /></button>
-        <button type="button" onClick={() => openHomeFeed("baskets")}><span>Baskets</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => routeTo("watchlist")}><span>Watching</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => routeTo("brokers")}><span>Brokers</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => routeTo("baskets")}><span>Baskets</span><Icon name="chev" size={15} /></button>
+        <button type="button" onClick={() => routeTo("objectives")}><span>Objectives</span><Icon name="chev" size={15} /></button>
         <button type="button" onClick={() => routeTo("discover")}><span>Tools & screener</span><Icon name="chev" size={15} /></button>
       </div>
     </>

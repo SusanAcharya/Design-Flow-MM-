@@ -24,6 +24,8 @@ const files = {
   "triangle-up": `${import.meta.env.BASE_URL}icons/triangle-up.svg`,
   "triangle-down": `${import.meta.env.BASE_URL}icons/triangle-down.svg`,
   mic: `${import.meta.env.BASE_URL}icons/mic.svg`,
+  close: `${import.meta.env.BASE_URL}icons/close.svg`,
+  chat: `${import.meta.env.BASE_URL}icons/chat.svg`,
   send: `${import.meta.env.BASE_URL}icons/send.svg`,
   pulse: `${import.meta.env.BASE_URL}icons/pulse.svg`,
   table: `${import.meta.env.BASE_URL}icons/table.svg`,

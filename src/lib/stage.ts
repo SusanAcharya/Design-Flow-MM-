@@ -1,4 +1,4 @@
-import type { HomeFeed, Stage } from "./types";
+import type { Stage } from "./types";
 
 export const stageMeta: Record<
   Stage,
@@ -50,13 +50,13 @@ export const stageMeta: Record<
 
 export const stageOrder: Stage[] = ["explorer", "primary", "secondary", "value", "active"];
 
-export const titleObjective: Record<Stage, string | null> = {
+export const titleObjective: Record<Stage, string> = {
   base: "share",
   explorer: "share",
-  primary: "ipo",
-  secondary: "orders",
-  value: "read",
-  active: null,
+  primary: "terms",
+  secondary: "book",
+  value: "book",
+  active: "book",
 };
 
 export const stageToast: Record<Stage, string> = {
@@ -85,17 +85,3 @@ export function showsHoldings(stage: Stage) {
   return stage === "base" || stage === "secondary" || stage === "value" || stage === "active";
 }
 
-export const homeTabs: { id: HomeFeed; label: string }[] = [
-  { id: "home", label: "Home" },
-  { id: "watchlist", label: "Watching" },
-  { id: "brokers", label: "Brokers" },
-  { id: "baskets", label: "Baskets" },
-];
-
-export function homeTabsFor(_stage?: Stage): { id: HomeFeed; label: string }[] {
-  return homeTabs;
-}
-
-export function coerceHomeFeed(_stage: Stage, feed: HomeFeed): HomeFeed {
-  return homeTabs.some((tab) => tab.id === feed) ? feed : "home";
-}

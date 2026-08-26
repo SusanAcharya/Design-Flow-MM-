@@ -13,13 +13,8 @@ import { user } from "../lib/data";
 import { useApp } from "../lib/state";
 
 function useOpenTool() {
-  const { go, setHomeFeed, openSheet } = useApp();
+  const { go, openSheet } = useApp();
   return (tool: ExploreTool) => {
-    if (tool.feed) {
-      setHomeFeed(tool.feed);
-      go("home");
-      return;
-    }
     if (tool.sheet) {
       openSheet(tool.sheet);
       return;

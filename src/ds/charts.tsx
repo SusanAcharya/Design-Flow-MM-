@@ -838,25 +838,30 @@ export function PulseBars({
 export function AllocStrip({
   rows,
   ghost = false,
+  legend = true,
 }: {
   rows: { short: string; pct: number; color: string }[];
   ghost?: boolean;
+  legend?: boolean;
 }) {
+  const summary = rows.map((row) => `${row.short} ${row.pct}%`).join(", ");
   return (
-    <div className={`alloc-strip${ghost ? " ghost" : ""}`}>
-      <div className="alloc-bar" aria-hidden>
+    <div className={`alloc-strip${ghost ? " ghost" : ""}${legend ? "" : " bar-only"}`}>
+      <div className="alloc-bar" aria-label={summary} aria-hidden={legend}>
         {rows.map((row) => (
           <i key={row.short} style={{ flexGrow: row.pct, background: row.color }} />
         ))}
       </div>
-      <ul className="alloc-legend">
-        {rows.map((row) => (
-          <li key={row.short}>
-            <i style={{ background: row.color }} />
-            {row.short} {ghost ? "—" : `${row.pct}%`}
-          </li>
-        ))}
-      </ul>
+      {legend && (
+        <ul className="alloc-legend">
+          {rows.map((row) => (
+            <li key={row.short}>
+              <i style={{ background: row.color }} />
+              {row.short} {ghost ? "—" : `${row.pct}%`}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

@@ -1,11 +1,12 @@
-import { getObjective, pathProgress, type Objective } from "../lib/objectives";
+import { useState, type ReactNode } from "react";
+import { getObjective, homeObjectiveId, pathProgress, type Objective } from "../lib/objectives";
 import { useApp } from "../lib/state";
 
 function Check({ on, now }: { on?: boolean; now?: boolean }) {
   return <i className={`path-check ${on ? "on" : ""} ${now ? "now" : ""}`} aria-hidden />;
 }
 
-function ModuleRow({
+function QuietRow({
   item,
   status,
 }: {
@@ -13,7 +14,6 @@ function ModuleRow({
   status: "learned" | "now" | "left";
 }) {
   const { go, route, viewingObjectiveId, setViewingObjectiveId } = useApp();
-  const label = status === "learned" ? "Learned" : status === "now" ? "Now" : "Left";
   const active = viewingObjectiveId === item.id && route === "objective";
   const open = () => {
     if (route === "objective") setViewingObjectiveId(item.id);
@@ -22,78 +22,101 @@ function ModuleRow({
   return (
     <button
       type="button"
-      className={`path-row path-row-${status} ${active ? "on" : ""}`}
+      className={`obj-quiet ${status} ${active ? "on" : ""}`}
       onClick={open}
     >
       <Check on={status === "learned"} now={status === "now"} />
-      <div className="row-main">
-        <p className="t-label-s c-muted">
-          {label} · {item.duration}
-        </p>
-        <p className="t-h-s">{item.title}</p>
-        <p className="row-sub">{item.cardSub}</p>
-      </div>
+      <span>
+        <strong>{item.title}</strong>
+        <small>{status === "learned" ? "Done" : item.duration}</small>
+      </span>
     </button>
   );
 }
 
-export function ObjectivePath({ hideNow = false }: { hideNow?: boolean }) {
-  const { go, route, objectiveId, pathFinished, setViewingObjectiveId } = useApp();
-  const { done, now, later, learned, total } = pathProgress(objectiveId, pathFinished);
-  const current = now ?? getObjective(objectiveId);
+function Fold({
+  label,
+  count,
+  children,
+}: {
+  label: string;
+  count: number;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  if (count === 0) return null;
+  return (
+    <div className="obj-fold">
+      <button
+        type="button"
+        className="obj-fold-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {open ? `Hide ${label}` : `View ${label} · ${count}`}
+      </button>
+      {open && <div className="obj-fold-list">{children}</div>}
+    </div>
+  );
+}
+
+export function ObjectivePath() {
+  const { go, route, objectiveId, pathFinished, setViewingObjectiveId, stage, personaId } = useApp();
+  const pinned = homeObjectiveId(objectiveId, stage, personaId);
+  const { done, now, later, learned, total } = pathProgress(pinned, pathFinished);
+  const current = now ?? getObjective(pinned);
+  const next = later[0] ?? null;
+  const rest = later.slice(1);
 
   const open = (id: string) => {
     if (route === "objective") setViewingObjectiveId(id);
     else go("objective", { objective: id });
   };
 
-  if (!current && !pathFinished && later.length === 0) {
-    return null;
-  }
+  if (!current && !pathFinished) return null;
 
   return (
-    <section className="objective-path">
-      <div className="path-head">
-        <span className="overline">Your path</span>
-        <span className="t-mono-s c-muted">
-          {pathFinished ? `${total} / ${total}` : `${learned} / ${total} learned`}
-        </span>
-      </div>
+    <section className="obj-track">
+      <p className="obj-track-count">
+        {pathFinished ? `${total} of ${total} done` : `${learned} of ${total} done`}
+      </p>
 
-      {!hideNow && current ? (
-        <button type="button" className="path-now" onClick={() => open(current.id)}>
-          <p className="overline">Now · {current.duration} sitting</p>
+      {pathFinished ? (
+        <div className="obj-now rest">
+          <span className="obj-now-kicker">Path complete</span>
+          <strong>That’s the last sitting on this path.</strong>
+          <small>Open a completed one if you want to watch it again.</small>
+        </div>
+      ) : current ? (
+        <button type="button" className="obj-now" onClick={() => open(current.id)}>
+          <span className="obj-now-kicker">
+            Now · {current.n}/{total} · {current.duration}
+          </span>
           <strong>{current.title}</strong>
-          <small>{current.tulkeyLine}</small>
+          <small>{current.cardSub}</small>
+          <em>{current.kind === "do" ? (current.cta ?? "Open") : "Open"} ›</em>
         </button>
-      ) : !hideNow && pathFinished ? (
-        <p className="t-body-s muted" style={{ margin: "4px 0 8px" }}>
-          You finished this path. Open any module below to watch it again.
-        </p>
-      ) : !hideNow ? (
-        <p className="t-body-s muted" style={{ margin: "4px 0 8px" }}>
-          No sitting pinned. Open a module if a word comes up.
-        </p>
       ) : null}
 
-      {done.length > 0 && (
-        <div className="path-group">
-          <p className="overline">Learned</p>
-          {done.map((item) => (
-            <ModuleRow key={item.id} item={item} status="learned" />
-          ))}
-        </div>
+      {next && (
+        <button type="button" className="obj-next" onClick={() => open(next.id)}>
+          <span className="obj-next-kicker">Next</span>
+          <strong>{next.title}</strong>
+          <em>Preview ›</em>
+        </button>
       )}
 
-      {(current || later.length > 0) && (
-        <div className="path-group">
-          <p className="overline">Left</p>
-          {current && <ModuleRow item={current} status="now" />}
-          {later.map((item) => (
-            <ModuleRow key={item.id} item={item} status="left" />
-          ))}
-        </div>
-      )}
+      <Fold label="completed" count={done.length}>
+        {done.map((item) => (
+          <QuietRow key={item.id} item={item} status="learned" />
+        ))}
+      </Fold>
+
+      <Fold label="later" count={rest.length}>
+        {rest.map((item) => (
+          <QuietRow key={item.id} item={item} status="left" />
+        ))}
+      </Fold>
     </section>
   );
 }

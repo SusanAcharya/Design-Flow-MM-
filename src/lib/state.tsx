@@ -9,12 +9,12 @@ import {
 } from "react";
 import { defaultExploreFavorites } from "./explore";
 import { getObjectiveByTitle, nextOnPath } from "./objectives";
+import { replyTo, type TulkeyMessage } from "./tulkey";
 import type { PersonaId } from "./types";
-import { coerceHomeFeed, stageToast } from "./stage";
+import { stageToast, titleObjective } from "./stage";
 import type {
   Circuit,
   HoldingMode,
-  HomeFeed,
   MarketSession,
   MarketTab,
   OnboardingResult,
@@ -57,14 +57,15 @@ type AppState = {
   objectiveId: string | null;
   viewingObjectiveId: string | null;
   pathFinished: boolean;
+  hideHomeObjectives: boolean;
   setViewingObjectiveId: (id: string | null) => void;
+  setHideHomeObjectives: (hide: boolean) => void;
   sheet: Sheet | null;
   toast: Toast | null;
   circuit: Circuit;
   densityLocked: boolean;
   holdingMode: HoldingMode;
   correctedKitta: number | null;
-  homeFeed: HomeFeed;
   exploreFavorites: string[];
   setTheme: (theme: Theme) => void;
   setUiFont: (font: UiFont) => void;
@@ -74,7 +75,6 @@ type AppState = {
   setCircuit: (circuit: Circuit) => void;
   setDensityLocked: (locked: boolean) => void;
   setObjectiveId: (id: string | null) => void;
-  setHomeFeed: (feed: HomeFeed) => void;
   setStockTab: (tab: StockTab) => void;
   setMarketTab: (tab: MarketTab) => void;
   setPlan: (plan: Plan) => void;
@@ -84,13 +84,24 @@ type AppState = {
   finishOnboarding: (result: OnboardingResult) => void;
   lookAround: () => void;
   resetDemo: () => void;
-  completeObjective: () => void;
+  completeObjective: (opts?: { stay?: boolean }) => void;
+  fulfillObjective: (id: string) => boolean;
+  addToWatchlist: (symbol: string) => void;
+  watchlistAdds: string[];
   openSheet: (sheet: Sheet) => void;
   closeSheet: () => void;
   dismissToast: () => void;
   flash: (next: Toast) => void;
   undoStage: () => void;
   saveCorrection: (kitta: number) => void;
+  dismissBookNudge: () => void;
+  bookNudgeDismissed: boolean;
+  tulkeyMessages: TulkeyMessage[];
+  tulkeyThinking: boolean;
+  tulkeyVoiceOpen: boolean;
+  askTulkey: (text: string) => void;
+  openTulkeyVoice: () => void;
+  closeTulkeyVoice: () => void;
 };
 
 const Ctx = createContext<AppState | null>(null);
@@ -113,17 +124,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [objectiveId, setObjectiveIdState] = useState<string | null>("share");
   const [viewingObjectiveId, setViewingObjectiveId] = useState<string | null>("share");
   const [pathFinished, setPathFinished] = useState(false);
+  const [hideHomeObjectives, setHideHomeObjectives] = useState(false);
+  const [watchlistAdds, setWatchlistAdds] = useState<string[]>([]);
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
   const [circuit, setCircuit] = useState<Circuit>("off");
   const [densityLocked, setDensityLocked] = useState(false);
   const [holdingMode, setHoldingMode] = useState<HoldingMode>("add");
   const [correctedKitta, setCorrectedKitta] = useState<number | null>(null);
-  const [homeFeed, setHomeFeed] = useState<HomeFeed>("home");
+  const [bookNudgeDismissed, setBookNudgeDismissed] = useState(false);
+  const [tulkeyMessages, setTulkeyMessages] = useState<TulkeyMessage[]>([]);
+  const [tulkeyThinking, setTulkeyThinking] = useState(false);
+  const [tulkeyVoiceOpen, setTulkeyVoiceOpen] = useState(false);
   const [exploreFavorites, setExploreFavorites] = useState<string[]>(defaultExploreFavorites);
   const [, setStack] = useState<Route[]>([]);
   const prevStage = useRef<Stage>("base");
   const toastTimer = useRef<number>(0);
+  const tulkeyThinkTimer = useRef<number>(0);
+  const tulkeyMsgId = useRef(1);
 
   const dismissToast = useCallback(() => {
     window.clearTimeout(toastTimer.current);
@@ -138,13 +156,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const setStage = useCallback(
     (next: Stage, opts?: { silent?: boolean }) => {
+      const changed = next !== stage;
       setStageState((current) => {
         if (current === next) return current;
         prevStage.current = current;
         return next;
       });
-      setHomeFeed((feed) => coerceHomeFeed(next, feed));
-      if (!opts?.silent && next !== stage) {
+      if (changed) {
+        const start = titleObjective[next];
+        setObjectiveIdState(start);
+        setViewingObjectiveId(start);
+        setPathFinished(false);
+        setHideHomeObjectives(false);
+      }
+      if (!opts?.silent && changed) {
         flash({ message: stageToast[next], undo: true });
       }
     },
@@ -153,7 +178,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const undoStage = useCallback(() => {
     setStageState(prevStage.current);
-    setHomeFeed((feed) => coerceHomeFeed(prevStage.current, feed));
     dismissToast();
   }, [dismissToast]);
 
@@ -203,9 +227,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setObjectiveIdState(result.objectiveId);
     setViewingObjectiveId(result.objectiveId);
     setPathFinished(false);
+    setHideHomeObjectives(false);
+    setWatchlistAdds([]);
     setPersonaId(result.personaId);
     setOnboardingPersona(null);
-    setHomeFeed("home");
+    setBookNudgeDismissed(false);
+    setTulkeyMessages([]);
+    setTulkeyThinking(false);
+    setTulkeyVoiceOpen(false);
     setStack([]);
     setRoute("home");
     setSheet(null);
@@ -214,12 +243,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const lookAround = useCallback(() => {
     setOnboarded(true);
     setStageState("base");
-    setObjectiveIdState(null);
-    setViewingObjectiveId(null);
+    setObjectiveIdState("share");
+    setViewingObjectiveId("share");
     setPathFinished(false);
+    setHideHomeObjectives(false);
+    setWatchlistAdds([]);
     setPersonaId(null);
     setOnboardingPersona(null);
-    setHomeFeed("home");
+    setBookNudgeDismissed(false);
+    setTulkeyMessages([]);
+    setTulkeyThinking(false);
+    setTulkeyVoiceOpen(false);
     setStack([]);
     setRoute("home");
   }, []);
@@ -232,6 +266,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setObjectiveIdState("share");
     setViewingObjectiveId("share");
     setPathFinished(false);
+    setHideHomeObjectives(false);
+    setWatchlistAdds([]);
     setRoute("onboarding");
     setStack([]);
     setStock("NABIL");
@@ -245,18 +281,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDensityLocked(false);
     setCorrectedKitta(null);
     setHoldingMode("add");
-    setHomeFeed("home");
+    setBookNudgeDismissed(false);
+    setTulkeyMessages([]);
+    setTulkeyThinking(false);
+    setTulkeyVoiceOpen(false);
   }, []);
 
   const setObjectiveId = useCallback((id: string | null) => {
     setObjectiveIdState(id);
     setViewingObjectiveId(id);
     setPathFinished(false);
+    if (id) setHideHomeObjectives(false);
   }, []);
 
-  const completeObjective = useCallback(() => {
+  const completeObjective = useCallback((opts?: { stay?: boolean }) => {
     if (!objectiveId) {
-      setRoute("home");
+      if (!opts?.stay) setRoute("home");
       return;
     }
     const next = nextOnPath(objectiveId);
@@ -270,10 +310,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPathFinished(true);
       flash({ message: "That’s the last objective on this path." });
     }
-    setRoute("home");
-    setStack([]);
+    if (!opts?.stay) {
+      setRoute("home");
+      setStack([]);
+    }
     setSheet(null);
   }, [flash, objectiveId]);
+
+  const fulfillObjective = useCallback((id: string) => {
+    if (objectiveId !== id) return false;
+    completeObjective({ stay: true });
+    return true;
+  }, [completeObjective, objectiveId]);
+
+  const addToWatchlist = useCallback((symbol: string) => {
+    setWatchlistAdds((current) => (current.includes(symbol) ? current : [...current, symbol]));
+    fulfillObjective("watch");
+  }, [fulfillObjective]);
 
   const toggleExploreFavorite = useCallback((id: string) => {
     setExploreFavorites((current) => {
@@ -289,6 +342,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSheet(null);
     flash({ message: "Correction saved. Original buy is kept as superseded." });
   }, [flash]);
+  const dismissBookNudge = useCallback(() => setBookNudgeDismissed(true), []);
+
+  const askTulkey = useCallback((text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setTulkeyThinking((busy) => {
+      if (busy) return busy;
+      const id = tulkeyMsgId.current++;
+      setTulkeyMessages((current) => [...current, { id, role: "user", text: trimmed }]);
+      window.clearTimeout(tulkeyThinkTimer.current);
+      tulkeyThinkTimer.current = window.setTimeout(() => {
+        const answer = replyTo(trimmed);
+        setTulkeyMessages((current) => [
+          ...current,
+          {
+            id: tulkeyMsgId.current++,
+            role: "tulkey",
+            text: answer.text,
+            sittingId: answer.sittingId,
+          },
+        ]);
+        setTulkeyThinking(false);
+      }, 1100);
+      return true;
+    });
+  }, []);
+
+  const openTulkeyVoice = useCallback(() => setTulkeyVoiceOpen(true), []);
+  const closeTulkeyVoice = useCallback(() => setTulkeyVoiceOpen(false), []);
 
   const value = useMemo(
     () => ({
@@ -309,14 +391,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
       objectiveId,
       viewingObjectiveId,
       pathFinished,
+      hideHomeObjectives,
       setViewingObjectiveId,
+      setHideHomeObjectives,
       sheet,
       toast,
       circuit,
       densityLocked,
       holdingMode,
       correctedKitta,
-      homeFeed,
       exploreFavorites,
       setTheme,
       setUiFont,
@@ -326,7 +409,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setCircuit,
       setDensityLocked,
       setObjectiveId,
-      setHomeFeed,
       setStockTab,
       setMarketTab,
       setPlan,
@@ -337,12 +419,23 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lookAround,
       resetDemo,
       completeObjective,
+      fulfillObjective,
+      addToWatchlist,
+      watchlistAdds,
       openSheet,
       closeSheet,
       dismissToast,
       flash,
       undoStage,
       saveCorrection,
+      dismissBookNudge,
+      bookNudgeDismissed,
+      tulkeyMessages,
+      tulkeyThinking,
+      tulkeyVoiceOpen,
+      askTulkey,
+      openTulkeyVoice,
+      closeTulkeyVoice,
     }),
     [
       theme,
@@ -362,13 +455,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       objectiveId,
       viewingObjectiveId,
       pathFinished,
+      hideHomeObjectives,
+      watchlistAdds,
       sheet,
       toast,
       circuit,
       densityLocked,
       holdingMode,
       correctedKitta,
-      homeFeed,
       exploreFavorites,
       setStage,
       toggleExploreFavorite,
@@ -378,12 +472,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       lookAround,
       resetDemo,
       completeObjective,
+      fulfillObjective,
+      addToWatchlist,
       openSheet,
       closeSheet,
       dismissToast,
       flash,
       undoStage,
       saveCorrection,
+      dismissBookNudge,
+      bookNudgeDismissed,
+      tulkeyMessages,
+      tulkeyThinking,
+      tulkeyVoiceOpen,
+      askTulkey,
     ],
   );
 

@@ -1,5 +1,5 @@
 import type { IconName } from "../ds/Icon";
-import type { HomeFeed, MarketTab, Route, Sheet, StockTab } from "./types";
+import type { MarketTab, Route, Sheet, StockTab } from "./types";
 
 export type ExploreCategoryId = "account" | "market" | "intel" | "media";
 
@@ -15,7 +15,6 @@ export type ExploreTool = {
   group: string;
   kind?: "portal";
   go?: { route: Route; stock?: string; stockTab?: StockTab; marketTab?: MarketTab; lesson?: string };
-  feed?: HomeFeed;
   sheet?: Sheet;
   soon?: { body: string };
   handoff?: { platform: string; body: string };
@@ -44,7 +43,31 @@ export const exploreTools: ExploreTool[] = [
     tone: "accent",
     category: "account",
     group: "Account",
-    feed: "watchlist",
+    go: { route: "watchlist" },
+  },
+  {
+    id: "brokers",
+    title: "Brokers",
+    short: "Brokers",
+    purpose: "Licensed houses and floor activity",
+    keywords: "brokers tms licensed capital",
+    icon: "building",
+    tone: "teal",
+    category: "account",
+    group: "Account",
+    go: { route: "brokers" },
+  },
+  {
+    id: "baskets",
+    title: "Baskets",
+    short: "Baskets",
+    purpose: "Themes of names, same session",
+    keywords: "baskets themes groups hydropower banks",
+    icon: "pie",
+    tone: "violet",
+    category: "account",
+    group: "Account",
+    go: { route: "baskets" },
   },
   {
     id: "alerts",

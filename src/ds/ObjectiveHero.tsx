@@ -1,11 +1,11 @@
-import { getObjective, nextOnPath } from "../lib/objectives";
+import { curriculum, getObjective, homeObjectiveId, nextOnPath } from "../lib/objectives";
 import { useApp } from "../lib/state";
 
 const tulkey = `${import.meta.env.BASE_URL}tulkey-hi.png`;
 
 export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
-  const { go, objectiveId } = useApp();
-  const o = getObjective(objectiveId);
+  const { go, objectiveId, stage, personaId } = useApp();
+  const o = getObjective(homeObjectiveId(objectiveId, stage, personaId));
 
   if (!o) {
     return (
@@ -41,7 +41,7 @@ export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
         <small>{compact ? (next ? `Next: ${next.title}` : o.tulkeyLine) : o.tulkeyLine}</small>
       </span>
       <span className="tulkey-card-bar" aria-hidden>
-        <i style={{ width: `${Math.min(100, (o.n / 7) * 100)}%` }} />
+        <i style={{ width: `${Math.min(100, (o.n / curriculum.length) * 100)}%` }} />
       </span>
     </button>
   );

@@ -1,7 +1,7 @@
 import { ObjectivePath } from "../ds/ObjectivePath";
 import { Badge, Button, Overline } from "../ds/primitives";
 import { Icon } from "../ds/Icon";
-import { getObjective, pathProgress } from "../lib/objectives";
+import { getObjective, homeObjectiveId, pathProgress } from "../lib/objectives";
 import { useApp } from "../lib/state";
 import { useEffect, useRef } from "react";
 
@@ -19,11 +19,12 @@ function VideoPlaceholder({ label, duration }: { label: string; duration: string
 }
 
 export function ObjectiveScreen() {
-  const { back, objectiveId, viewingObjectiveId, pathFinished, completeObjective, viewport } = useApp();
+  const { back, go, objectiveId, viewingObjectiveId, pathFinished, completeObjective, hideHomeObjectives, setHideHomeObjectives, viewport, stage, personaId } = useApp();
   const topRef = useRef<HTMLDivElement>(null);
-  const id = viewingObjectiveId ?? objectiveId;
+  const pinned = homeObjectiveId(objectiveId, stage, personaId);
+  const id = viewingObjectiveId ?? pinned;
   const o = getObjective(id);
-  const progress = pathProgress(objectiveId, pathFinished);
+  const progress = pathProgress(pinned, pathFinished);
 
   useEffect(() => {
     const el = topRef.current;
@@ -56,6 +57,13 @@ export function ObjectiveScreen() {
   const isNow = progress.now?.id === o.id;
   const isLearned = progress.done.some((item) => item.id === o.id) || pathFinished;
   const isLater = !isNow && !isLearned;
+  const isDo = o.kind === "do";
+
+  const startDo = () => {
+    if (o.doAction === "book") go("holding", { holdingMode: "add" });
+    else if (o.doAction === "alert") go("alerts");
+    else if (o.doAction === "watch") go("watchlist");
+  };
 
   return (
     <div className="objective-page">
@@ -73,8 +81,8 @@ export function ObjectiveScreen() {
         <div className="obj-hero-meta">
           <Badge tone="accent">{o.level}</Badge>
           <span className="chip">{o.duration}</span>
-          {isLearned && <span className="chip">Learned</span>}
-          {isNow && <span className="chip chip-on">Now</span>}
+          {isLearned && <span className="chip">Done</span>}
+          {isNow && <span className="chip chip-on">{isDo ? "Your move" : "Now"}</span>}
           {isLater && <span className="chip">Later on this path</span>}
         </div>
         <h2 className="t-h-xl">{o.title}</h2>
@@ -116,9 +124,11 @@ export function ObjectiveScreen() {
         </p>
       )}
 
-      <div className="pad" style={{ paddingTop: 20, paddingBottom: 8 }}>
-        <ObjectivePath hideNow />
-      </div>
+      {isNow && progress.later[0] && (
+        <p className="pad t-body-s muted" style={{ paddingTop: 16 }}>
+          Next: {progress.later[0].title}
+        </p>
+      )}
 
       <div className="pad" style={{ paddingTop: 12, paddingBottom: 28 }}>
         <div className="card warn">
@@ -131,15 +141,83 @@ export function ObjectiveScreen() {
           </div>
         </div>
         <div className="stack" style={{ gap: 10, marginTop: 16 }}>
-          {isNow && (
-            <Button variant="primary" size="lg" block onClick={completeObjective}>
-              I understand this
+          {isNow && o.kind === "learn" && (
+            <Button variant="primary" size="lg" block onClick={() => completeObjective()}>
+              Mark as done
             </Button>
+          )}
+          {isNow && isDo && (
+            <>
+              <Button variant="primary" size="lg" block onClick={startDo}>
+                {o.cta ?? "Open"}
+              </Button>
+              <p className="t-body-xs muted" style={{ textAlign: "center" }}>
+                Completes when you actually {o.doAction === "book" ? "save the holding" : o.doAction === "alert" ? "save the alert" : "add the name"} — not from this screen.
+              </p>
+            </>
           )}
           <Button variant={isNow ? "secondary" : "primary"} size="lg" block onClick={back}>
             Back to Home
           </Button>
+          {!hideHomeObjectives && (
+            <button
+              type="button"
+              className="text-link"
+              style={{ alignSelf: "center" }}
+              onClick={() => {
+                setHideHomeObjectives(true);
+                go("home");
+              }}
+            >
+              Don’t show me the objectives
+            </button>
+          )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+export function ObjectivesScreen() {
+  const { back, viewport, hideHomeObjectives, setHideHomeObjectives } = useApp();
+
+  return (
+    <div className="obj-page">
+      {viewport === "mobile" && (
+        <div className="app-bar">
+          <button type="button" className="icon-btn" onClick={back} aria-label="Back">
+            <Icon name="back" />
+          </button>
+          <h1>Objectives</h1>
+        </div>
+      )}
+      <div className="pad stack" style={{ gap: 6, paddingTop: 12 }}>
+        {viewport === "web" && (
+          <button type="button" className="text-link" onClick={back}>‹ Home</button>
+        )}
+        <p className="t-h-l">Your path</p>
+        <p className="t-body-s muted">One sitting at a time. The rest stays folded.</p>
+      </div>
+      <div className="pad" style={{ paddingBottom: 12 }}>
+        <ObjectivePath />
+      </div>
+      <div className="pad" style={{ paddingBottom: 28 }}>
+        {hideHomeObjectives ? (
+          <p className="t-body-s muted">
+            Next steps is off Home.{" "}
+            <button type="button" className="text-link" onClick={() => setHideHomeObjectives(false)}>
+              Show it again
+            </button>
+          </p>
+        ) : (
+          <button
+            type="button"
+            className="text-link"
+            onClick={() => setHideHomeObjectives(true)}
+          >
+            Don’t show me the objectives
+          </button>
+        )}
       </div>
     </div>
   );

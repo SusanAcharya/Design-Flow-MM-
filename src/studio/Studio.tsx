@@ -6,11 +6,15 @@ import type { Circuit, Plan, Route, Stage, UiFont } from "../lib/types";
 const screens: { id: Route; label: string }[] = [
   { id: "onboarding", label: "Onboarding" },
   { id: "home", label: "Home" },
+  { id: "objectives", label: "Objectives" },
   { id: "ai", label: "Tulkey AI" },
   { id: "objective", label: "Objective" },
   { id: "market", label: "Market" },
   { id: "stock", label: "Stock detail" },
   { id: "portfolio", label: "Portfolio" },
+  { id: "watchlist", label: "Watchlist" },
+  { id: "brokers", label: "Brokers" },
+  { id: "baskets", label: "Baskets" },
   { id: "discover", label: "Explore" },
   { id: "search", label: "Search" },
   { id: "learn", label: "Learn" },
@@ -125,8 +129,8 @@ export function Studio() {
         <label>
           Objective
           <select
-            value={objectiveId ?? ""}
-            onChange={(e) => setObjectiveId(e.target.value || null)}
+            value={objectiveId ?? "share"}
+            onChange={(e) => setObjectiveId(e.target.value)}
           >
             {studioObjectives.map((o) => (
               <option key={o.id || "none"} value={o.id}>{o.label}</option>

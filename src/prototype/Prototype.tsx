@@ -1,14 +1,15 @@
 import { useApp } from "../lib/state";
 import { AlertsScreen, DiscoverScreen, IpoScreen, LearnScreen, LessonScreen, MoreScreen, SearchScreen } from "../screens/Discover";
 import { TulkeyScreen } from "../screens/Tulkey";
-import { HomeScreen } from "../screens/Home";
+import { BasketsScreen, BrokersScreen, HomeScreen, WatchlistScreen } from "../screens/Home";
 import { MarketScreen } from "../screens/Market";
-import { ObjectiveScreen } from "../screens/Objective";
+import { ObjectiveScreen, ObjectivesScreen } from "../screens/Objective";
 import { Onboarding, StartingPoint } from "../screens/Onboarding";
 import { HoldingScreen, PortfolioScreen } from "../screens/Portfolio";
 import { StockScreen } from "../screens/Stock";
 import { DesktopChrome, MobileChrome } from "../shell/Chrome";
 import { Overlays } from "../shell/Overlays";
+import { HomeFab, TulkeyVoiceOverlay } from "../ds/TulkeyVoice";
 
 export function Prototype() {
   const { viewport, route, theme, uiFont } = useApp();
@@ -43,10 +44,18 @@ export function Prototype() {
         return <LessonScreen />;
       case "objective":
         return <ObjectiveScreen />;
+      case "objectives":
+        return <ObjectivesScreen />;
       case "holding":
         return <HoldingScreen />;
       case "alerts":
         return <AlertsScreen />;
+      case "watchlist":
+        return <WatchlistScreen />;
+      case "brokers":
+        return <BrokersScreen />;
+      case "baskets":
+        return <BasketsScreen />;
       default:
         return <HomeScreen />;
     }
@@ -61,6 +70,8 @@ export function Prototype() {
           {screen}
         </DesktopChrome>
       )}
+      <HomeFab />
+      <TulkeyVoiceOverlay />
       <Overlays />
     </div>
   );

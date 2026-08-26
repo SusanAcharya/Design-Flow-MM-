@@ -1,7 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import {
-  Badge,
   BreadthBar,
   Button,
   Chip,
@@ -10,6 +9,7 @@ import {
   Overline,
 } from "../ds/primitives";
 import { SessionWalk } from "../ds/charts";
+import { QuoteList } from "../ds/QuoteList";
 import {
   floorBrokers,
   floorSheet,
@@ -19,7 +19,6 @@ import {
   nepse,
   nepseSession,
   sectors,
-  type MoverRow,
   type TapePrint,
 } from "../lib/data";
 import { npr, pct, signed } from "../lib/format";
@@ -43,31 +42,91 @@ function ChangeText({ value }: { value: number }) {
   return <b className={value < 0 ? "c-down" : "c-up"}>{pct(value)}</b>;
 }
 
-function QuoteRow({
-  row,
-  note,
+const sectorMarks: Record<string, string> = {
+  Hydropower: "HY",
+  Manufacturing: "MF",
+  "Hotels & tourism": "HT",
+  "Life insurance": "LI",
+  "Development banks": "DB",
+  "Commercial banks": "CB",
+  Microfinance: "MI",
+};
+
+function sectorMark(name: string) {
+  return sectorMarks[name] ?? name.slice(0, 2).toUpperCase();
+}
+
+function SectorList({
+  rows,
   onOpen,
 }: {
-  row: MoverRow;
-  note?: string;
-  onOpen: (symbol: string) => void;
+  rows: typeof sectors;
+  onOpen?: () => void;
 }) {
-  const circuit = row.extra.includes("cap") || row.changePct >= 9.9;
   return (
-    <button type="button" className="row" onClick={() => onOpen(row.symbol)}>
-      <div className="row-main">
-        <p className="t-ticker">
-          {row.symbol}
-          {circuit && <Badge tone="warn">Circuit</Badge>}
-        </p>
-        <p className="row-sub">{note ?? row.name}</p>
-      </div>
-      <div className="row-meta">
-        <p className="t-mono-m">{npr(row.price, 2)}</p>
-        <ChangeText value={row.changePct} />
-      </div>
-    </button>
+    <div className="quote-list">
+      {rows.map((sector) => (
+        <button
+          key={sector.name}
+          type="button"
+          className="quote-list-row"
+          onClick={onOpen}
+        >
+          <span className={`ticker-mark ${sector.changePct < 0 ? "down" : "up"}`}>
+            {sectorMark(sector.name)}
+          </span>
+          <span className="quote-id">
+            <span className="t-ticker">{sector.name}</span>
+            <small>Turnover {sector.turnover} · {sector.rose} rose / {sector.fell} fell</small>
+          </span>
+          <span className="quote-list-meta">
+            <b className={sector.changePct < 0 ? "c-down" : "c-up"}>{pct(sector.changePct)}</b>
+          </span>
+        </button>
+      ))}
+    </div>
   );
+}
+
+function FloorBrokerList({
+  rows,
+  onOpen,
+}: {
+  rows: typeof floorBrokers;
+  onOpen?: () => void;
+}) {
+  return (
+    <div className="quote-list">
+      {rows.map((broker) => (
+        <button
+          key={broker.code}
+          type="button"
+          className="quote-list-row"
+          onClick={onOpen}
+        >
+          <span className={`ticker-mark ${broker.net < 0 ? "down" : "up"}`}>{broker.code}</span>
+          <span className="quote-id">
+            <span className="t-ticker">Broker {broker.code}</span>
+            <small>Most active in {broker.active}</small>
+          </span>
+          <span className="quote-list-meta">
+            <b className={broker.net < 0 ? "c-down" : "c-up"}>{signed(broker.net)}</b>
+            <em className="muted">{broker.net < 0 ? "Net seller" : "Net buyer"}</em>
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function moverRows(view: MoverView, limit?: number) {
+  const source = limit ? moverBoards[view].slice(0, limit) : moverBoards[view];
+  return source.map((row) => ({
+    symbol: row.symbol,
+    name: view === "gainers" || view === "losers" ? row.name : `${row.name} · ${row.extra}`,
+    price: row.price,
+    changePct: row.changePct,
+  }));
 }
 
 function MarketBlock({
@@ -98,7 +157,6 @@ function MarketBlock({
 
 export function MarketScreen() {
   const { flash, go, openSheet, session, viewport, marketTab: tab, setMarketTab } = useApp();
-  const [index, setIndex] = useState("NEPSE");
   const [moverView, setMoverView] = useState<MoverView>("gainers");
   const [sectorSort, setSectorSort] = useState<(typeof sectorSorts)[number]>("By change");
   const [floorView, setFloorView] = useState<(typeof floorViews)[number]>("By broker");
@@ -143,24 +201,23 @@ export function MarketScreen() {
 
       {tab === "Overview" && (
         <>
-          <div className="market-filters">
-            {["NEPSE", "Sensitive", "Float", "Banking"].map((item) => (
-              <Chip key={item} selected={index === item} onClick={() => setIndex(item)}>
-                {item}
-              </Chip>
-            ))}
-          </div>
-          {index !== "NEPSE" && (
-            <p className="pad t-body-xs muted">
-              This prototype keeps the NEPSE tape visible; {index} data is not fabricated.
-            </p>
-          )}
-
           <div className="hero-row">
             <div className="figure-line">
               <p className="hero-num">{npr(shown, 2)}</p>
               <MovePill amount={shownChange} pct={shownPct} />
             </div>
+            <button
+              type="button"
+              className="stat-info hero-info"
+              aria-label="What is NEPSE"
+              onClick={() => explain(
+                "What is NEPSE?",
+                "NEPSE is the Nepal Stock Exchange index — a weighted average of listed companies. It is not the price of one share.",
+                "A rising index can still hide more companies falling than rising.",
+              )}
+            >
+              <Icon name="info" size={16} />
+            </button>
           </div>
           <div className="market-live">
             {session === "open" && <span className="live-dot" />}
@@ -171,13 +228,6 @@ export function MarketScreen() {
                   ? `Live · updated ${nepse.liveAt}, ${nepse.date}`
                   : `Market closed · last close ${nepse.closedAt}, ${nepse.date}`}
             </span>
-            <Explain onClick={() => explain(
-              "What is NEPSE?",
-              "NEPSE is the Nepal Stock Exchange index — a weighted average of listed companies. It is not the price of one share.",
-              "A rising index can still hide more companies falling than rising.",
-            )}>
-              What is NEPSE?
-            </Explain>
           </div>
           <SessionWalk tape={nepseSession} compact showVolume={false} onScrub={setScrub} />
 
@@ -243,9 +293,10 @@ export function MarketScreen() {
               setMarketTab("Movers");
             }}
           >
-            {moverBoards.gainers.slice(0, 3).map((row) => (
-              <QuoteRow key={row.symbol} row={row} onOpen={(symbol) => go("stock", { stock: symbol })} />
-            ))}
+            <QuoteList
+              rows={moverRows("gainers", 3)}
+              onRow={(symbol) => go("stock", { stock: symbol })}
+            />
           </MarketBlock>
 
           <MarketBlock
@@ -256,46 +307,18 @@ export function MarketScreen() {
               setMarketTab("Movers");
             }}
           >
-            {moverBoards.losers.slice(0, 3).map((row) => (
-              <QuoteRow
-                key={row.symbol}
-                row={row}
-                note={row.symbol === "NABIL"
-                  ? "Ex-dividend today — part of the fall is the dividend."
-                  : row.name}
-                onOpen={(symbol) => go("stock", { stock: symbol })}
-              />
-            ))}
+            <QuoteList
+              rows={moverRows("losers", 3)}
+              onRow={(symbol) => go("stock", { stock: symbol })}
+            />
           </MarketBlock>
 
           <MarketBlock title="Sectors" action="See all ›" onAction={() => setMarketTab("Sectors")}>
-            {sectors.slice(0, 4).map((sector) => (
-              <div className="row" key={sector.name}>
-                <div className="row-main">
-                  <p className="t-h-s">{sector.name}</p>
-                  <p className="row-sub">Turnover {sector.turnover}</p>
-                </div>
-                <ChangeText value={sector.changePct} />
-              </div>
-            ))}
+            <SectorList rows={sectors.slice(0, 4)} onOpen={() => setMarketTab("Sectors")} />
           </MarketBlock>
 
           <MarketBlock title="Floor sheet" action="Full sheet ›" onAction={() => setMarketTab("Floor sheet")}>
-            {floorBrokers.slice(0, 3).map((broker) => (
-              <div className="row" key={broker.code}>
-                <div className="row-main">
-                  <p className="t-h-s">Broker {broker.code}</p>
-                  <p className="row-sub">Most active in {broker.active}</p>
-                </div>
-                <span className={`badge ${broker.net < 0 ? "badge-down" : "badge-teal"}`}>
-                  <span className="badge-dot" />
-                  {broker.net < 0 ? "Net seller" : "Net buyer"}
-                </span>
-                <b className={broker.net < 0 ? "c-down t-mono-s" : "c-up t-mono-s"}>
-                  {signed(broker.net)}
-                </b>
-              </div>
-            ))}
+            <FloorBrokerList rows={floorBrokers.slice(0, 3)} onOpen={() => setMarketTab("Floor sheet")} />
             <p className="foot-note">
               The floor sheet records trades that already happened. It is not the live order book.
             </p>
@@ -337,36 +360,10 @@ export function MarketScreen() {
             <span className="chip chip-quiet">Traded today ▾</span>
           </div>
           <MarketBlock>
-            <div className="sheet-wrap market-table">
-              <table className="sheet-table">
-                <thead>
-                  <tr>
-                    <th>Company</th>
-                    <th className="num">LTP</th>
-                    <th className="num">Change</th>
-                    <th className="num">Turnover</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {moverBoards[moverView].map((row) => (
-                    <tr key={row.symbol} onClick={() => go("stock", { stock: row.symbol })}>
-                      <td>
-                        <span className="t-ticker">
-                          {row.symbol}
-                          {(row.extra.includes("cap") || row.changePct >= 9.9) && (
-                            <Badge tone="warn">Circuit</Badge>
-                          )}
-                        </span>
-                        <small>{row.name}</small>
-                      </td>
-                      <td className="num">{npr(row.price, 2)}</td>
-                      <td className="num"><ChangeText value={row.changePct} /></td>
-                      <td className="num muted-num">{row.extra}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <QuoteList
+              rows={moverRows(moverView)}
+              onRow={(symbol) => go("stock", { stock: symbol })}
+            />
           </MarketBlock>
           <p className="market-intro">
             “Circuit” means the price reached its daily limit. It says nothing about what the company is worth.
@@ -415,11 +412,12 @@ export function MarketScreen() {
                   {sectorRows.map((sector) => (
                     <tr key={sector.name}>
                       <td>
-                        {sector.name}
-                        <i
-                          className={`sector-rail ${sector.changePct < 0 ? "down" : "up"}`}
-                          style={{ width: `${Math.min(92, 28 + Math.abs(sector.changePct) * 24)}%` }}
-                        />
+                        <span className="sheet-name">
+                          <span className={`ticker-mark sm ${sector.changePct < 0 ? "down" : "up"}`}>
+                            {sectorMark(sector.name)}
+                          </span>
+                          {sector.name}
+                        </span>
                       </td>
                       <td className="num">{sector.rose} / {sector.fell}</td>
                       <td className="num">{sector.turnover}</td>
@@ -506,8 +504,13 @@ export function MarketScreen() {
                     {floorBrokers.map((broker) => (
                       <tr key={broker.code}>
                         <td>
-                          Broker {broker.code}
-                          <small>Most active in {broker.active}</small>
+                          <span className="sheet-name">
+                            <span className={`ticker-mark sm ${broker.net < 0 ? "down" : "up"}`}>{broker.code}</span>
+                            <span>
+                              Broker {broker.code}
+                              <small>Most active in {broker.active}</small>
+                            </span>
+                          </span>
                         </td>
                         <td className="num">{npr(broker.bought)}</td>
                         <td className="num">{npr(broker.sold)}</td>
@@ -539,7 +542,12 @@ export function MarketScreen() {
                       const trades = floorSheet.filter((trade) => trade.symbol === symbol);
                       return (
                         <tr key={symbol} onClick={() => go("stock", { stock: symbol })}>
-                          <td className="t-ticker">{symbol}</td>
+                          <td>
+                            <span className="sheet-name">
+                              <span className="ticker-mark sm">{symbol.slice(0, 2)}</span>
+                              {symbol}
+                            </span>
+                          </td>
                           <td className="num">{npr(trades.reduce((sum, trade) => sum + trade.kitta, 0))}</td>
                           <td className="num">{npr(trades[0].price, 2)}</td>
                           <td className="muted-num">{trades[0].from} → {trades[0].to}</td>
@@ -554,14 +562,33 @@ export function MarketScreen() {
 
           {floorView === "All trades" && (
             <MarketBlock>
-              {floorSheet.map((trade) => (
-                <div className="floor-row" key={`${trade.time}-${trade.symbol}-${trade.from}`}>
-                  <span className="t-mono-s">{trade.time}</span>
-                  <span className="t-ticker">{trade.symbol}</span>
-                  <span className="t-mono-s">{trade.kitta} @ {npr(trade.price, 2)}</span>
-                  <span className="t-body-xs muted">{trade.from} → {trade.to}</span>
-                </div>
-              ))}
+              <div className="sheet-wrap market-table">
+                <table className="sheet-table">
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Symbol</th>
+                      <th className="num">Kitta</th>
+                      <th className="num">Price</th>
+                      <th className="num">Brokers</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {floorSheet.map((trade) => (
+                      <tr
+                        key={`${trade.time}-${trade.symbol}-${trade.from}`}
+                        onClick={() => go("stock", { stock: trade.symbol })}
+                      >
+                        <td className="muted-num">{trade.time}</td>
+                        <td className="t-ticker">{trade.symbol}</td>
+                        <td className="num">{npr(trade.kitta)}</td>
+                        <td className="num">{npr(trade.price, 2)}</td>
+                        <td className="num muted-num">{trade.from} → {trade.to}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </MarketBlock>
           )}
 
