@@ -1,9 +1,8 @@
 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="icon/coin">
-<path d="M11 4 A7 7 0 1 1 11 18 A7 7 0 1 1 11 4" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-<path d="M11 7.5 V14.5" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-<path d="M8.4 9.3 H13.6" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-<path d="M8.4 12.7 H13.6" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-
+<circle cx="11" cy="11" r="7.4" stroke="#5C574D" stroke-width="1.7" fill="none"/>
+<path d="M7.8 8 H14.2" stroke="#5C574D" stroke-width="1.55" stroke-linecap="round" fill="none"/>
+<path d="M12.8 8 V14.6" stroke="#5C574D" stroke-width="1.55" stroke-linecap="round" fill="none"/>
+<path d="M8.2 8 C8.7 10.4 10.3 12.3 12.8 13.2" stroke="#5C574D" stroke-width="1.55" stroke-linecap="round" fill="none"/>
 </g>
 </svg>

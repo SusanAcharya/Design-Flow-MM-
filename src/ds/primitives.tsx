@@ -21,18 +21,21 @@ export function Button({
   size = "lg",
   onClick,
   block,
+  disabled,
 }: {
   children: ReactNode;
   variant?: "primary" | "secondary" | "ghost" | "danger" | "up" | "warn";
   size?: "lg" | "md" | "sm";
   onClick?: () => void;
   block?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       className={`btn btn-${variant} btn-${size} ${block ? "btn-block" : ""}`}
       onClick={onClick}
+      disabled={disabled}
     >
       {children}
     </button>

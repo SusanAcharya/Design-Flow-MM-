@@ -23,11 +23,11 @@ import {
   nepseSession,
   portfolio,
   secondaryBook,
-  sectorAlloc,
   watchlist,
   watchLists,
   stripAlloc,
 } from "../lib/data";
+import { bookFor } from "../lib/portfolio";
 import { npr, pct } from "../lib/format";
 import { isBaseHome } from "../lib/stage";
 import { homeObjectiveId, pathProgress } from "../lib/objectives";
@@ -118,25 +118,33 @@ function BookSummary({ empty = false }: { empty?: boolean }) {
 }
 
 function BookCard({ empty = false }: { empty?: boolean }) {
-  const { stage, go } = useApp();
+  const { stage, go, primaryPortfolioId, setPortfolioId } = useApp();
+  const primary = bookFor(primaryPortfolioId);
   const value = empty
     ? 0
     : stage === "value"
       ? portfolio.investorValue
       : stage === "secondary"
         ? secondaryBook.value
-        : portfolio.value;
+        : primary.totals.marketValue;
   const today = empty
     ? 0
     : stage === "value"
       ? portfolio.investorToday
       : stage === "secondary"
         ? secondaryBook.today
-        : portfolio.today;
+        : primary.totals.dayPl;
   const down = today < 0;
 
   return (
-    <button type="button" className="book-card" onClick={() => go("portfolio")}>
+    <button
+      type="button"
+      className="book-card"
+      onClick={() => {
+        setPortfolioId(primaryPortfolioId);
+        go("portfolio");
+      }}
+    >
       <span className="book-card-head">
         <span>Your portfolio</span>
         <span className="book-card-open">Open ›</span>
@@ -147,7 +155,7 @@ function BookCard({ empty = false }: { empty?: boolean }) {
           {down ? "−" : "+"}Rs {npr(Math.abs(today))}
         </em>
       </span>
-      <AllocStrip rows={empty ? emptyAlloc : stripAlloc(sectorAlloc)} legend={false} />
+      <AllocStrip rows={empty ? emptyAlloc : stripAlloc(primary.sectors)} legend={false} />
       <BookSummary empty={empty} />
     </button>
   );

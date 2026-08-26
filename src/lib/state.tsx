@@ -10,6 +10,7 @@ import {
 import { defaultExploreFavorites } from "./explore";
 import { getObjectiveByTitle, nextOnPath } from "./objectives";
 import { replyTo, type TulkeyMessage } from "./tulkey";
+import { portfolioList, type PortfolioId, type PortfolioKind } from "./portfolio";
 import type { PersonaId } from "./types";
 import { stageToast, titleObjective } from "./stage";
 import type {
@@ -19,6 +20,7 @@ import type {
   MarketTab,
   OnboardingResult,
   Plan,
+  PortfolioTab,
   Route,
   Sheet,
   Stage,
@@ -33,8 +35,10 @@ type GoExtras = {
   stock?: string;
   stockTab?: StockTab;
   marketTab?: MarketTab;
+  portfolioTab?: PortfolioTab;
   lesson?: string;
   holdingMode?: HoldingMode;
+  holding?: string;
   persona?: PersonaId;
   objective?: string;
 };
@@ -49,6 +53,9 @@ type AppState = {
   stock: string;
   stockTab: StockTab;
   marketTab: MarketTab;
+  portfolioTab: PortfolioTab;
+  portfolioId: PortfolioId;
+  holdingSymbol: string;
   plan: Plan;
   lesson: string;
   onboarded: boolean;
@@ -77,6 +84,16 @@ type AppState = {
   setObjectiveId: (id: string | null) => void;
   setStockTab: (tab: StockTab) => void;
   setMarketTab: (tab: MarketTab) => void;
+  setPortfolioTab: (tab: PortfolioTab) => void;
+  setPortfolioId: (id: PortfolioId) => void;
+  portfolioNames: Record<PortfolioId, string>;
+  portfolioKinds: Record<PortfolioId, PortfolioKind>;
+  primaryPortfolioId: PortfolioId;
+  openPortfolioIds: PortfolioId[];
+  renamePortfolio: (id: PortfolioId, name: string) => void;
+  savePortfolio: (id: PortfolioId, patch: { name: string; kind: PortfolioKind; primary: boolean }) => void;
+  createPortfolio: (patch: { name: string; kind: PortfolioKind; primary: boolean }) => boolean;
+  deletePortfolio: (id: PortfolioId) => void;
   setPlan: (plan: Plan) => void;
   toggleExploreFavorite: (id: string) => void;
   go: (route: Route, extras?: GoExtras) => void;
@@ -106,6 +123,14 @@ type AppState = {
 
 const Ctx = createContext<AppState | null>(null);
 
+const defaultPortfolioNames = Object.fromEntries(
+  portfolioList.map((item) => [item.id, item.name]),
+) as Record<PortfolioId, string>;
+const defaultOpenPortfolios: PortfolioId[] = ["main", "long"];
+const defaultPortfolioKinds = Object.fromEntries(
+  portfolioList.map((item) => [item.id, "individual"]),
+) as Record<PortfolioId, PortfolioKind>;
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>("dark");
   const [uiFont, setUiFont] = useState<UiFont>("plex");
@@ -116,6 +141,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [stock, setStock] = useState("NABIL");
   const [stockTab, setStockTab] = useState<StockTab>("Overview");
   const [marketTab, setMarketTab] = useState<MarketTab>("Overview");
+  const [portfolioTab, setPortfolioTab] = useState<PortfolioTab>("Overview");
+  const [portfolioId, setPortfolioId] = useState<PortfolioId>("main");
+  const [portfolioNames, setPortfolioNames] = useState<Record<PortfolioId, string>>(defaultPortfolioNames);
+  const [portfolioKinds, setPortfolioKinds] = useState<Record<PortfolioId, PortfolioKind>>(defaultPortfolioKinds);
+  const [primaryPortfolioId, setPrimaryPortfolioId] = useState<PortfolioId>("main");
+  const [openPortfolioIds, setOpenPortfolioIds] = useState<PortfolioId[]>(defaultOpenPortfolios);
+  const [holdingSymbol, setHoldingSymbol] = useState("NABIL");
   const [plan, setPlan] = useState<Plan>("free");
   const [lesson, setLesson] = useState("");
   const [onboarded, setOnboarded] = useState(false);
@@ -188,6 +220,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     else if (next === "stock" && route !== "stock") setStockTab("Overview");
     if (extras?.marketTab) setMarketTab(extras.marketTab);
     else if (next === "market" && route !== "market") setMarketTab("Overview");
+    if (extras?.portfolioTab) setPortfolioTab(extras.portfolioTab);
+    else if (next === "portfolio" && route !== "portfolio") setPortfolioTab("Overview");
+    if (extras?.holding) setHoldingSymbol(extras.holding);
     if (extras?.lesson) {
       const mapped = getObjectiveByTitle(extras.lesson);
       if (mapped) {
@@ -274,6 +309,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setStockTab("Overview");
     setMarketTab("Overview");
     setPlan("free");
+    setPortfolioId("main");
+    setPortfolioTab("Overview");
+    setPortfolioNames(defaultPortfolioNames);
+    setPortfolioKinds(defaultPortfolioKinds);
+    setPrimaryPortfolioId("main");
+    setOpenPortfolioIds(defaultOpenPortfolios);
     setExploreFavorites(defaultExploreFavorites);
     setSheet(null);
     setToast(null);
@@ -372,6 +413,46 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const openTulkeyVoice = useCallback(() => setTulkeyVoiceOpen(true), []);
   const closeTulkeyVoice = useCallback(() => setTulkeyVoiceOpen(false), []);
 
+  const renamePortfolio = useCallback((id: PortfolioId, name: string) => {
+    const next = name.trim();
+    if (!next) return;
+    setPortfolioNames((current) => ({ ...current, [id]: next }));
+  }, []);
+
+  const savePortfolio = useCallback((id: PortfolioId, patch: { name: string; kind: PortfolioKind; primary: boolean }) => {
+    renamePortfolio(id, patch.name);
+    setPortfolioKinds((current) => ({ ...current, [id]: patch.kind }));
+    if (patch.primary) {
+      setPrimaryPortfolioId(id);
+      return;
+    }
+    setPrimaryPortfolioId((current) => {
+      if (current !== id) return current;
+      return openPortfolioIds.find((item) => item !== id) ?? id;
+    });
+  }, [openPortfolioIds, renamePortfolio]);
+
+  const createPortfolio = useCallback((patch: { name: string; kind: PortfolioKind; primary: boolean }) => {
+    const title = patch.name.trim();
+    if (!title) return false;
+    const id = (["fresh", "side"] as PortfolioId[]).find((item) => !openPortfolioIds.includes(item));
+    if (!id) return false;
+    setOpenPortfolioIds((current) => [...current, id]);
+    savePortfolio(id, { name: title, kind: patch.kind, primary: patch.primary });
+    setPortfolioId(id);
+    return true;
+  }, [openPortfolioIds, savePortfolio]);
+
+  const deletePortfolio = useCallback((id: PortfolioId) => {
+    setOpenPortfolioIds((current) => {
+      const remaining = current.filter((item) => item !== id);
+      if (remaining.length === 0) return current;
+      setPortfolioId((active) => (active === id ? remaining[0] : active));
+      setPrimaryPortfolioId((primary) => (primary === id ? remaining[0] : primary));
+      return remaining;
+    });
+  }, []);
+
   const value = useMemo(
     () => ({
       theme,
@@ -383,6 +464,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       stock,
       stockTab,
       marketTab,
+      portfolioTab,
+      portfolioId,
+      holdingSymbol,
       plan,
       lesson,
       onboarded,
@@ -411,6 +495,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setObjectiveId,
       setStockTab,
       setMarketTab,
+      setPortfolioTab,
+      setPortfolioId,
+      portfolioNames,
+      portfolioKinds,
+      primaryPortfolioId,
+      openPortfolioIds,
+      renamePortfolio,
+      savePortfolio,
+      createPortfolio,
+      deletePortfolio,
       setPlan,
       toggleExploreFavorite,
       go,
@@ -447,6 +541,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       stock,
       stockTab,
       marketTab,
+      portfolioTab,
+      portfolioId,
+      portfolioNames,
+      portfolioKinds,
+      primaryPortfolioId,
+      openPortfolioIds,
+      holdingSymbol,
       plan,
       lesson,
       onboarded,
@@ -486,6 +587,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       tulkeyThinking,
       tulkeyVoiceOpen,
       askTulkey,
+      renamePortfolio,
+      savePortfolio,
+      createPortfolio,
+      deletePortfolio,
     ],
   );
 

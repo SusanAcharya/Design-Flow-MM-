@@ -203,7 +203,7 @@ export function MoreScreen() {
         <Icon name="chev" size={15} />
       </button>
       {tools.filter((t) => t.title !== "Compare companies" && t.title !== "Alerts" && t.title !== "Settings").map((t) => (
-        t.title.startsWith("WACC") ? (
+        t.title.startsWith("Avg cost") ? (
           <button key={t.title} className="row" onClick={() => openSheet({ kind: "metric", id: "wacc" })}>
             <div className="row-main">
               <p className="t-h-s">{t.title}</p>

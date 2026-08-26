@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Icon } from "../ds/Icon";
+import { Icon, type IconName } from "../ds/Icon";
 import {
   BreadthBar,
   Button,
@@ -8,7 +8,7 @@ import {
   MovePill,
   Overline,
 } from "../ds/primitives";
-import { SessionWalk } from "../ds/charts";
+import { SessionWalk, Sparkline } from "../ds/charts";
 import { HappenList } from "../ds/HappenList";
 import { QuoteList } from "../ds/QuoteList";
 import {
@@ -17,6 +17,7 @@ import {
   liveIpo,
   marketEvents,
   marketHappen,
+  marketIndices,
   moverBoards,
   nepse,
   nepseSession,
@@ -157,6 +158,187 @@ function MarketBlock({
   );
 }
 
+function IndexStrip() {
+  const { openSheet } = useApp();
+
+  return (
+    <div className="idx-strip" role="list" aria-label="Market indices">
+      {marketIndices.map((item) => {
+        const down = item.change < 0;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className="idx-card"
+            role="listitem"
+            onClick={() =>
+              openSheet({
+                kind: "quick",
+                title: item.label,
+                body: item.body,
+                note: "An index is a picture of a group. It is not a price you can buy.",
+              })
+            }
+          >
+            <span className="idx-card-label">{item.label}</span>
+            <b className="idx-card-value">{npr(item.value, 2)}</b>
+            <em className={down ? "c-down" : "c-up"}>
+              {signed(item.change, 2)} ({pct(item.changePct)})
+            </em>
+            <span className="idx-card-spark">
+              <Sparkline changePct={item.changePct} seed={item.id} width={160} height={26} />
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+type MarketTool = {
+  id: string;
+  label: string;
+  icon: IconName;
+  run: () => void;
+};
+
+function MarketTools() {
+  const { go, openSheet, setMarketTab } = useApp();
+  const [more, setMore] = useState(false);
+
+  const tools: MarketTool[] = [
+    {
+      id: "summary",
+      label: "Market Summary",
+      icon: "clipboard",
+      run: () =>
+        openSheet({
+          kind: "quick",
+          title: "Market summary",
+          body: `NEPSE ${npr(nepse.value, 2)}, ${signed(nepse.change, 2)} (${pct(nepse.changePct)}). ${nepse.rose} rose, ${nepse.fell} fell, turnover ${nepse.traded}.`,
+          note: "This is today’s session so far. It is not a recommendation.",
+        }),
+    },
+    {
+      id: "sectors",
+      label: "Sector Summary",
+      icon: "pie",
+      run: () => setMarketTab("Sectors"),
+    },
+    {
+      id: "floor",
+      label: "Market Floorsheet",
+      icon: "table",
+      run: () => setMarketTab("Floor sheet"),
+    },
+    {
+      id: "range",
+      label: "52 W change",
+      icon: "range",
+      run: () => go("stock", { stock: "NABIL" }),
+    },
+    {
+      id: "live",
+      label: "Live Market",
+      icon: "pulse",
+      run: () =>
+        openSheet({
+          kind: "quick",
+          title: "Live market",
+          body: `Last print ${nepse.liveAt}, ${nepse.date}. The tape on this page is the session so far.`,
+          note: "Live is a delayed print, not a promise.",
+        }),
+    },
+    {
+      id: "charts",
+      label: "Technical Chart",
+      icon: "candles",
+      run: () => go("stock", { stock: "NABIL", stockTab: "Analysis" }),
+    },
+    {
+      id: "price",
+      label: "Stock price",
+      icon: "coin",
+      run: () => go("search"),
+    },
+    {
+      id: "movers",
+      label: "Market movers",
+      icon: "movers",
+      run: () => setMarketTab("Movers"),
+    },
+    {
+      id: "gainloss",
+      label: "Gain and losses",
+      icon: "percent",
+      run: () => setMarketTab("Movers"),
+    },
+    {
+      id: "data",
+      label: "NEPSE Data",
+      icon: "doc",
+      run: () =>
+        openSheet({
+          kind: "quick",
+          title: "NEPSE data",
+          body: `${nepse.companies} companies, ${nepse.kitta} kitta traded, ${npr(nepse.transactions)} transactions. Turnover ${nepse.traded}.`,
+          note: "Published session figures, not a forecast.",
+        }),
+    },
+    {
+      id: "indices",
+      label: "Market indices",
+      icon: "index",
+      run: () =>
+        openSheet({
+          kind: "quick",
+          title: "Market indices",
+          body: "NEPSE, Sensitive, Float, Banking and Hydro sit in the strip at the top of this page. Each is a group average.",
+          note: "None of them is a share you can buy.",
+        }),
+    },
+    {
+      id: "depth",
+      label: "Market depth",
+      icon: "depth",
+      run: () => go("stock", { stock: "NABIL", stockTab: "Analysis" }),
+    },
+  ];
+
+  const shown = more ? tools : tools.slice(0, 4);
+
+  return (
+    <section className="market-block mkt-tools-block">
+      <header className="market-block-head">
+        <h2>Market tools</h2>
+        <button
+          type="button"
+          className={`mkt-tools-toggle ${more ? "on" : ""}`}
+          aria-expanded={more}
+          aria-label={more ? "Show fewer tools" : "Show all tools"}
+          onClick={() => setMore((value) => !value)}
+        >
+          <Icon name="chev" size={16} />
+        </button>
+      </header>
+      <div className="market-block-body">
+        <div className="mkt-tools">
+          <div className="mkt-tools-grid">
+            {shown.map((tool) => (
+              <button key={tool.id} type="button" className="mkt-tool" onClick={tool.run}>
+                <span className="mkt-tool-ico" aria-hidden>
+                  <Icon name={tool.icon} size={20} />
+                </span>
+                <strong>{tool.label}</strong>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function MarketScreen() {
   const { flash, go, openSheet, session, viewport, marketTab: tab, setMarketTab } = useApp();
   const [moverView, setMoverView] = useState<MoverView>("gainers");
@@ -203,9 +385,13 @@ export function MarketScreen() {
 
       {tab === "Overview" && (
         <div className="market-overview">
+          <div className="market-web-indices">
+            <IndexStrip />
+          </div>
           <div className="market-web-pulse">
           <div className="hero-row">
             <div className="figure-line">
+              <span className="market-hero-name">NEPSE Index</span>
               <p className="hero-num">{npr(shown, 2)}</p>
               <MovePill amount={shownChange} pct={shownPct} />
             </div>
@@ -275,21 +461,20 @@ export function MarketScreen() {
 
           <div className="pad" style={{ paddingTop: 14 }}>
             <BreadthBar rose={nepse.rose} fell={nepse.fell} unchanged={nepse.unchanged} />
-            <div style={{ marginTop: 10 }}>
+            {/* <div style={{ marginTop: 10 }}>
               <Explain onClick={() => explain(
                 "What is market breadth?",
                 "Breadth counts how many companies rose, fell, or stayed put. The index is weighted, so large companies pull it more.",
               )}>
                 What is market breadth?
               </Explain>
-            </div>
-            <p className="t-body-s muted" style={{ marginTop: 9 }}>
-              More fell than rose, and the index followed — this was a broad decline, not a few names dragging the average.
-            </p>
+            </div> */}
+            
           </div>
           </div>
 
           <div className="market-web-update">
+            <MarketTools />
             <MarketBlock title="Market update">
               <HappenList
                 items={marketHappen}

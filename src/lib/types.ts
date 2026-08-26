@@ -32,6 +32,7 @@ export type PlanCycle = "monthly" | "annual";
 export type MarketSession = "open" | "closed";
 export type MarketTab = "Overview" | "Movers" | "Sectors" | "Floor sheet" | "Events";
 export type StockTab = "Overview" | "Financials" | "Analysis" | "Floor sheet" | "Events";
+export type PortfolioTab = "Overview" | "Holdings" | "Allocation" | "Activity" | "Income" | "Analytics";
 
 export type Sheet =
   | { kind: "profile" }
@@ -42,6 +43,13 @@ export type Sheet =
   | { kind: "order"; symbol: string }
   | { kind: "stock-tools"; symbol: string }
   | { kind: "correct" }
+  | { kind: "portfolio-switch" }
+  | { kind: "portfolio-menu" }
+  | { kind: "portfolio-edit" }
+  | { kind: "portfolio-create" }
+  | { kind: "portfolio-delete" }
+  | { kind: "portfolio-import" }
+  | { kind: "portfolio-import-steps"; source: "file" | "tms"; fileName?: string }
   | { kind: "compare" }
   | { kind: "plans" };
 

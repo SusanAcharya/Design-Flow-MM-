@@ -1,5 +1,9 @@
-<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="19" height="19" viewBox="0 0 19 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g id="icon/compare">
-<path id="Vector" d="M4.31818 15.5455V6.90909M9.5 15.5455V3.45455M14.6818 15.5455V9.5" stroke="#5C574D" stroke-width="1.46818" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M11 4 V18.4" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+<path d="M4.4 6.6 H17.6" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+<path d="M4.4 6.6 L2.6 11.4 H6.2 Z" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<path d="M17.6 6.6 L15.8 11.4 H19.4 Z" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+<path d="M7.6 18.4 H14.4" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
 </g>
 </svg>

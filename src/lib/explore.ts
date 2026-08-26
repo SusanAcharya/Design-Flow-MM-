@@ -184,7 +184,7 @@ export const exploreTools: ExploreTool[] = [
     id: "valuators",
     title: "Stock Valuators",
     short: "Valuators",
-    purpose: "WACC, P/E and cost basis",
+    purpose: "Avg cost, P/E and cost basis",
     keywords: "valuator wacc pe calculator average cost",
     icon: "calc",
     tone: "teal",

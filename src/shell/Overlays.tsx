@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { UserAvatar } from "../ds/UserAvatar";
 import { Button } from "../ds/primitives";
 import { Icon } from "../ds/Icon";
@@ -10,6 +10,14 @@ import {
   nabilLedger,
 } from "../lib/data";
 import { npr, signed } from "../lib/format";
+import {
+  attentionFor,
+  importPortals,
+  importPreview,
+  portfolioList,
+  type PortfolioId,
+  type PortfolioKind,
+} from "../lib/portfolio";
 import { planFeatures, planMeta } from "../lib/explore";
 import { activeTab } from "../lib/nav";
 import { stageMeta, stageOrder } from "../lib/stage";
@@ -31,18 +39,66 @@ export function MetricLink({
   );
 }
 
+const DISMISS_AT = 96;
+
 function SheetFrame({
   children,
   onClose,
   tall,
   from = "bottom",
+  labelledBy,
 }: {
   children: ReactNode;
   onClose: () => void;
   tall?: boolean;
   from?: "bottom" | "left";
+  labelledBy?: string;
 }) {
   const drawer = from === "left";
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const dragFrom = useRef<number | null>(null);
+  const dragged = useRef(false);
+  const [drag, setDrag] = useState(0);
+
+  useEffect(() => {
+    const opener = document.activeElement as HTMLElement | null;
+    sheetRef.current?.focus({ preventScroll: true });
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      opener?.focus?.({ preventScroll: true });
+    };
+  }, [onClose]);
+
+  const startDrag = (e: ReactPointerEvent<HTMLElement>) => {
+    dragFrom.current = e.clientY;
+    dragged.current = false;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const moveDrag = (e: ReactPointerEvent<HTMLElement>) => {
+    if (dragFrom.current === null) return;
+    const dy = e.clientY - dragFrom.current;
+    if (Math.abs(dy) > 6) dragged.current = true;
+    setDrag(Math.max(0, dy));
+  };
+  const endDrag = () => {
+    if (dragFrom.current === null) return;
+    dragFrom.current = null;
+    if (drag > DISMISS_AT) onClose();
+    else setDrag(0);
+  };
+  // The grab bar doubles as a tap-to-close target, so ignore the click a drag leaves behind.
+  const grabClick = () => {
+    if (dragged.current) {
+      dragged.current = false;
+      return;
+    }
+    onClose();
+  };
+
   return (
     <div
       className={`sheet-backdrop${drawer ? " from-left" : ""}`}
@@ -50,12 +106,29 @@ function SheetFrame({
       role="presentation"
     >
       <div
-        className={`sheet${tall ? " sheet-tall" : ""}${drawer ? " sheet-drawer" : ""}`}
+        ref={sheetRef}
+        className={`sheet${tall ? " sheet-tall" : ""}${drawer ? " sheet-drawer" : ""}${drag ? " is-dragging" : ""}`}
         role="dialog"
         aria-modal="true"
+        aria-labelledby={labelledBy}
+        tabIndex={-1}
+        style={drag ? { transform: `translateY(${drag}px)` } : undefined}
         onClick={(e) => e.stopPropagation()}
       >
-        {!drawer && <div className="sheet-handle" />}
+        {!drawer && (
+          <button
+            type="button"
+            className="sheet-grab"
+            aria-label="Close"
+            onClick={grabClick}
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+          >
+            <span className="sheet-handle" />
+          </button>
+        )}
         {children}
       </div>
     </div>
@@ -110,15 +183,25 @@ function ProfileSheet() {
 function QuickSheet({ title, body, note }: { title: string; body: string; note?: string }) {
   const { closeSheet } = useApp();
   return (
-    <>
-      <p className="overline">In short</p>
-      <p className="t-h-l" style={{ margin: "8px 0" }}>{title}</p>
-      <p className="t-body-m">{body}</p>
-      {note && <p className="t-body-xs muted" style={{ marginTop: 10 }}>{note}</p>}
-      <div style={{ marginTop: 16 }}>
-        <Button variant="primary" size="md" onClick={closeSheet}>Got it</Button>
+    <div className="quick-sheet">
+      <header className="quick-sheet-head">
+        <div>
+          <p className="overline">In short</p>
+          <h2 className="t-h-l" id="sheet-title">{title}</h2>
+        </div>
+        <button type="button" className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </header>
+      <p className="t-body-m quick-sheet-body">{body}</p>
+      {note && (
+        <p className="quick-sheet-note">
+          <Icon name="info" size={14} />
+          <span>{note}</span>
+        </p>
+      )}
+      <div className="quick-sheet-foot">
+        <Button variant="primary" size="md" block onClick={closeSheet}>Got it</Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -380,7 +463,7 @@ function CorrectSheet() {
       </label>
       <div className="preview-card">
         <div>
-          <p className="overline">WACC</p>
+          <p className="overline">Avg cost</p>
           <p className="t-mono-m">{npr(wacc, 2)}</p>
         </div>
         <div>
@@ -395,6 +478,515 @@ function CorrectSheet() {
       <div className="btn-row" style={{ marginTop: 16 }}>
         <Button variant="primary" size="md" onClick={() => saveCorrection(kitta)}>Save correction</Button>
         <Button variant="secondary" size="md" onClick={closeSheet}>Cancel</Button>
+      </div>
+    </>
+  );
+}
+
+function PortfolioSwitchSheet() {
+  const {
+    portfolioId,
+    setPortfolioId,
+    closeSheet,
+    openSheet,
+    openPortfolioIds,
+    portfolioNames,
+    portfolioKinds,
+    primaryPortfolioId,
+  } = useApp();
+  const rows = portfolioList.filter((item) => openPortfolioIds.includes(item.id));
+
+  const pick = (id: PortfolioId) => {
+    setPortfolioId(id);
+    closeSheet();
+  };
+
+  return (
+    <>
+      <p className="overline">Your portfolios</p>
+      <ul className="pf-switch">
+        {rows.map((item) => {
+          const events = attentionFor(item.id).length;
+          const on = item.id === portfolioId;
+          const name = portfolioNames[item.id] ?? item.name;
+          const kind = portfolioKinds[item.id] === "company" ? "Company" : "Individual";
+          const primary = item.id === primaryPortfolioId;
+          return (
+            <li key={item.id}>
+              <button type="button" className={on ? "on" : ""} onClick={() => pick(item.id)}>
+                <span className="pf-switch-mark" aria-hidden>{name.slice(0, 1)}</span>
+                <span className="pf-switch-copy">
+                  <strong>
+                    {name}
+                    {primary && <em className="pf-primary-tag">Primary</em>}
+                  </strong>
+                  <small>
+                    {kind} · Rs {npr(item.marketValue)} · {item.count} holdings
+                  </small>
+                  {events > 0 && (
+                    <small className="pf-switch-badge">
+                      <i aria-hidden /> {events} {events === 1 ? "item needs" : "items need"} attention
+                    </small>
+                  )}
+                </span>
+                {on && (
+                  <span className="pf-switch-tick" aria-hidden>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
+                      <path d="M5 12.5l4.5 4.5L19 7.5" />
+                    </svg>
+                  </span>
+                )}
+              </button>
+            </li>
+          );
+        })}
+        <li>
+          <button
+            type="button"
+            className="pf-switch-add"
+            onClick={() => openSheet({ kind: "portfolio-create" })}
+          >
+            <span className="pf-switch-mark plus" aria-hidden>+</span>
+            <span className="pf-switch-copy">
+              <strong>Create a portfolio</strong>
+              <small>Keep long-term holdings apart from trades</small>
+            </span>
+          </button>
+        </li>
+      </ul>
+      <p className="t-body-xs muted" style={{ marginTop: 14 }}>
+        Each portfolio keeps its own transactions, average cost and P/L. Nothing is mixed between them.
+      </p>
+    </>
+  );
+}
+
+function PortfolioMenuSheet() {
+  const { closeSheet, openSheet, portfolioId, portfolioNames, openPortfolioIds } = useApp();
+  const name = portfolioNames[portfolioId];
+  const only = openPortfolioIds.length === 1;
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l">{name}</p>
+          <p className="t-body-xs muted">Rename this book, or remove it from the list.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <ul className="pf-menu">
+        <li>
+          <button type="button" onClick={() => openSheet({ kind: "portfolio-edit" })}>
+            <span className="pf-menu-ico" aria-hidden><Icon name="clipboard" size={18} /></span>
+            <span>
+              <strong>Edit portfolio</strong>
+              <small>Rename, set the type, or mark this book as primary.</small>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            className="danger"
+            disabled={only}
+            onClick={() => {
+              if (only) return;
+              openSheet({ kind: "portfolio-delete" });
+            }}
+          >
+            <span className="pf-menu-ico" aria-hidden><Icon name="alert" size={18} /></span>
+            <span>
+              <strong>Delete portfolio</strong>
+              <small>
+                {only
+                  ? "This is your only book, so it cannot be deleted."
+                  : "Removes it from this list. History is not recovered."}
+              </small>
+            </span>
+          </button>
+        </li>
+      </ul>
+    </>
+  );
+}
+
+function PortfolioEditSheet() {
+  const {
+    closeSheet,
+    flash,
+    portfolioId,
+    portfolioNames,
+    portfolioKinds,
+    primaryPortfolioId,
+    openPortfolioIds,
+    savePortfolio,
+  } = useApp();
+  const current = portfolioNames[portfolioId];
+  const [name, setName] = useState(current);
+  const [kind, setKind] = useState<PortfolioKind>(portfolioKinds[portfolioId] ?? "individual");
+  const [primary, setPrimary] = useState(portfolioId === primaryPortfolioId);
+  const onlyBook = openPortfolioIds.length === 1;
+
+  const save = () => {
+    const next = name.trim();
+    if (!next) return;
+    savePortfolio(portfolioId, { name: next, kind, primary: primary || onlyBook });
+    closeSheet();
+    flash({ message: "Portfolio updated." });
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l">Edit portfolio</p>
+          <p className="t-body-xs muted">Holdings and history stay as they are.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <label className="field" style={{ marginTop: 16 }}>
+        Name
+        <input
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          maxLength={32}
+          autoComplete="off"
+        />
+      </label>
+      <p className="field-label">Type</p>
+      <div className="pf-seg" role="radiogroup" aria-label="Portfolio type">
+        {(["individual", "company"] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            role="radio"
+            aria-checked={kind === item}
+            className={kind === item ? "on" : ""}
+            onClick={() => setKind(item)}
+          >
+            {item === "individual" ? "Individual" : "Company"}
+          </button>
+        ))}
+      </div>
+      <label className={`pf-check${onlyBook ? " locked" : ""}`}>
+        <input
+          type="checkbox"
+          checked={primary || onlyBook}
+          disabled={onlyBook}
+          onChange={(event) => setPrimary(event.target.checked)}
+        />
+        <span>
+          <strong>Mark as primary</strong>
+          <small>
+            {onlyBook
+              ? "This is your only book, so it stays primary and is used on Home."
+              : "Shown first, and used on Home. Only one book can be primary."}
+          </small>
+        </span>
+      </label>
+      <div className="btn-row" style={{ marginTop: 16 }}>
+        <Button variant="primary" size="md" onClick={save}>Save</Button>
+        <Button variant="secondary" size="md" onClick={closeSheet}>Cancel</Button>
+      </div>
+    </>
+  );
+}
+
+function PortfolioCreateSheet() {
+  const { closeSheet, flash, openSheet, openPortfolioIds, createPortfolio } = useApp();
+  const [name, setName] = useState("");
+  const [kind, setKind] = useState<PortfolioKind>("individual");
+  const [primary, setPrimary] = useState(false);
+  const room = (["fresh", "side"] as const).some((id) => !openPortfolioIds.includes(id));
+
+  const save = () => {
+    if (!createPortfolio({ name, kind, primary })) {
+      flash({ message: room ? "Give this book a name." : "Delete a book first to make space." });
+      return;
+    }
+    closeSheet();
+    flash({ message: "Portfolio created. Add a holding when you are ready." });
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l">Create a portfolio</p>
+          <p className="t-body-xs muted">
+            {room
+              ? "A separate book keeps its own average cost and history."
+              : "This demo can keep two extra books. Delete one to make space."}
+          </p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      {room ? (
+        <>
+          <label className="field" style={{ marginTop: 16 }}>
+            Name
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              maxLength={32}
+              autoComplete="off"
+              placeholder="Long term, SIP, family…"
+            />
+          </label>
+          <p className="field-label">Type</p>
+          <div className="pf-seg" role="radiogroup" aria-label="Portfolio type">
+            {(["individual", "company"] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                role="radio"
+                aria-checked={kind === item}
+                className={kind === item ? "on" : ""}
+                onClick={() => setKind(item)}
+              >
+                {item === "individual" ? "Individual" : "Company"}
+              </button>
+            ))}
+          </div>
+          <label className="pf-check">
+            <input
+              type="checkbox"
+              checked={primary}
+              onChange={(event) => setPrimary(event.target.checked)}
+            />
+            <span>
+              <strong>Mark as primary</strong>
+              <small>Shown first, and used on Home. Only one book can be primary.</small>
+            </span>
+          </label>
+          <div className="btn-row" style={{ marginTop: 16 }}>
+            <Button variant="primary" size="md" onClick={save}>Create</Button>
+            <Button variant="secondary" size="md" onClick={() => openSheet({ kind: "portfolio-switch" })}>
+              Back
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div className="btn-row" style={{ marginTop: 16 }}>
+          <Button variant="secondary" size="md" onClick={() => openSheet({ kind: "portfolio-switch" })}>
+            Back to list
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function PortfolioImportSheet() {
+  const { closeSheet, openSheet } = useApp();
+  const [portalId, setPortalId] = useState(importPortals[0].id);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const portal = importPortals.find((item) => item.id === portalId) ?? importPortals[0];
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l">Import portfolio</p>
+          <p className="t-body-xs muted">Choose where the holdings come from. Nothing is written until you confirm.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <label className="field" style={{ marginTop: 16 }}>
+        Portal
+        <select
+          value={portalId}
+          onChange={(event) => {
+            setPortalId(event.target.value);
+            setFileName(null);
+          }}
+        >
+          {importPortals.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="t-body-xs muted" style={{ marginTop: 10 }}>{portal.hint}</p>
+
+      {portal.mode === "file" ? (
+        <>
+          <label className={`pf-drop${fileName ? " on" : ""}`}>
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls,.pdf,.txt"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                setFileName(file?.name ?? null);
+              }}
+            />
+            <Icon name="doc" size={20} />
+            <strong>{fileName ?? "Select a file to upload"}</strong>
+            <small>{fileName ? "Tap to choose a different file" : "CSV, Excel or PDF"}</small>
+          </label>
+          <div style={{ marginTop: 16 }}>
+            <Button
+              variant="primary"
+              size="lg"
+              block
+              disabled={!fileName}
+              onClick={() => {
+                if (!fileName) return;
+                openSheet({ kind: "portfolio-import-steps", source: "file", fileName });
+              }}
+            >
+              Continue
+            </Button>
+          </div>
+        </>
+      ) : (
+        <div style={{ marginTop: 16 }}>
+          <Button
+            variant="primary"
+            size="lg"
+            block
+            onClick={() => openSheet({ kind: "portfolio-import-steps", source: "tms" })}
+          >
+            Go to import steps
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
+
+function PortfolioImportStepsSheet({ source, fileName }: { source: "file" | "tms"; fileName?: string }) {
+  const { closeSheet, flash, openSheet } = useApp();
+  const [step, setStep] = useState(0);
+  const firstTitle = source === "file" ? "File received" : "Connect to TMS";
+  const steps = [firstTitle, "Review holdings", "Confirm"];
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l">Import</p>
+          <p className="t-body-xs muted">
+            Step {step + 1} of {steps.length} · {steps[step]}
+          </p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <ol className="pf-steps" aria-hidden>
+        {steps.map((label, index) => (
+          <li key={label} className={index === step ? "on" : index < step ? "done" : ""}>
+            <i>{index + 1}</i>
+            {label}
+          </li>
+        ))}
+      </ol>
+
+      {step === 0 && (
+        <div className="pf-import-copy">
+          {source === "file" ? (
+            <>
+              <p className="t-h-s">{fileName ?? "Statement"}</p>
+              <p className="t-body-s muted">
+                We read {importPreview.length} holdings from this file. You will review every row before anything is saved.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="t-h-s">Broker TMS</p>
+              <p className="t-body-s muted">
+                This is a demo handshake. In production you would sign in at your broker. We never place orders or move cash.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {step === 1 && (
+        <ul className="pf-import-list">
+          {importPreview.map((row) => (
+            <li key={row.symbol}>
+              <span>
+                <strong className="t-ticker">{row.symbol}</strong>
+                <small>{row.name}</small>
+              </span>
+              <span>
+                <b>{npr(row.kitta)} kitta</b>
+                <small>Avg cost {npr(row.avg, 2)}</small>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {step === 2 && (
+        <div className="pf-import-copy">
+          <p className="t-h-s">{importPreview.length} holdings ready</p>
+          <p className="t-body-s muted">
+            Quantity, average cost and market value will update. You can correct any row afterwards — history is never deleted.
+          </p>
+        </div>
+      )}
+
+      <div className="btn-row" style={{ marginTop: 18 }}>
+        {step > 0 && (
+          <Button variant="secondary" size="md" onClick={() => setStep((n) => n - 1)}>Back</Button>
+        )}
+        {step === 0 && (
+          <Button variant="secondary" size="md" onClick={() => openSheet({ kind: "portfolio-import" })}>
+            Change portal
+          </Button>
+        )}
+        {step < 2 ? (
+          <Button variant="primary" size="md" onClick={() => setStep((n) => n + 1)}>
+            {step === 0 ? "Review holdings" : "Continue"}
+          </Button>
+        ) : (
+          <Button
+            variant="primary"
+            size="md"
+            onClick={() => {
+              closeSheet();
+              flash({ message: `${importPreview.length} holdings imported. We don’t place orders.` });
+            }}
+          >
+            Confirm import
+          </Button>
+        )}
+      </div>
+    </>
+  );
+}
+
+function PortfolioDeleteSheet() {
+  const { closeSheet, flash, portfolioId, portfolioNames, openPortfolioIds, deletePortfolio } = useApp();
+  const name = portfolioNames[portfolioId];
+  const only = openPortfolioIds.length === 1;
+
+  const confirm = () => {
+    if (only) return;
+    deletePortfolio(portfolioId);
+    closeSheet();
+    flash({ message: `${name} was removed.` });
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l">Delete {name}?</p>
+          <p className="t-body-xs muted">
+            {only
+              ? "Keep at least one book. Create another first if you want to start over."
+              : "This removes the book from your list. Holdings and transactions are not recovered in this prototype."}
+          </p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="btn-row" style={{ marginTop: 16 }}>
+        {!only && <Button variant="danger" size="md" onClick={confirm}>Delete</Button>}
+        <Button variant="secondary" size="md" onClick={closeSheet}>{only ? "Close" : "Cancel"}</Button>
       </div>
     </>
   );
@@ -542,7 +1134,7 @@ export function Overlays() {
         <SheetFrame from="left" onClose={closeSheet}><NavigationSheet /></SheetFrame>
       )}
       {sheet?.kind === "quick" && (
-        <SheetFrame onClose={closeSheet}>
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title">
           <QuickSheet title={sheet.title} body={sheet.body} note={sheet.note} />
         </SheetFrame>
       )}
@@ -566,6 +1158,29 @@ export function Overlays() {
       )}
       {sheet?.kind === "correct" && (
         <SheetFrame onClose={closeSheet}><CorrectSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "portfolio-switch" && (
+        <SheetFrame onClose={closeSheet}><PortfolioSwitchSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "portfolio-menu" && (
+        <SheetFrame onClose={closeSheet}><PortfolioMenuSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "portfolio-edit" && (
+        <SheetFrame onClose={closeSheet}><PortfolioEditSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "portfolio-create" && (
+        <SheetFrame onClose={closeSheet}><PortfolioCreateSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "portfolio-delete" && (
+        <SheetFrame onClose={closeSheet}><PortfolioDeleteSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "portfolio-import" && (
+        <SheetFrame onClose={closeSheet}><PortfolioImportSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "portfolio-import-steps" && (
+        <SheetFrame tall onClose={closeSheet}>
+          <PortfolioImportStepsSheet source={sheet.source} fileName={sheet.fileName} />
+        </SheetFrame>
       )}
     </>
   );

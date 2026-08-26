@@ -24,6 +24,57 @@ export const nepse = {
   liveAt: "12:42 PM",
 };
 
+export const marketIndices = [
+  {
+    id: "nepse",
+    label: "NEPSE Index",
+    value: 2622.48,
+    change: -19.34,
+    changePct: -0.73,
+    body: "NEPSE is the Nepal Stock Exchange index — a weighted average of listed companies. It is not a share you can buy.",
+  },
+  {
+    id: "sensitive",
+    label: "Sensitive Index",
+    value: 468.12,
+    change: -3.42,
+    changePct: -0.73,
+    body: "The Sensitive Index covers A-class companies — larger names that trade more often.",
+  },
+  {
+    id: "float",
+    label: "Float Index",
+    value: 179.40,
+    change: -1.28,
+    changePct: -0.71,
+    body: "The Float Index weights companies by shares that can actually trade, not the full issued capital.",
+  },
+  {
+    id: "senfloat",
+    label: "Sensitive Float",
+    value: 156.80,
+    change: -0.92,
+    changePct: -0.58,
+    body: "Sensitive Float combines A-class names with free-float weights.",
+  },
+  {
+    id: "banking",
+    label: "Banking Index",
+    value: 1248.60,
+    change: -8.12,
+    changePct: -0.65,
+    body: "The Banking Index groups commercial banks. A move here is about the group, not one ticker.",
+  },
+  {
+    id: "hydro",
+    label: "Hydro Index",
+    value: 2840.20,
+    change: -22.10,
+    changePct: -0.77,
+    body: "The Hydro Index groups hydropower companies listed on NEPSE.",
+  },
+];
+
 export const movers = [
   { symbol: "SAPIL", name: "Sarbottam Poly", price: 524.6, changePct: 14.99, note: "Hit today’s 15% limit" },
   { symbol: "MEPDL", name: "Men's Apparel", price: 603.2, changePct: 14.98, note: "Hit today’s 15% limit" },
@@ -287,12 +338,12 @@ export const discover = [
   { kind: "Stock", title: "NABIL", sub: "Nabil Bank · you own 790 kitta" },
   { kind: "IPO", title: ipo.name, sub: `Rs ${ipo.price} · closes ${ipo.closes}` },
   { kind: "Broker", title: "Broker 58", sub: "Observed activity, not a rating" },
-  { kind: "Tool", title: "WACC", sub: "Average cost of what you hold" },
+  { kind: "Tool", title: "Avg cost", sub: "What you paid, on average, for what you hold" },
   { kind: "Gyan", title: "What is a kitta?", sub: "The unit Nepal’s market trades in" },
 ];
 
 export const tools = [
-  { title: "WACC / average cost", sub: "How cost basis is calculated" },
+  { title: "Average cost", sub: "How cost basis is calculated" },
   { title: "SIP calculator", sub: "What a regular buy would have done" },
   { title: "Compare companies", sub: "Same dates, same definitions" },
   { title: "Alerts", sub: "Price, event, IPO — you set the rule" },
@@ -348,14 +399,6 @@ export type SectorRow = {
   changePct: number;
   symbols: string[];
 };
-
-export const sectorAlloc: SectorRow[] = [
-  { name: "Banks", short: "BANKS", pct: 45, color: "#5b8cff", value: 578070, changePct: -1.52, symbols: ["NABIL", "NICA", "GBIME"] },
-  { name: "Hydropower", short: "HYDRO", pct: 28, color: "#32e36a", value: 359688, changePct: 0.42, symbols: ["UPPER", "CHCL", "RIDI"] },
-  { name: "Manufacturing", short: "MFG", pct: 11, color: "#f08c00", value: 141401, changePct: 1.1, symbols: ["SHIVM"] },
-  { name: "Distillery", short: "DIST", pct: 10, color: "#d4a84a", value: 128365, changePct: 3.4, symbols: ["HDL"] },
-  { name: "Investment", short: "INV", pct: 6, color: "#a78bfa", value: 77076, changePct: 1.2, symbols: ["SOHL"] },
-];
 
 /** Home strip: four named slices, remainder folded into Other. */
 export function stripAlloc(rows: SectorRow[], named = 4): SectorRow[] {
@@ -430,7 +473,7 @@ export const bookPulse = {
   ],
 };
 
-export type BookRange = "1D" | "1W" | "1M" | "6M" | "1Y";
+export type BookRange = "1D" | "1W" | "1M" | "3M" | "6M" | "1Y" | "All";
 
 export const compareRows = [
   { id: "pe", label: "P/E", nabil: "12.4", gbime: "14.8" },
@@ -502,9 +545,9 @@ export const metrics: Record<
     lesson: "How to read P/E",
   },
   wacc: {
-    name: "WACC",
+    name: "Avg cost",
     value: "462.40",
-    plain: "Weighted average cost of your NABIL kitta after fees. The stock has to trade above this for you to be ahead.",
+    plain: "Average cost of your NABIL kitta after fees. Brokers call this WACC. The stock has to trade above this for you to be ahead.",
     stock: 462.4,
     sector: 480,
     nepseAvg: 0,
@@ -649,6 +692,7 @@ export function bookRangeTape(last: number, today: number, overall: number, rang
   }
   if (range === "1W") return seriesTape(last, today * 1.6, ["Sun", "Mon", "Tue", "Wed", "Thu"]);
   if (range === "1M") return seriesTape(last, overall * 0.22, ["3 Shr", "10", "17", "24", "2 Bha"]);
+  if (range === "3M") return seriesTape(last, overall * 0.38, ["Jes", "Ash", "Shr", "Bha"]);
   if (range === "6M") return seriesTape(last, overall * 0.55, ["Mag", "Fal", "Cha", "Bai", "Jes", "Bha"]);
   return seriesTape(last, overall, ["Ash", "Kar", "Pou", "Mag", "Cha", "Bai", "Jes", "Bha"]);
 }

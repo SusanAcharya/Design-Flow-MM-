@@ -1,5 +1,6 @@
 import { npr, pct } from "../lib/format";
 import { Sparkline } from "./charts";
+import { TickerMark } from "./TickerMark";
 
 export type QuoteRowData = {
   symbol: string;
@@ -26,7 +27,7 @@ export function QuoteList({
           className="quote-list-row"
           onClick={() => onRow(row.symbol)}
         >
-          <span className="ticker-mark" aria-hidden>{row.symbol.slice(0, 2)}</span>
+          <TickerMark symbol={row.symbol} />
           <span className="quote-id">
             <span className="t-ticker">{row.symbol}</span>
             <small>{row.name}</small>
