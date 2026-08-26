@@ -202,7 +202,8 @@ export function MarketScreen() {
       </div>
 
       {tab === "Overview" && (
-        <>
+        <div className="market-overview">
+          <div className="market-web-pulse">
           <div className="hero-row">
             <div className="figure-line">
               <p className="hero-num">{npr(shown, 2)}</p>
@@ -286,68 +287,75 @@ export function MarketScreen() {
               More fell than rose, and the index followed — this was a broad decline, not a few names dragging the average.
             </p>
           </div>
+          </div>
 
-          <MarketBlock title="Market update">
-            <HappenList
-              items={marketHappen}
-              onOpen={(item) => {
-                if (item.stock) go("stock", { stock: item.stock });
-                else if (item.kind === "ipo") go("ipo");
+          <div className="market-web-update">
+            <MarketBlock title="Market update">
+              <HappenList
+                items={marketHappen}
+                onOpen={(item) => {
+                  if (item.stock) go("stock", { stock: item.stock });
+                  else if (item.kind === "ipo") go("ipo");
+                }}
+              />
+            </MarketBlock>
+          </div>
+
+          <div className="market-web-movers">
+            <MarketBlock
+              title="Top gainers"
+              action="All movers ›"
+              onAction={() => {
+                setMoverView("gainers");
+                setMarketTab("Movers");
               }}
-            />
-          </MarketBlock>
+            >
+              <QuoteList
+                rows={moverRows("gainers", 3)}
+                onRow={(symbol) => go("stock", { stock: symbol })}
+              />
+            </MarketBlock>
 
-          <MarketBlock
-            title="Top gainers"
-            action="All movers ›"
-            onAction={() => {
-              setMoverView("gainers");
-              setMarketTab("Movers");
-            }}
-          >
-            <QuoteList
-              rows={moverRows("gainers", 3)}
-              onRow={(symbol) => go("stock", { stock: symbol })}
-            />
-          </MarketBlock>
+            <MarketBlock
+              title="Top losers"
+              action="All movers ›"
+              onAction={() => {
+                setMoverView("losers");
+                setMarketTab("Movers");
+              }}
+            >
+              <QuoteList
+                rows={moverRows("losers", 3)}
+                onRow={(symbol) => go("stock", { stock: symbol })}
+              />
+            </MarketBlock>
+          </div>
 
-          <MarketBlock
-            title="Top losers"
-            action="All movers ›"
-            onAction={() => {
-              setMoverView("losers");
-              setMarketTab("Movers");
-            }}
-          >
-            <QuoteList
-              rows={moverRows("losers", 3)}
-              onRow={(symbol) => go("stock", { stock: symbol })}
-            />
-          </MarketBlock>
+          <div className="market-web-rest">
+            <MarketBlock title="Sectors" action="See all ›" onAction={() => setMarketTab("Sectors")}>
+              <SectorList rows={sectors.slice(0, 4)} onOpen={() => setMarketTab("Sectors")} />
+            </MarketBlock>
 
-          <MarketBlock title="Sectors" action="See all ›" onAction={() => setMarketTab("Sectors")}>
-            <SectorList rows={sectors.slice(0, 4)} onOpen={() => setMarketTab("Sectors")} />
-          </MarketBlock>
+            <MarketBlock title="Floor sheet" action="Full sheet ›" onAction={() => setMarketTab("Floor sheet")}>
+              <FloorBrokerList rows={floorBrokers.slice(0, 3)} onOpen={() => setMarketTab("Floor sheet")} />
+              <p className="foot-note">
+                The floor sheet records trades that already happened. It is not the live order book.
+              </p>
+            </MarketBlock>
 
-          <MarketBlock title="Floor sheet" action="Full sheet ›" onAction={() => setMarketTab("Floor sheet")}>
-            <FloorBrokerList rows={floorBrokers.slice(0, 3)} onOpen={() => setMarketTab("Floor sheet")} />
-            <p className="foot-note">
-              The floor sheet records trades that already happened. It is not the live order book.
-            </p>
-          </MarketBlock>
-
-          <MarketBlock title="Coming up" action="Events ›" onAction={() => setMarketTab("Events")}>
-            {marketEvents.slice(0, 2).map((event) => (
-              <div className="row" key={event.title}>
-                <div className="row-main">
-                  <p className="t-h-s">{event.title}</p>
-                  <p className="row-sub">{event.sub}</p>
+            <MarketBlock title="Coming up" action="Events ›" onAction={() => setMarketTab("Events")}>
+              {marketEvents.slice(0, 2).map((event) => (
+                <div className="row" key={event.title}>
+                  <div className="row-main">
+                    <p className="t-h-s">{event.title}</p>
+                    <p className="row-sub">{event.sub}</p>
+                  </div>
+                  <span className="t-body-xs muted">{event.date}</span>
                 </div>
-                <span className="t-body-xs muted">{event.date}</span>
-              </div>
-            ))}
-          </MarketBlock>
-        </>
+              ))}
+            </MarketBlock>
+          </div>
+        </div>
       )}
 
       {tab === "Movers" && (

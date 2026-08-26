@@ -367,15 +367,19 @@ function HomeFeedStack() {
       <FeedGroup label="Top free baskets" tone="book" action="All ›" onAction={() => go("baskets")}>
         <FreeBasketsRail />
       </FeedGroup>
-      <FeedGroup label="Watchlist" tone="list" action="View full ›" onAction={() => go("watchlist")}>
-        <WatchlistPreview />
-      </FeedGroup>
-      <FeedGroup label="A guide" hideLabel tone="learn">
-        <ConsultCard />
-      </FeedGroup>
-      <FeedGroup label="Learn more" tone="learn">
-        <LearnBoard />
-      </FeedGroup>
+      <div className="home-split">
+        <FeedGroup label="Watchlist" tone="list" action="View full ›" onAction={() => go("watchlist")}>
+          <WatchlistPreview />
+        </FeedGroup>
+        <div className="home-split-side">
+          <FeedGroup label="A guide" hideLabel tone="learn">
+            <ConsultCard />
+          </FeedGroup>
+          <FeedGroup label="Learn more" tone="learn">
+            <LearnBoard />
+          </FeedGroup>
+        </div>
+      </div>
     </div>
   );
 }

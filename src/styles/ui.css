@@ -539,7 +539,7 @@ body {
   overflow: hidden;
 }
 .web-main .app-scroll {
-  padding: 8px 36px 36px;
+  padding: 12px 40px 40px;
 }
 
 .pad { padding: 0 20px; }
@@ -3083,6 +3083,15 @@ button.home-card:hover,
   gap: 28px;
   padding: 6px 20px 28px;
 }
+.home-split,
+.home-split-side,
+.market-overview,
+.market-web-pulse,
+.market-web-update,
+.market-web-movers,
+.market-web-rest {
+  display: contents;
+}
 .home-nepse {
   padding: 8px 20px 4px;
 }
@@ -5250,8 +5259,8 @@ button.happen-row {
 }
 
 .device.web .home-screen {
-  max-width: 1080px;
-  margin: 0 auto;
+  max-width: none;
+  width: 100%;
 }
 .device.web .home-feed-bar {
   position: static;
@@ -5274,22 +5283,22 @@ button.happen-row {
   font-size: 14px;
 }
 .device.web .home-you {
-  padding: 4px 0 24px;
+  padding: 4px 0 32px;
   gap: 28px;
 }
 .device.web .home-nepse {
-  max-width: 1080px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
   padding: 8px 0 4px;
 }
 .device.web .book-nudge {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(220px, 0.95fr);
+  grid-template-columns: minmax(0, 1.1fr) minmax(260px, 0.9fr);
   grid-template-areas: "copy preview" "actions preview";
   align-items: start;
-  gap: 16px 28px;
-  padding: 20px 24px 22px;
-  max-width: 720px;
+  gap: 16px 32px;
+  padding: 22px 28px 22px;
+  max-width: none;
 }
 .device.web .book-nudge-copy { grid-area: copy; }
 .device.web .book-preview { grid-area: preview; align-self: stretch; }
@@ -5297,22 +5306,74 @@ button.happen-row {
   grid-area: actions;
   flex-direction: row;
   align-self: end;
-  max-width: none;
+  max-width: 360px;
 }
 .device.web .book-nudge-actions .btn { width: auto; flex: 1; padding: 0 16px; }
 .device.web .broker-icon-rail {
   margin: 0;
   padding: 2px 0 6px;
 }
-.device.web .nepse-hero { max-width: 520px; }
-.device.web .nepse-hero-value { font-size: 24px; letter-spacing: -0.7px; }
-.device.web .book-card { max-width: 520px; }
-.device.web .next-steps { max-width: 520px; }
+.device.web .home-you .broker-icon-rail {
+  flex-wrap: wrap;
+  overflow: visible;
+  gap: 16px 18px;
+  justify-content: flex-start;
+}
+.device.web .home-you .broker-icon {
+  width: 76px;
+}
+.device.web .home-you .basket-cover {
+  width: 64px;
+  height: 64px;
+}
+.device.web .home-top {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.2fr);
+  gap: 20px;
+  align-items: stretch;
+}
+.device.web .home-top:has(> :only-child) {
+  grid-template-columns: 1fr;
+}
+.device.web .home-allot {
+  grid-column: 2;
+}
+.device.web .nepse-hero {
+  max-width: none;
+  height: 100%;
+  justify-content: center;
+  padding: 18px 20px 16px;
+}
+.device.web .nepse-hero-value { font-size: 28px; letter-spacing: -0.8px; }
+.device.web .nepse-hero-line .sparkline { height: 36px; }
+.device.web .book-card { max-width: none; }
+.device.web .next-steps { max-width: none; }
 .device.web .obj-now,
-.device.web .obj-next { max-width: 520px; }
-.device.web .home-top > .feed-group { max-width: 720px; }
+.device.web .obj-next { max-width: none; }
+.device.web .obj-page,
+.device.web .objective-page {
+  max-width: 720px;
+}
+.device.web .home-top > .feed-group { max-width: none; }
 .device.web .book-card-figures b { font-size: 32px; letter-spacing: -1.2px; }
-.device.web .port-screen { max-width: 720px; }
+.device.web .home-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: 28px 28px;
+  align-items: start;
+}
+.device.web .home-split-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.device.web .consult-card {
+  padding: 16px 18px 16px 12px;
+}
+.device.web .consult-copy strong { font-size: 16px; }
+.device.web .learn-byte { max-width: none; }
+.device.web .learn-byte-copy strong { font-size: 16px; }
+.device.web .port-screen { max-width: none; }
 .device.web .port-value { font-size: 44px; }
 .device.web .sector-board {
   display: grid;
@@ -5326,13 +5387,11 @@ button.happen-row {
 }
 .device.web .tulkey-card-mascot,
 .device.web .tulkey-card-mascot img { height: 124px; }
-.device.web .learn-byte { max-width: 480px; }
-.device.web .learn-byte-copy strong { font-size: 16px; }
 .device.web .happen-board {
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   gap: 8px;
-  max-width: 720px;
+  max-width: none;
   align-items: stretch;
 }
 .device.web .happen-lead { min-height: 100%; justify-content: center; }
@@ -6662,14 +6721,58 @@ button.happen-row {
   border-top: 1px solid var(--border-subtle);
 }
 .device.web .market-screen {
-  max-width: 1120px;
-  margin: 0 auto;
+  max-width: none;
+  width: 100%;
+}
+.device.web .market-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
+  gap: 8px 28px;
+  align-items: start;
+}
+.device.web .market-web-pulse {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.device.web .market-web-update {
+  display: block;
+  min-width: 0;
+  padding-top: 8px;
+}
+.device.web .market-web-update .market-block {
+  margin-top: 0;
+}
+.device.web .market-web-movers,
+.device.web .market-web-rest {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 24px;
+}
+.device.web .market-web-rest {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+.device.web .market-web-pulse .hero-row,
+.device.web .market-web-pulse .market-live,
+.device.web .market-web-pulse .market-stats,
+.device.web .market-web-pulse > .pad {
+  padding-left: 0;
+  padding-right: 0;
+}
+.device.web .market-intro,
+.device.web .market-helps,
+.device.web .market-filters {
+  padding-left: 0;
+  padding-right: 0;
 }
 .device.web .market-screen .tabs {
   position: sticky;
   top: 0;
   z-index: 3;
-  background: var(--bg-surface);
+  padding-left: 0;
+  padding-right: 0;
+  background: var(--bg-canvas);
 }
 .device.web .market-screen .market-table {
   padding: 0 20px;
