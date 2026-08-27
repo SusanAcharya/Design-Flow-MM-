@@ -6,9 +6,10 @@ import { getPersona, personas } from "../lib/personas";
 import { useApp } from "../lib/state";
 import { useEffect, useRef } from "react";
 import type { Route } from "../lib/types";
+import { mitra } from "../lib/mitra";
 
-const tulkeyFace = `${import.meta.env.BASE_URL}tulkey-hi.png`;
-const guideFace = `${import.meta.env.BASE_URL}characters/setup-guide.png`;
+const tulkeyFace = mitra.hi;
+const guideFace = mitra.pointing;
 
 /** One line from the teacher, when the page already carries the lesson. */
 function TulkeyAside({ line }: { line: string }) {

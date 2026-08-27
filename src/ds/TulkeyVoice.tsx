@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { voiceSamples } from "../lib/tulkey";
 import { useApp } from "../lib/state";
+import { mitra } from "../lib/mitra";
 
-const tulkey = `${import.meta.env.BASE_URL}tulkey-hi.png`;
+const tulkey = mitra.hi;
 
 function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -231,7 +232,6 @@ export function TulkeyVoiceOverlay() {
             Conversation
           </button>
         </div>
-        <p className="t-body-xs muted">I explain. I don’t pick stocks.</p>
       </div>
     </div>
   );

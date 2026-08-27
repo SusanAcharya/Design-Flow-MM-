@@ -422,9 +422,7 @@ function StockToolsSheet({ symbol }: { symbol: string }) {
           </button>
         ))}
       </div>
-      <p className="t-body-xs muted" style={{ marginTop: 14 }}>
-        Readings explain published data. They do not rate the stock or recommend a trade.
-      </p>
+  
     </>
   );
 }

@@ -3,6 +3,7 @@ import { Icon } from "../ds/Icon";
 import { Badge, Button, Chip, Explain, MovePill, Overline } from "../ds/primitives";
 import { SessionWalk } from "../ds/charts";
 import { MetricLink } from "../shell/Overlays";
+import { TickerMark } from "../ds/TickerMark";
 import { GreedMeter } from "../ds/GreedMeter";
 import {
   nabil,
@@ -12,16 +13,43 @@ import {
   nabilFinancials,
   nabilFloor,
   nabilMonth,
-  nabilSession,
+  nabilSessionTicks,
   nabilWeek,
   nabilYear,
+  nepse,
   stockTake,
   type Tape,
   type TapePrint,
 } from "../lib/data";
 import { npr, pct, signed } from "../lib/format";
 import { useApp } from "../lib/state";
-import type { StockTab } from "../lib/types";
+import type { IconName } from "../ds/Icon";
+import type { MarketDesk, Route, StockTab } from "../lib/types";
+
+type CompanyMenu = {
+  label: string;
+  icon: IconName;
+  tab?: StockTab;
+  desk?: MarketDesk;
+  route?: Route;
+  sheet?: "compare" | "depth";
+};
+
+/* The same jumps the company menu offers, on the page instead of behind a tap. */
+const companyMenus: CompanyMenu[] = [
+  { label: "Market depth", icon: "depth", desk: "depth" },
+  { label: "Floor sheet", icon: "table", tab: "Floor sheet" },
+  { label: "Broker holding", icon: "building", route: "brokers" },
+  { label: "Price history", icon: "candles", desk: "price" },
+  { label: "Dividend", icon: "coins", tab: "Events" },
+  { label: "Fundamentals", icon: "doc", tab: "Financials" },
+  { label: "Share holding", icon: "pie", tab: "Financials" },
+  { label: "Technicals", icon: "pulse", tab: "Analysis" },
+  { label: "Announcements", icon: "megaphone", tab: "Events" },
+  { label: "AGM history", icon: "cal", tab: "Events" },
+  { label: "Compare", icon: "compare", sheet: "compare" },
+  { label: "Reports", icon: "clipboard", route: "learn" },
+];
 
 const ranges = ["1D", "1W", "1M", "3M", "1Y"] as const;
 const tabs: StockTab[] = ["Overview", "Financials", "Analysis", "Floor sheet", "Events"];
@@ -129,6 +157,13 @@ export function StockScreen() {
   const [showRsi, setShowRsi] = useState(false);
   const [showAllReadings, setShowAllReadings] = useState(false);
   const [scrub, setScrub] = useState<TapePrint | null>(null);
+  const openMenu = (item: CompanyMenu) => {
+    if (item.tab) setStockTab(item.tab);
+    else if (item.desk) go("market-desk", { marketDesk: item.desk });
+    else if (item.sheet === "compare") openSheet({ kind: "compare" });
+    else if (item.route) go(item.route, item.route === "brokers" ? { brokerDesk: "analysis" } : undefined);
+  };
+
   const tape =
     range === "1W"
       ? nabilWeek
@@ -136,7 +171,7 @@ export function StockScreen() {
         ? nabilMonth
         : range === "1Y"
           ? nabilYear
-          : nabilSession;
+          : nabilSessionTicks;
   const shown = scrub?.v ?? nabil.ltp;
   const shownChange = scrub ? shown - tape.prevClose : nabil.change;
   const shownPct = scrub ? (shownChange / tape.prevClose) * 100 : nabil.changePct;
@@ -148,6 +183,7 @@ export function StockScreen() {
       {viewport === "mobile" && (
         <div className="app-bar stock-app-bar">
           <button className="icon-btn" onClick={back} aria-label="Back"><Icon name="back" /></button>
+          <TickerMark symbol={nabil.symbol} size="sm" />
           <div className="stock-identity">
             <p className="t-ticker">{nabil.symbol}</p>
             <p className="t-body-xs muted">{nabil.name} · {nabil.sector}</p>
@@ -171,10 +207,40 @@ export function StockScreen() {
         </div>
       )}
       {viewport === "web" && (
-        <div className="pad" style={{ paddingBottom: 8 }}>
+        <div className="pad stock-web-head">
           <button className="text-link web-back" onClick={back}>‹ Market</button>
-          <p className="t-ticker" style={{ marginTop: 8 }}>{nabil.symbol}</p>
-          <p className="t-body-s muted">{nabil.name} · {nabil.sector}</p>
+          <div className="stock-web-id">
+            <TickerMark symbol={nabil.symbol} />
+            <div>
+              <p className="t-ticker">{nabil.symbol}</p>
+              <p className="t-body-s muted">{nabil.name} · {nabil.sector}</p>
+            </div>
+            <div className="stock-web-acts">
+              <button
+                type="button"
+                className="pf-quick-btn"
+                onClick={() => {
+                  if (!addToWatchlist(nabil.symbol)) flash({ message: "NABIL is on your watchlist." });
+                }}
+              >
+                <Icon name="star" size={15} /> Watch
+              </button>
+              <button
+                type="button"
+                className="pf-quick-btn"
+                onClick={() => go("alerts", { alertSymbol: nabil.symbol })}
+              >
+                <Icon name="bell" size={15} /> Alert
+              </button>
+              <button
+                type="button"
+                className="pf-quick-btn"
+                onClick={() => openSheet({ kind: "stock-tools", symbol: nabil.symbol })}
+              >
+                <Icon name="dots" size={15} /> More
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -221,7 +287,7 @@ export function StockScreen() {
       </div>
 
       {chartMode === "line" ? (
-        <SessionWalk tape={tape} compact showVolume={false} bare onScrub={setScrub} />
+        <SessionWalk tape={tape} compact showVolume={false} bare spiky={range === "1D"} onScrub={setScrub} />
       ) : (
         <CandleChart tape={tape} />
       )}
@@ -263,6 +329,18 @@ export function StockScreen() {
             <GreedMeter symbol={nabil.symbol} />
           </div>
 
+          <StockSection title="More on this company" />
+          <div className="stock-menus">
+            {companyMenus.map((item) => (
+              <button key={item.label} type="button" onClick={() => openMenu(item)}>
+                <span className="stock-menu-ico" aria-hidden>
+                  <Icon name={item.icon} size={19} />
+                </span>
+                {item.label}
+              </button>
+            ))}
+          </div>
+
           <StockSection title="Key numbers" action="" />
           {[
             { id: "pe", label: "P/E", value: nabil.pe.toFixed(1) },
@@ -270,7 +348,6 @@ export function StockScreen() {
             { id: "eps", label: "EPS", value: nabil.eps.toFixed(2) },
             { id: null, label: "Market cap", value: nabil.mcap },
             { id: null, label: "Dividend", value: nabil.dividend },
-            { id: null, label: "52-week range", value: nabil.range },
           ].map((row) => (
             <div className="kv" key={row.label}>
               <span>
@@ -281,17 +358,25 @@ export function StockScreen() {
             </div>
           ))}
 
-          <StockSection title="Today’s trading" />
-          {[
-            ["Open", npr(nabil.open, 2)],
-            ["High", npr(nabil.high, 2)],
-            ["Low", npr(nabil.low, 2)],
-            ["Previous close", npr(nabil.prev, 2)],
-            ["Volume", nabil.volume],
-            ["Turnover", nabil.turnover],
-          ].map(([label, value]) => (
-            <div className="kv" key={label}><span>{label}</span><b>{value}</b></div>
-          ))}
+          <StockSection title="Price info" action={nepse.date} />
+          <div className="stock-grid">
+            {[
+              ["Open", npr(nabil.open, 2)],
+              ["High", npr(nabil.high, 2)],
+              ["Low", npr(nabil.low, 2)],
+              ["Previous close", npr(nabil.prev, 2)],
+              ["Turnover", nabil.turnover],
+              ["Volume", nabil.volume],
+              ["52W high", npr(nabil.weekHigh, 2)],
+              ["52W low", npr(nabil.weekLow, 2)],
+              ["30-day average", npr(nabil.avg30, 2)],
+            ].map(([label, value]) => (
+              <span key={label}>
+                <small>{label}</small>
+                <b>{value}</b>
+              </span>
+            ))}
+          </div>
 
           <StockSection title="About the company" />
           <div className="stock-company">
@@ -325,6 +410,16 @@ export function StockScreen() {
             <span className="chip chip-quiet">Q4</span>
             <span className="chip chip-quiet">6-year</span>
           </div>
+          <StockSection title="Company essentials" action={nabilFinancials.period} />
+          <div className="stock-grid">
+            {nabilFinancials.essentials.map((row) => (
+              <span key={row.label}>
+                <small>{row.label}</small>
+                <b>{row.value}</b>
+              </span>
+            ))}
+          </div>
+
           <StockSection title="Earnings" action="Full statement ›" />
           {nabilFinancials.earnings.map((row) => (
             <div className="kv" key={row.label}>
@@ -379,33 +474,14 @@ export function StockScreen() {
 
       {tab === "Analysis" && (
         <>
-          <div className="analysis-hero">
-            <div className="analysis-hero-top">
-              <div>
-                <Overline>Technical snapshot</Overline>
-                <h2>Mixed picture</h2>
-              </div>
-              <span className="analysis-price">{npr(nabil.ltp, 2)}</span>
-            </div>
-            <p>
-              Short-term momentum is weak, while the price remains above its long-term average.
-              That describes the chart; it does not recommend an action.
-            </p>
-            <div className="analysis-summary">
-              <div><small>Short term</small><b>Below 20d & 50d</b></div>
-              <div><small>Long term</small><b>Above 200d</b></div>
-              <div><small>Activity</small><b>12.19 Cr</b></div>
-            </div>
-            <div className="analysis-asof">
-              <span>{nabilAnalysis.updated}</span>
-              <Explain onClick={() => explain(
-                "What does mixed picture mean?",
-                "Different windows can point in different directions. Here, recent prices are below shorter averages while remaining above the 200-day average.",
-                "This is context, not a buy or sell signal.",
-              )}>
-                Explain this
-              </Explain>
-            </div>
+          <StockSection title="Technical essentials" action={nabilAnalysis.updated.split(" · ")[0]} />
+          <div className="stock-grid">
+            {nabilAnalysis.essentials.map((row) => (
+              <span key={row.label}>
+                <small>{row.label}</small>
+                <b>{row.value}</b>
+              </span>
+            ))}
           </div>
 
           <StockSection title="Price versus trend" action="Closing prices" />
@@ -602,8 +678,8 @@ export function StockScreen() {
       <div className={`float-actions stock-actions ${tab === "Analysis" ? "stock-actions-min" : ""}`}>
         <button
           className="icon-btn"
-          aria-label="Alert"
-          onClick={() => flash({ message: "NABIL price alert created for this demo." })}
+          aria-label="Set an alert"
+          onClick={() => go("alerts", { alertSymbol: nabil.symbol })}
         >
           <Icon name="alert" />
         </button>

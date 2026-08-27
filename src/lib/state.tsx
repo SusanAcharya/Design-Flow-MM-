@@ -188,7 +188,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [route, setRoute] = useState<Route>(linkedRoute ?? "onboarding");
   const [session, setSession] = useState<MarketSession>("closed");
   const [stock, setStock] = useState("NABIL");
-  const [stockTab, setStockTab] = useState<StockTab>("Overview");
+  const [stockTab, setStockTab] = useState<StockTab>(
+    param("stab", ["Overview", "Financials", "Analysis", "Floor sheet", "Events"] as const, "Overview"),
+  );
   const [marketTab, setMarketTab] = useState<MarketTab>(param("tab", ["Overview", "Movers", "Sectors", "Floor sheet", "Events"] as const, "Overview"));
   const [marketDesk, setMarketDesk] = useState<MarketDesk>("summary");
   const [marketIndex, setMarketIndex] = useState("nepse");

@@ -1,7 +1,8 @@
 import { curriculum, getObjective, homeObjectiveId, nextOnPath } from "../lib/objectives";
 import { useApp } from "../lib/state";
+import { mitra } from "../lib/mitra";
 
-const tulkey = `${import.meta.env.BASE_URL}tulkey-hi.png`;
+const tulkey = mitra.pointing;
 
 export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
   const { go, objectiveId, stage, personaId } = useApp();

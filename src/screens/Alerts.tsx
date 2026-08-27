@@ -192,8 +192,10 @@ export function AlertsScreen() {
   const [tab, setTab] = useState<"active" | "expired">(() =>
     rawParam("alert") === "expired" ? "expired" : "active",
   );
+  const linked = rawParam("alert");
+  const linkedSymbol = linked && listedQuotes.some((q) => q.symbol === linked) ? linked : null;
   const [editing, setEditing] = useState<AlertRule | "new" | null>(() =>
-    rawParam("alert") === "new" ? "new" : null,
+    linked === "new" || linkedSymbol ? "new" : null,
   );
 
   useEffect(() => {
@@ -259,7 +261,7 @@ export function AlertsScreen() {
     return (
       <AlertForm
         rule={editing === "new" ? null : editing}
-        symbolSeed={alertSeed ?? undefined}
+        symbolSeed={alertSeed ?? linkedSymbol ?? undefined}
         onSave={save}
         onDelete={askDelete}
         onCancel={() => {

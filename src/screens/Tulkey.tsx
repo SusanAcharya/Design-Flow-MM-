@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Icon } from "../ds/Icon";
 import { tulkeyPrompts } from "../lib/tulkey";
 import { useApp } from "../lib/state";
+import { mitra } from "../lib/mitra";
 
 export function TulkeyScreen() {
   const { askTulkey, tulkeyMessages, tulkeyThinking } = useApp();
@@ -65,7 +66,7 @@ export function TulkeyScreen() {
         {tulkeyMessages.length === 0 ? (
           <div className="tulkey-empty">
             <div className="tulkey-empty-mascot">
-              <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
+              <img src={mitra.hi} alt="" />
             </div>
             <p className="overline">Tulkey AI</p>
             <h1 className="t-h-xl">Ask about Nepal’s market</h1>
@@ -90,7 +91,7 @@ export function TulkeyScreen() {
               ) : (
                 <article key={message.id} className="tulkey-turn">
                   <span className="tulkey-turn-face">
-                    <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
+                    <img src={mitra.hi} alt="" />
                   </span>
                   <div className="tulkey-turn-body">
                     <p className="tulkey-bubble tulkey">{message.text}</p>
@@ -101,7 +102,7 @@ export function TulkeyScreen() {
             {tulkeyThinking && (
               <article className="tulkey-turn" aria-live="polite" aria-label="Tulkey is writing">
                 <span className="tulkey-turn-face">
-                  <img src={`${import.meta.env.BASE_URL}tulkey-hi.png`} alt="" />
+                  <img src={mitra.thinking} alt="" />
                 </span>
                 <p className="tulkey-bubble tulkey typing">
                   <i /><i /><i />
@@ -144,7 +145,6 @@ export function TulkeyScreen() {
             </button>
           )}
         </form>
-        <p className="tulkey-note">I explain. I don’t pick stocks.</p>
       </div>
     </div>
   );

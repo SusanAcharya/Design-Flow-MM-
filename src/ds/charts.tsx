@@ -66,6 +66,7 @@ export function SessionWalk({
   showVolume = !compact,
   bare = false,
   mark = "line",
+  spiky = false,
   onScrub,
   onActivate,
 }: {
@@ -74,6 +75,7 @@ export function SessionWalk({
   showVolume?: boolean;
   bare?: boolean;
   mark?: "line" | "columns";
+  spiky?: boolean;
   onScrub?: (print: TapePrint | null) => void;
   onActivate?: () => void;
 }) {
@@ -110,14 +112,16 @@ export function SessionWalk({
       t: p.t,
     }));
     const yClose = yOf(tape.prevClose);
-    const line = smoothLine(pts, padT + 1, padT + plotH - 1);
+    const line = spiky
+      ? pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ")
+      : smoothLine(pts, padT + 1, padT + plotH - 1);
     const floorY = bare ? H - 2 : yClose;
     const area = `${line} L${pts[pts.length - 1].x.toFixed(2)} ${floorY.toFixed(2)} L${pts[0].x.toFixed(2)} ${floorY.toFixed(2)} Z`;
     const yPeak = Math.min(...pts.map((p) => p.y), yClose);
     const yTrough = Math.max(...pts.map((p) => p.y), yClose);
     const colW = Math.max(6, ((W - padL - padR) / Math.max(pts.length, 1)) * 0.58);
     return { pts, yClose, line, area, yPeak, yTrough, colW };
-  }, [tape, padT, padL, padR, plotH, H, bare, W]);
+  }, [tape, padT, padL, padR, plotH, H, bare, W, spiky]);
 
   const { pts, yClose, line, area, yPeak, yTrough, colW } = geo;
   const last = pts[pts.length - 1];

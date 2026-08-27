@@ -2,8 +2,9 @@ import { useState } from "react";
 import { Icon } from "../ds/Icon";
 import { personas, type Persona } from "../lib/personas";
 import { useApp } from "../lib/state";
+import { mitra } from "../lib/mitra";
 
-const tulkey = `${import.meta.env.BASE_URL}tulkey-hi.png`;
+const tulkey = mitra.namaste;
 
 function FaceGrid({
   selectedId,
@@ -95,9 +96,7 @@ export function Onboarding() {
         <img src={tulkey} alt="" />
         <p className="ob-hello-brand">MoneyMitra · your guide</p>
         <h1>Namaste. I’m Tulkey.</h1>
-        <p className="ob-hello-copy">
-          I explain Nepal’s market and set up Home around you. I never place an order, and I never tell you what to buy.
-        </p>
+      
       </div>
       <div className="ob-hello-foot">
         <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => go("start")}>

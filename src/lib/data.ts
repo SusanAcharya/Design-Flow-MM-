@@ -177,10 +177,35 @@ export const nabil = {
   prev: 511.9,
   volume: "2.44 L kitta",
   turnover: "12.19 Cr",
+  weekHigh: 685.0,
+  weekLow: 452.3,
+  avg30: 516.4,
 };
 
 export const nabilFinancials = {
   period: "FY 2081–82",
+  essentials: [
+    { label: "Earning per share", value: "27.05" },
+    { label: "Market capitalisation", value: "12,240 Cr" },
+    { label: "Graham number", value: "380.15" },
+    { label: "Paid up capital", value: "3,205.7 Cr" },
+    { label: "Book value", value: "237.10" },
+    { label: "Net profit", value: "7,940 L" },
+    { label: "Current ratio", value: "1.18" },
+    { label: "Dividend yield", value: "2.01%" },
+    { label: "Debt to equity", value: "1.42" },
+    { label: "Price per earning", value: "18.40" },
+    { label: "Return on asset", value: "1.08%" },
+    { label: "Return on equity", value: "13.80%" },
+    { label: "Price per book value", value: "2.10" },
+    { label: "Liabilities to asset", value: "0.88" },
+    { label: "Number of shares", value: "32.06 Cr" },
+    { label: "Interest income", value: "3,795.54 Cr" },
+    { label: "Interest expense", value: "2,240.10 Cr" },
+    { label: "Operating expenses", value: "612.40 Cr" },
+    { label: "Revenue", value: "4,182.90 Cr" },
+    { label: "One year yield", value: "6.42%" },
+  ],
   earnings: [
     { label: "Net interest income", value: "24,180 L", change: 11.4 },
     { label: "Net profit", value: "7,940 L", change: 8.2 },
@@ -211,6 +236,21 @@ export const nabilFinancials = {
 
 export const nabilAnalysis = {
   updated: "2 Bhadra 2083 · session close",
+  essentials: [
+    { label: "Date", value: "2 Bhadra 2083" },
+    { label: "LTP", value: "498.00" },
+    { label: "RSI (14)", value: "39.23" },
+    { label: "Stochastic", value: "26.24" },
+    { label: "MACD", value: "−0.09" },
+    { label: "MACD signal", value: "0.34" },
+    { label: "MACD vs signal", value: "Down" },
+    { label: "Bollinger signal", value: "Buy" },
+    { label: "13-day VWAP", value: "502.44" },
+    { label: "30-day average", value: "516.40" },
+    { label: "8-day EMA", value: "500.20" },
+    { label: "ADX", value: "36.07" },
+    { label: "MFI", value: "19.30" },
+  ],
   momentum: [
     { label: "RSI (14)", value: "39.23", state: "Lower half", explain: "Momentum compared with recent gains and losses." },
     { label: "Stochastic", value: "26.24", state: "Near low band", explain: "Where the close sits inside its recent range." },
@@ -230,8 +270,10 @@ export const nabilAnalysis = {
   ],
   risk: [
     { label: "Weekly beta", value: "0.73", note: "Moved less than the market in this sample." },
+    { label: "Month beta", value: "0.91", note: "One month of daily moves against the index." },
     { label: "Quarter beta", value: "0.57", note: "Sensitivity varies with the time window." },
     { label: "Year beta", value: "0.76", note: "Historical relationship, not a forecast." },
+    { label: "Three-year beta", value: "0.82", note: "The longest window we hold." },
   ],
   context: [
     { label: "Short-term trend", value: 36, state: "Below 20- and 50-day averages" },
@@ -726,6 +768,46 @@ export const nabilSession: Tape = {
     { t: "15:00", v: 498.0, vol: 29 },
   ],
 };
+
+/* The session tape at print resolution: the same path, sampled every couple of
+   minutes with the wobble a real tape has. Deterministic, so shots repeat. */
+function clockAt(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  return `${h}:${String(m).padStart(2, "0")}`;
+}
+
+function toMinutes(clock: string) {
+  const [h, m] = clock.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function tickTape(base: Tape, per = 8): Tape {
+  const prints: TapePrint[] = [];
+  for (let i = 0; i < base.prints.length - 1; i += 1) {
+    const a = base.prints[i];
+    const b = base.prints[i + 1];
+    const from = toMinutes(a.t);
+    const to = toMinutes(b.t);
+    for (let k = 0; k < per; k += 1) {
+      const f = k / per;
+      const n = i * per + k;
+      const wobble = Math.sin(n * 1.9) * 0.85 + Math.sin(n * 0.61) * 1.35 + Math.sin(n * 3.7) * 0.45;
+      const value = a.v + (b.v - a.v) * f + wobble;
+      prints.push({
+        t: clockAt(from + (to - from) * f),
+        v: Math.round(Math.min(base.high, Math.max(base.low, value)) * 100) / 100,
+        vol: a.vol ? Math.round((a.vol / per) * (1 + Math.sin(n * 2.3) * 0.4)) : undefined,
+      });
+    }
+  }
+  prints.push(base.prints[base.prints.length - 1]);
+  return { ...base, prints };
+}
+
+export const nabilSessionTicks: Tape = tickTape(nabilSession);
+
+export const nepseSessionTicks: Tape = tickTape(nepseSession, 7);
 
 export const nabilWeek: Tape = {
   prevClose: 522.4,

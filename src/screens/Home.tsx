@@ -10,7 +10,7 @@ import {
   ipoPipeline,
   watchlist,
   nepse,
-  nepseSession,
+  nepseSessionTicks,
   portfolio,
   secondaryBook,
   stripAlloc,
@@ -21,8 +21,8 @@ import { curriculum, homeObjectiveId, pathProgress, type Objective } from "../li
 import { getExploreTool } from "../lib/explore";
 import type { IconName } from "../ds/Icon";
 import type { Route } from "../lib/types";
-import { personas } from "../lib/personas";
 import { useApp } from "../lib/state";
+import { mitra } from "../lib/mitra";
 
 type FeedTone = "market" | "book" | "learn" | "news" | "alert" | "ipo" | "move" | "list";
 
@@ -62,24 +62,42 @@ function FeedGroup({
 }
 
 function NepseHero() {
-  const { go, viewport } = useApp();
-  /* A wider viewBox on web keeps the tape from stretching out of proportion. */
+  const { go, session, viewport } = useApp();
   const web = viewport === "web";
   const down = nepse.changePct < 0;
-  const spark = nepseSession.prints.map((print) => print.v);
+  const spark = nepseSessionTicks.prints.map((print) => print.v);
 
   return (
     <button type="button" className={`nepse-hero ${down ? "down" : "up"}`} onClick={() => go("market")}>
-      <span className="nepse-hero-line">
-        <span className="nepse-hero-kicker">NEPSE</span>
-        <b className="nepse-hero-value">{npr(nepse.value, 2)}</b>
-        <TapeSpark values={spark} width={web ? 420 : 140} height={web ? 150 : 28} positive={!down} smooth={false} />
-        <em className={down ? "c-down" : "c-up"}>{pct(nepse.changePct)}</em>
+      <span className="nepse-hero-head">
+        <span className="nepse-hero-name">
+          NEPSE
+          <Icon name="chev" size={14} />
+        </span>
+        <span className="nepse-hero-when">
+          {nepse.date} · {session === "closed" ? nepse.closedAt : nepse.liveAt}
+          <span className={`nepse-hero-state ${session}`}>{session === "closed" ? "CLOSED" : "OPEN"}</span>
+        </span>
       </span>
+
+      <span className="nepse-hero-line">
+        <b className="nepse-hero-value">{npr(nepse.value, 2)}</b>
+        <span className={`nepse-hero-pill ${down ? "down" : "up"}`}>
+          {down ? "↓" : "↑"} {pct(nepse.changePct)}
+        </span>
+      </span>
+
+      <TapeSpark
+        values={spark}
+        width={web ? 460 : 320}
+        height={web ? 72 : 40}
+        positive={!down}
+        smooth={false}
+      />
+
       <span className="nepse-meta">
-        Turnover <b>{npr(nepse.turnoverCr, 2)} Cr</b>
-        <i />
-        Volume <b>{nepse.volume}</b>
+        <span>Turnover <b>{npr(nepse.turnoverCr, 2)} Cr</b></span>
+        <span>Volume <b>{nepse.volume}</b></span>
       </span>
     </button>
   );
@@ -266,7 +284,7 @@ function NextStepsCard() {
             );
           })}
         </ul>
-        <img className="setup-guide" src={`${import.meta.env.BASE_URL}characters/setup-guide.png`} alt="" />
+        <img className="setup-guide" src={mitra.pointing} alt="" />
       </div>
 
       <footer className="setup-foot">
@@ -417,8 +435,6 @@ function WatchlistPreview() {
 
 function LearnBoard() {
   const { go } = useApp();
-  const tulkey = `${import.meta.env.BASE_URL}tulkey-hi.png`;
-  const sita = personas.find((p) => p.id === "sita") ?? personas[0];
 
   return (
     <button type="button" className="learn-byte" onClick={() => go("objective", { objective: "terms" })}>
@@ -429,8 +445,7 @@ function LearnBoard() {
         <em>Read it ›</em>
       </span>
       <span className="learn-byte-art" aria-hidden>
-        <img src={sita.img} alt="" />
-        <img src={tulkey} alt="" />
+        <img src={mitra.search} alt="" />
       </span>
     </button>
   );
@@ -438,8 +453,6 @@ function LearnBoard() {
 
 function ConsultCard() {
   const { openSheet } = useApp();
-  const guide = personas.find((p) => p.id === "prakash") ?? personas[0];
-  const tulkey = `${import.meta.env.BASE_URL}tulkey-hi.png`;
 
   return (
     <button
@@ -453,8 +466,7 @@ function ConsultCard() {
       })}
     >
       <span className="consult-faces" aria-hidden>
-        <img src={tulkey} alt="" />
-        <img src={guide.img} alt="" />
+        <img src={mitra.chart} alt="" />
       </span>
       <span className="consult-copy">
         <small>Quick call</small>
