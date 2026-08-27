@@ -141,7 +141,7 @@ export function ProfileScreen() {
             <AccountRow
               icon="chat"
               title="Help & support"
-              sub="Tulkey, or write to us"
+              sub="Mitra, or write to us"
               onClick={() => openSheet({ kind: "help" })}
             />
           </div>

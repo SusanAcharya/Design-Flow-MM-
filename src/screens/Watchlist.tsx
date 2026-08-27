@@ -6,6 +6,7 @@ import { TapeSpark } from "../ds/charts";
 import { listedQuotes, nepse, watchlist } from "../lib/data";
 import { npr, pct } from "../lib/format";
 import { useApp } from "../lib/state";
+import { mitra } from "../lib/mitra";
 
 /* One screen for every list a member keeps: switch, name, add, alert, drop. */
 
@@ -116,10 +117,19 @@ export function WatchlistScreen() {
           label: `Remove from ${active.label}`,
           icon: "close",
           danger: true,
-          onSelect: () => {
-            removeFromList(active.id, symbol);
-            flash({ message: `${symbol} removed from ${active.label}.` });
-          },
+          onSelect: () =>
+            openSheet({
+              kind: "confirm",
+              title: `Remove ${symbol}?`,
+              body: `${name} comes off ${active.label}. Nothing is sold — a list only follows.`,
+              confirmLabel: "Remove",
+              cancelLabel: "Keep it",
+              danger: true,
+              onConfirm: () => {
+                removeFromList(active.id, symbol);
+                flash({ message: `${symbol} removed from ${active.label}.` });
+              },
+            }),
         },
       ],
     });
@@ -185,24 +195,29 @@ export function WatchlistScreen() {
       )}
 
       {rows.length === 0 ? (
-        <div className="alerts-empty">
-          <span className="alerts-empty-ico" aria-hidden>
-            <Icon name="star" size={22} />
-          </span>
-          <p className="t-h-s">{active.symbols.length === 0 ? "Nothing on this list yet" : "No match"}</p>
+        <div className="watch-empty">
+          <img src={mitra.search} alt="" />
+          <p className="t-h-m">
+            {active.symbols.length === 0 ? "No names on this list yet" : "No match on this list"}
+          </p>
           <p className="t-body-s muted">
             {active.symbols.length === 0
-              ? "Add a name and it shows up here after every close."
-              : "No name on this list matches that search."}
+              ? "Follow a company and it shows up here after every close, with the day’s move and a line you can set an alert on."
+              : "Nothing on this list matches that search."}
           </p>
           {active.symbols.length === 0 && (
-            <button
-              type="button"
-              className="pf-quick-btn primary"
-              onClick={() => openSheet({ kind: "watch-add", listId: active.id })}
-            >
-              Add a name
-            </button>
+            <div className="watch-empty-acts">
+              <button
+                type="button"
+                className="pf-quick-btn primary"
+                onClick={() => openSheet({ kind: "watch-add", listId: active.id })}
+              >
+                <Icon name="plus" size={16} /> Add a name
+              </button>
+              <button type="button" className="pf-quick-btn" onClick={() => go("market")}>
+                Browse the market
+              </button>
+            </div>
           )}
         </div>
       ) : (

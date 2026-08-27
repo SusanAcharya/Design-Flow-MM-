@@ -1329,7 +1329,6 @@ function PortfolioEmpty() {
 
       <div className="pf-zero-copy">
         <h2>Nothing in your book yet</h2>
-        <p>Add one buy and this page fills in — value, average cost, P/L and the split.</p>
       </div>
 
       <div className="pf-quick">
@@ -1400,7 +1399,7 @@ export function PortfolioScreen() {
             </button>
           </div>
           <p className="foot-note">
-            Tulkey can explain kitta, average cost and cost basis before you record anything.
+            Mitra can explain kitta, average cost and cost basis before you record anything.
           </p>
         </div>
       </div>

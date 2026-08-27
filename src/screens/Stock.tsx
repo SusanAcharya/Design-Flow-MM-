@@ -26,6 +26,15 @@ import { useApp } from "../lib/state";
 import type { IconName } from "../ds/Icon";
 import type { MarketDesk, Route, StockTab } from "../lib/types";
 
+function StarMark({ on }: { on: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden
+      fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
+      <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" />
+    </svg>
+  );
+}
+
 type CompanyMenu = {
   label: string;
   icon: IconName;
@@ -151,12 +160,57 @@ function StockSection({
 }
 
 export function StockScreen() {
-  const { back, flash, go, openSheet, session, setStockTab, stockTab: tab, viewport, addToWatchlist } = useApp();
+  const {
+    back,
+    flash,
+    go,
+    openSheet,
+    session,
+    setStockTab,
+    stockTab: tab,
+    viewport,
+    watchlists,
+    addToList,
+    removeFromList,
+    fulfillObjective,
+  } = useApp();
   const [range, setRange] = useState<Range>("1D");
   const [chartMode, setChartMode] = useState<"line" | "candles">("line");
   const [showRsi, setShowRsi] = useState(false);
   const [showAllReadings, setShowAllReadings] = useState(false);
   const [scrub, setScrub] = useState<TapePrint | null>(null);
+  const watched = watchlists.some((list) => list.symbols.includes(nabil.symbol));
+  const holding = watchlists.find((list) => list.symbols.includes(nabil.symbol));
+  const watch = () => {
+    if (holding) {
+      openSheet({
+        kind: "confirm",
+        title: `Remove ${nabil.symbol}?`,
+        body: `It comes off ${holding.label}. Nothing is sold — a list only follows.`,
+        confirmLabel: "Remove",
+        cancelLabel: "Keep it",
+        danger: true,
+        onConfirm: () => {
+          removeFromList(holding.id, nabil.symbol);
+          flash({ message: `${nabil.symbol} removed from ${holding.label}.` });
+        },
+      });
+      return;
+    }
+    openSheet({
+      kind: "confirm",
+      title: `Add ${nabil.symbol} to ${watchlists[0].label}?`,
+      body: "Following a company never buys kitta. You will see it after every close.",
+      confirmLabel: "Add to list",
+      cancelLabel: "Not now",
+      onConfirm: () => {
+        addToList(watchlists[0].id, nabil.symbol);
+        fulfillObjective("watch");
+        flash({ message: `${nabil.symbol} added to ${watchlists[0].label}.` });
+      },
+    });
+  };
+
   const openMenu = (item: CompanyMenu) => {
     if (item.tab) setStockTab(item.tab);
     else if (item.desk) go("market-desk", { marketDesk: item.desk });
@@ -189,20 +243,21 @@ export function StockScreen() {
             <p className="t-body-xs muted">{nabil.name} · {nabil.sector}</p>
           </div>
           <button
-            className="icon-btn stock-star"
-            aria-label="Watchlist"
-            onClick={() => {
-              if (!addToWatchlist(nabil.symbol)) flash({ message: "NABIL is on your watchlist." });
-            }}
+            type="button"
+            className={`icon-btn stock-star${watched ? " on" : ""}`}
+            aria-label={watched ? "On your watchlist" : "Add to watchlist"}
+            aria-pressed={watched}
+            onClick={watch}
           >
-            <Icon name="star" />
+            <StarMark on={watched} />
           </button>
           <button
+            type="button"
             className="icon-btn"
-            aria-label="More stock tools"
+            aria-label="Company tools"
             onClick={() => openSheet({ kind: "stock-tools", symbol: nabil.symbol })}
           >
-            <Icon name="dots" />
+            <Icon name="sliders" />
           </button>
         </div>
       )}
@@ -216,14 +271,8 @@ export function StockScreen() {
               <p className="t-body-s muted">{nabil.name} · {nabil.sector}</p>
             </div>
             <div className="stock-web-acts">
-              <button
-                type="button"
-                className="pf-quick-btn"
-                onClick={() => {
-                  if (!addToWatchlist(nabil.symbol)) flash({ message: "NABIL is on your watchlist." });
-                }}
-              >
-                <Icon name="star" size={15} /> Watch
+              <button type="button" className={`pf-quick-btn${watched ? " on" : ""}`} onClick={watch}>
+                <StarMark on={watched} /> {watched ? "Watching" : "Watch"}
               </button>
               <button
                 type="button"
@@ -237,7 +286,7 @@ export function StockScreen() {
                 className="pf-quick-btn"
                 onClick={() => openSheet({ kind: "stock-tools", symbol: nabil.symbol })}
               >
-                <Icon name="dots" size={15} /> More
+                <Icon name="sliders" size={15} /> Tools
               </button>
             </div>
           </div>
@@ -319,11 +368,12 @@ export function StockScreen() {
                 <span className="take-ico" aria-hidden>
                   <Icon name="tulkey" size={17} />
                 </span>
-                <span className="overline">Tulkey&rsquo;s take</span>
+                <span className="overline">Mitra&rsquo;s take</span>
               </header>
               <p className="take-body">{stockTake.summary}</p>
+              <p className="take-aside">{stockTake.aside}</p>
               <button type="button" className="text-link" onClick={() => go("ai")}>
-                Ask Tulkey about {nabil.symbol} &rsaquo;
+                Ask Mitra about {nabil.symbol} &rsaquo;
               </button>
             </section>
             <GreedMeter symbol={nabil.symbol} />
@@ -341,22 +391,39 @@ export function StockScreen() {
             ))}
           </div>
 
-          <StockSection title="Key numbers" action="" />
-          {[
-            { id: "pe", label: "P/E", value: nabil.pe.toFixed(1) },
-            { id: null, label: "P/B", value: nabil.pb.toFixed(2) },
-            { id: "eps", label: "EPS", value: nabil.eps.toFixed(2) },
-            { id: null, label: "Market cap", value: nabil.mcap },
-            { id: null, label: "Dividend", value: nabil.dividend },
-          ].map((row) => (
-            <div className="kv" key={row.label}>
-              <span>
-                {row.id ? <MetricLink id={row.id}>{row.label}</MetricLink> : row.label}
-                {!row.id && <Icon name="info" size={11} />}
-              </span>
-              <b>{row.value}</b>
-            </div>
-          ))}
+          {/* One number to a tile: what it is called, the figure, then what it means. */}
+          <StockSection title="Key numbers" />
+          <div className="stock-keys">
+            {[
+              { id: "pe", code: "P/E", value: nabil.pe.toFixed(1), label: "Price vs profit" },
+              { id: "pb", code: "P/B", value: nabil.pb.toFixed(2), label: "Price vs net worth" },
+              { id: "eps", code: "EPS", value: `Rs ${nabil.eps.toFixed(2)}`, label: "Profit per share" },
+              { id: null, code: "Market cap", value: nabil.mcap, label: "Value of all shares" },
+              { id: null, code: "Dividend", value: nabil.dividend, label: "Paid last year" },
+            ].map((row) =>
+              row.id ? (
+                <button
+                  type="button"
+                  className="stock-key"
+                  key={row.code}
+                  onClick={() => openSheet({ kind: "metric", id: row.id! })}
+                >
+                  <small className="stock-key-code">
+                    {row.code}
+                    <Icon name="info" size={11} />
+                  </small>
+                  <b>{row.value}</b>
+                  <span>{row.label}</span>
+                </button>
+              ) : (
+                <div className="stock-key" key={row.code}>
+                  <small className="stock-key-code">{row.code}</small>
+                  <b>{row.value}</b>
+                  <span>{row.label}</span>
+                </div>
+              ),
+            )}
+          </div>
 
           <StockSection title="Price info" action={nepse.date} />
           <div className="stock-grid">
@@ -423,7 +490,10 @@ export function StockScreen() {
           <StockSection title="Earnings" action="Full statement ›" />
           {nabilFinancials.earnings.map((row) => (
             <div className="kv" key={row.label}>
-              <span>{row.label}{row.label === "EPS" && <Icon name="info" size={11} />}</span>
+              <span>
+                {row.metric ? <MetricLink id={row.metric}>{row.label}</MetricLink> : row.label}
+                {row.code && <small className="kv-code">{row.code}</small>}
+              </span>
               <b>
                 {row.value}
                 {row.change != null && <em className="stock-change c-up">{pct(row.change, 1)}</em>}
@@ -435,7 +505,7 @@ export function StockScreen() {
             <div className="kv" key={row.label}>
               <span>
                 {row.metric ? <MetricLink id={row.metric}>{row.label}</MetricLink> : row.label}
-                {!row.metric && <Icon name="info" size={11} />}
+                {row.code && <small className="kv-code">{row.code}</small>}
               </span>
               <b className={row.tone === "warn" ? "stock-warn" : ""}>{row.value}</b>
             </div>
@@ -677,6 +747,7 @@ export function StockScreen() {
       </p>
       <div className={`float-actions stock-actions ${tab === "Analysis" ? "stock-actions-min" : ""}`}>
         <button
+          type="button"
           className="icon-btn"
           aria-label="Set an alert"
           onClick={() => go("alerts", { alertSymbol: nabil.symbol })}
@@ -684,6 +755,7 @@ export function StockScreen() {
           <Icon name="alert" />
         </button>
         <button
+          type="button"
           className="icon-btn"
           aria-label="Compare"
           onClick={() => openSheet({ kind: "compare" })}

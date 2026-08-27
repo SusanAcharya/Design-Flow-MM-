@@ -1,13 +1,14 @@
 import { useApp } from "../lib/state";
 import { Prototype } from "../prototype/Prototype";
-import { studioObjectives } from "../lib/objectives";
-import type { Circuit, DataState, Plan, Route, Stage, UiFont } from "../lib/types";
+import type { DataState, Plan, Route, Stage } from "../lib/types";
 
 const screens: { id: Route; label: string }[] = [
   { id: "onboarding", label: "Onboarding" },
+  { id: "signin", label: "Sign in" },
+  { id: "signup", label: "Sign up" },
   { id: "home", label: "Home" },
   { id: "objectives", label: "Objectives" },
-  { id: "ai", label: "Tulkey AI" },
+  { id: "ai", label: "Mitra AI" },
   { id: "objective", label: "Objective" },
   { id: "market", label: "Market" },
   { id: "market-desk", label: "Market tools" },
@@ -37,13 +38,6 @@ const stages: { id: Stage; label: string }[] = [
   { id: "active", label: "Veteran" },
 ];
 
-const circuits: { id: Circuit; label: string }[] = [
-  { id: "off", label: "Off" },
-  { id: "index5", label: "Index 5%" },
-  { id: "index8", label: "Index 8%" },
-  { id: "stock15", label: "Stock 15%" },
-];
-
 const dataStates: { id: DataState; label: string }[] = [
   { id: "ready", label: "Ready" },
   { id: "loading", label: "Loading" },
@@ -51,39 +45,24 @@ const dataStates: { id: DataState; label: string }[] = [
   { id: "error", label: "Failed" },
 ];
 
-const fonts: { id: UiFont; label: string }[] = [
-  { id: "plex", label: "IBM Plex Sans" },
-  { id: "inter", label: "Inter" },
-  { id: "satoshi", label: "Satoshi" },
-  { id: "jakarta", label: "Plus Jakarta Sans" },
-  { id: "geist", label: "Geist Mono" },
-  { id: "subjectivity", label: "Subjectivity" },
-  { id: "chillax", label: "Chillax" },
-  { id: "america", label: "GT America" },
-];
-
 export function Studio() {
   const {
     theme,
     setTheme,
-    uiFont,
-    setUiFont,
     viewport,
     setViewport,
     stage,
     setStage,
-    objectiveId,
-    setObjectiveId,
     session,
     setSession,
-    circuit,
-    setCircuit,
     plan,
     setPlan,
     dataState,
     setDataState,
     hasPortfolio,
     setHasPortfolio,
+    hasWatchlist,
+    setHasWatchlist,
     route,
     go,
     resetDemo,
@@ -125,31 +104,10 @@ export function Studio() {
         </label>
 
         <label>
-          Font
-          <select value={uiFont} onChange={(e) => setUiFont(e.target.value as UiFont)}>
-            {fonts.map((f) => (
-              <option key={f.id} value={f.id}>{f.label}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
           Home stage
           <select value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
             {stages.map((s) => (
               <option key={s.id} value={s.id}>{s.label}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Objective
-          <select
-            value={objectiveId ?? "share"}
-            onChange={(e) => setObjectiveId(e.target.value)}
-          >
-            {studioObjectives.map((o) => (
-              <option key={o.id || "none"} value={o.id}>{o.label}</option>
             ))}
           </select>
         </label>
@@ -164,15 +122,6 @@ export function Studio() {
               Open
             </button>
           </div>
-        </label>
-
-        <label>
-          Circuit
-          <select value={circuit} onChange={(e) => setCircuit(e.target.value as Circuit)}>
-            {circuits.map((c) => (
-              <option key={c.id} value={c.id}>{c.label}</option>
-            ))}
-          </select>
         </label>
 
         <label>
@@ -193,6 +142,18 @@ export function Studio() {
               Added
             </button>
             <button className={!hasPortfolio ? "on" : ""} onClick={() => setHasPortfolio(false)}>
+              None
+            </button>
+          </div>
+        </label>
+
+        <label>
+          Watchlist
+          <div className="seg">
+            <button className={hasWatchlist ? "on" : ""} onClick={() => setHasWatchlist(true)}>
+              Added
+            </button>
+            <button className={!hasWatchlist ? "on" : ""} onClick={() => setHasWatchlist(false)}>
               None
             </button>
           </div>

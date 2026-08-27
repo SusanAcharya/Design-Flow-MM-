@@ -153,16 +153,16 @@ export function TulkeyVoiceOverlay() {
       : typing
         ? "Answering"
         : lastTulkey
-          ? "Tulkey"
+          ? "Mitra"
           : "Tap the mic";
 
   return (
-    <div className={`tulkey-voice ${phase}`} role="dialog" aria-modal="true" aria-label="Ask Tulkey">
+    <div className={`tulkey-voice ${phase}`} role="dialog" aria-modal="true" aria-label="Ask Mitra">
       <header className="tulkey-voice-bar">
         <button type="button" className="icon-btn" onClick={closeTulkeyVoice} aria-label="Close">
           <Icon name="close" />
         </button>
-        <p className="t-h-s">Tulkey</p>
+        <p className="t-h-s">Mitra</p>
         <button type="button" className="icon-btn" onClick={openThread} aria-label="Open conversation">
           <Icon name="chat" />
         </button>
@@ -175,7 +175,7 @@ export function TulkeyVoiceOverlay() {
           </div>
           <WaveBars />
         </div>
-        <p className="tulkey-siri-name">Tulkey</p>
+        <p className="tulkey-siri-name">Mitra</p>
 
         <p className={`tulkey-voice-chip ${listening || tulkeyThinking || typing ? "live" : ""}`}>
           <Icon name={listening ? "mic" : tulkeyThinking ? "pulse" : "tulkey"} size={14} />
@@ -241,7 +241,7 @@ export function HomeFab() {
   const { route, tulkeyVoiceOpen, openTulkeyVoice } = useApp();
   if (route !== "home" || tulkeyVoiceOpen) return null;
   return (
-    <button type="button" className="home-fab" onClick={openTulkeyVoice} aria-label="Ask Tulkey">
+    <button type="button" className="home-fab" onClick={openTulkeyVoice} aria-label="Ask Mitra">
       <Icon name="tulkey" size={26} />
     </button>
   );

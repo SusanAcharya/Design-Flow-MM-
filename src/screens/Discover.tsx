@@ -101,7 +101,7 @@ export function LearnScreen() {
     <div>
       {viewport === "mobile" && <div className="page-title"><h1>Learn</h1></div>}
       <div className="pad">
-        <p className="t-body-m muted">Tulkey’s current objective first. The library is here when you want more than one sitting.</p>
+        <p className="t-body-m muted">Mitra’s current objective first. The library is here when you want more than one sitting.</p>
       </div>
       <div className="pad" style={{ paddingBottom: 12 }}>
         <ObjectiveHero compact />

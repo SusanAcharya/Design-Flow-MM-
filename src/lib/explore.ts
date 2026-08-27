@@ -467,8 +467,8 @@ export const exploreTools: ExploreTool[] = [
     id: "lessons",
     title: "2-Minute Market Lessons",
     short: "Lessons",
-    purpose: "Tulkey sittings — words and platforms",
-    keywords: "lessons gyan tulkey learn 2 minute",
+    purpose: "Mitra sittings — words and platforms",
+    keywords: "lessons gyan mitra learn 2 minute",
     icon: "tulkey",
     tone: "learn",
     category: "media",
@@ -649,7 +649,7 @@ export const memberCharacter = "deepak";
 export const planHighlights: Record<Plan, string[]> = {
   free: ["Live tape and the index", "One watchlist, one book", "Every term explained"],
   plus: ["Price alerts that reach you", "Screener, compare and baskets", "Broker statement import"],
-  pro: ["Market depth and floorsheet history", "Valuators and the weekly letter", "Tulkey without a daily cap"],
+  pro: ["Market depth and floorsheet history", "Valuators and the weekly letter", "Mitra without a daily cap"],
 };
 
 export type PerkValue = string | boolean;
@@ -690,7 +690,7 @@ export const planPerkGroups: {
       { name: "Baskets", free: "Open ones", plus: "All", pro: "All" },
       { name: "Screener and compare", free: false, plus: true, pro: true },
       { name: "Valuators — WACC, DCF", free: false, plus: false, pro: true },
-      { name: "Tulkey AI", free: "5 a day", plus: "50 a day", pro: "Unlimited" },
+      { name: "Mitra AI", free: "5 a day", plus: "50 a day", pro: "Unlimited" },
     ],
   },
   {

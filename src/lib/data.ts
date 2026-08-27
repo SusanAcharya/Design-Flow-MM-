@@ -209,15 +209,15 @@ export const nabilFinancials = {
   earnings: [
     { label: "Net interest income", value: "24,180 L", change: 11.4 },
     { label: "Net profit", value: "7,940 L", change: 8.2 },
-    { label: "EPS", value: "27.05" },
-    { label: "Book value", value: "237.10" },
+    { label: "Profit per share", code: "EPS", value: "27.05", metric: "eps" },
+    { label: "Net worth per share", code: "Book value", value: "237.10" },
   ],
   quality: [
-    { label: "P/E", value: "18.4", metric: "pe" },
-    { label: "P/B", value: "2.10" },
-    { label: "Return on equity", value: "13.8%" },
-    { label: "Non-performing loans", value: "3.42%", tone: "warn" },
-    { label: "Capital adequacy", value: "12.90%" },
+    { label: "Price vs profit", code: "P/E", value: "18.4", metric: "pe" },
+    { label: "Price vs net worth", code: "P/B", value: "2.10", metric: "pb" },
+    { label: "Return on equity", code: "ROE", value: "13.8%" },
+    { label: "Loans not repaid on time", code: "NPL", value: "3.42%", tone: "warn" },
+    { label: "Capital adequacy", code: "CAR", value: "12.90%" },
   ],
   balance: [
     { label: "Paid-up capital", value: "3,205.7 Cr" },
@@ -353,6 +353,10 @@ export const watchlist = [
   { symbol: "HDL", name: "Himalayan Distillery", sector: "Manufacturing", price: 2412, changePct: 3.4, pe: 22.1, kitta: 60 },
   { symbol: "SHIVM", name: "Shivam Cements", sector: "Manufacturing", price: 548.1, changePct: 1.1, pe: 19.6, kitta: 300 },
 ];
+
+/** Three liquid, familiar names to start an empty watchlist from — a bank,
+    a hydro and the telecom, so the first pick is not a guess. */
+export const watchStarters = ["NABIL", "UPPER", "NTC"];
 
 export const watchLists = [
   {
@@ -573,7 +577,10 @@ export const floorSheet = [
 export const metrics: Record<
   string,
   {
+    /** Plain words first — this is what the row is labelled with. */
     name: string;
+    /** The short form every other app and broker uses, kept so it is learnable. */
+    short: string;
     value: string;
     plain: string;
     stock: number;
@@ -583,36 +590,50 @@ export const metrics: Record<
   }
 > = {
   pe: {
-    name: "P/E ratio",
+    name: "Price vs profit",
+    short: "P/E",
     value: "18.4",
-    plain: "P/E compares the share price with one year of profit per share. At 18.4, the market is paying about Rs 18.40 for every Rs 1 NABIL earns in a year.",
+    plain: "How many years of profit the price is asking for. At 18.4, buyers are paying about Rs 18.40 for every Rs 1 NABIL earns in a year.",
     stock: 18.4,
     sector: 16.2,
     nepseAvg: 21.7,
     lesson: "How to read P/E",
   },
+  pb: {
+    name: "Price vs net worth",
+    short: "P/B",
+    value: "2.10",
+    plain: "How the price compares with what the bank is worth on paper — everything it owns, less everything it owes, per share. At 2.10, the price is a little over twice that.",
+    stock: 2.1,
+    sector: 1.8,
+    nepseAvg: 2.4,
+    lesson: "How to read P/E",
+  },
   wacc: {
-    name: "Avg cost",
+    name: "Your average cost",
+    short: "WACC",
     value: "462.40",
-    plain: "Average cost of your NABIL kitta after fees. Brokers call this WACC. The stock has to trade above this for you to be ahead.",
+    plain: "What one NABIL kitta cost you on average, fees included. The stock has to trade above this for you to be ahead.",
     stock: 462.4,
     sector: 480,
     nepseAvg: 0,
     lesson: "How is return calculated?",
   },
   eps: {
-    name: "EPS",
+    name: "Profit per share",
+    short: "EPS",
     value: "27.05",
-    plain: "NABIL earned NPR 27.05 per share over the last reported year.",
+    plain: "NABIL earned Rs 27.05 for each share over the last reported year. It is the profit behind the price, not money paid to you — that part is the dividend.",
     stock: 27.05,
     sector: 28.4,
     nepseAvg: 22.1,
     lesson: "How to read P/E",
   },
   npl: {
-    name: "NPL",
+    name: "Loans not repaid on time",
+    short: "NPL",
     value: "1.2%",
-    plain: "Non-performing loans — the share of NABIL’s loans that are not being repaid on time.",
+    plain: "The share of NABIL’s lending that borrowers have fallen behind on. For a bank, a low number is the comfortable one.",
     stock: 1.2,
     sector: 2.1,
     nepseAvg: 2.8,
@@ -1652,7 +1673,7 @@ export const moreHappen = [
   { kind: "up" as const, title: "Turnover crossed 9 Cr in the last hour", sub: "Hydropower took 41% of the day.", context: "Market", stock: "UPPER" },
 ];
 
-/* ── Mood, and what Tulkey makes of it ──────────────────────────────────────
+/* ── Mood, and what Mitra makes of it ──────────────────────────────────────
    A reading of where a price sits and how it got there. Never a call. */
 export type GreedRead = {
   score: number;
@@ -1675,8 +1696,10 @@ export function greedRead(symbol: string): GreedRead {
   return { score, label, note };
 }
 
-/** Tulkey's read on the open stock page — plain words, no call to act. */
+/** Mitra's read on the open stock page — plain words, no call to act. */
 export const stockTake = {
   summary:
-    "Most of today's 2.71% fall is the 10% cash dividend leaving the price on its ex-date, not the business changing. Turnover ran heavier than a usual NABIL day, and the price now sits in the lower fifth of its 52-week range.",
+    "Most of today's fall is the 10% cash dividend leaving the price on its ex-date, not the business changing.",
+  aside:
+    "Volume is a touch above its month average, so the move is not one desk on a thin tape. Nothing here is a call to buy or sell.",
 };

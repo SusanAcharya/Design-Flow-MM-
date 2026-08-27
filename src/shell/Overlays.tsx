@@ -213,7 +213,7 @@ function QuickSheet({ title, body, note }: { title: string; body: string; note?:
 const drawerTabs: { id: Route; label: string; icon: "home" | "market" | "tulkey" | "wallet" | "discover" }[] = [
   { id: "home", label: "Home", icon: "home" },
   { id: "market", label: "Market", icon: "market" },
-  { id: "ai", label: "Tulkey AI", icon: "tulkey" },
+  { id: "ai", label: "Mitra AI", icon: "tulkey" },
   { id: "portfolio", label: "Portfolio", icon: "wallet" },
   { id: "discover", label: "Explore", icon: "discover" },
 ];
@@ -283,7 +283,7 @@ function MetricSheet({ id }: { id: string }) {
       <div className="metric-sheet-head">
         <div>
           <p className="t-h-l">{m.name}</p>
-          <p className="t-body-xs muted">Nabil Bank · what this number means</p>
+          <p className="t-body-xs muted">Nabil Bank · most apps write this as {m.short}</p>
         </div>
         <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
       </div>
@@ -374,12 +374,20 @@ function OrderSheet({ symbol }: { symbol: string }) {
 }
 
 function StockToolsSheet({ symbol }: { symbol: string }) {
-  const { closeSheet, flash, openSheet, setStockTab } = useApp();
+  const { closeSheet, flash, go, openSheet, setStockTab } = useApp();
   const openTab = (tab: "Overview" | "Financials" | "Analysis" | "Floor sheet" | "Events") => {
     setStockTab(tab);
     closeSheet();
   };
   const tools = [
+    {
+      label: "Set an alert",
+      icon: "bell" as const,
+      onClick: () => {
+        closeSheet();
+        go("alerts", { alertSymbol: symbol });
+      },
+    },
     { label: "Highlights", icon: "star" as const, onClick: () => openTab("Overview") },
     { label: "Technicals", icon: "market" as const, onClick: () => openTab("Analysis") },
     { label: "Fundamentals", icon: "learn" as const, onClick: () => openTab("Financials") },
@@ -1044,7 +1052,7 @@ function HelpSheet() {
       <div className="metric-sheet-head">
         <div>
           <p className="t-h-l" id="sheet-title">Help & support</p>
-          <p className="t-body-xs muted">Tulkey explains the words. It never picks a stock.</p>
+          <p className="t-body-xs muted">Mitra explains the words. It never picks a stock.</p>
         </div>
         <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
       </div>
@@ -1060,7 +1068,7 @@ function HelpSheet() {
         >
           <span className="profile-row-ico"><Icon name="tulkey" size={16} /></span>
           <div className="row-main">
-            <p className="t-h-s">Ask Tulkey</p>
+            <p className="t-h-s">Ask Mitra</p>
             <p className="row-sub">Plain-language answers in the app</p>
           </div>
           <Icon name="chev" size={15} />
@@ -1166,10 +1174,28 @@ function AvatarSheet() {
 
 /* Search every listed name and add one to this list. */
 function WatchAddSheet() {
-  const { closeSheet, sheet, watchlists, addToList, flash, fulfillObjective } = useApp();
+  const { closeSheet, openSheet, sheet, watchlists, addToList, flash, fulfillObjective } = useApp();
   const [query, setQuery] = useState("");
   if (sheet?.kind !== "watch-add") return null;
   const list = watchlists.find((item) => item.id === sheet.listId);
+  const listId = sheet.listId;
+  const label = list?.label ?? "the list";
+
+  /* Adding is cheap to undo, but a member should still say yes to it once. */
+  const askThenAdd = (symbol: string, name: string) => {
+    openSheet({
+      kind: "confirm",
+      title: `Add ${symbol} to ${label}?`,
+      body: `${name} joins ${label}. Following a company never buys kitta — you will just see it after every close.`,
+      confirmLabel: "Add to list",
+      cancelLabel: "Not now",
+      onConfirm: () => {
+        addToList(listId, symbol);
+        fulfillObjective("watch");
+        flash({ message: `${symbol} added to ${label}.` });
+      },
+    });
+  };
   const q = query.trim().toLowerCase();
   const rows = listedQuotes.filter((quote) => {
     if (list?.symbols.includes(quote.symbol)) return false;
@@ -1195,12 +1221,7 @@ function WatchAddSheet() {
             key={quote.symbol}
             type="button"
             className="watch-add-row"
-            onClick={() => {
-              addToList(sheet.listId, quote.symbol);
-              fulfillObjective("watch");
-              closeSheet();
-              flash({ message: `${quote.symbol} added to ${list?.label ?? "the list"}.` });
-            }}
+            onClick={() => askThenAdd(quote.symbol, quote.name)}
           >
             <TickerMark symbol={quote.symbol} />
             <span className="watch-add-id">

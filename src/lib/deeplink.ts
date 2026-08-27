@@ -7,6 +7,8 @@ const query = new URLSearchParams(typeof window === "undefined" ? "" : window.lo
 
 export const allRoutes: Route[] = [
   "onboarding",
+  "signin",
+  "signup",
   "start",
   "home",
   "market",

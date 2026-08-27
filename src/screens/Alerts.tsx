@@ -355,8 +355,9 @@ function AlertForm({
   const [expiry, setExpiry] = useState(rule?.expiry ?? "30 Bhadra 2083");
   const [app, setApp] = useState(rule ? rule.channels.includes("app") : true);
   const [email, setEmail] = useState(rule ? rule.channels.includes("email") : false);
-  const [name, setName] = useState(rule?.name ?? "");
-  const [message, setMessage] = useState(rule?.message ?? "");
+  /* The name and message inputs are commented out in the form for now. */
+  const [name] = useState(rule?.name ?? "");
+  const [message] = useState(rule?.message ?? "");
 
   const quote = useMemo(() => listedQuotes.find((q) => q.symbol === symbol), [symbol]);
   const value = Number(price);
@@ -466,7 +467,7 @@ function AlertForm({
             ))}
           </div>
 
-          <div className="pf-fields one">
+          {/* <div className="pf-fields one">
             <label className="pf-field">
               <span>Name (optional)</span>
               <input value={name} placeholder={`${symbol} ${cross} ${price || "0.00"}`} onChange={(event) => setName(event.target.value)} />
@@ -475,7 +476,7 @@ function AlertForm({
               <span>Message (optional)</span>
               <input value={message} placeholder="What to check when this fires" onChange={(event) => setMessage(event.target.value)} />
             </label>
-          </div>
+          </div> */}
         </div>
 
         <aside className="alert-form-side">

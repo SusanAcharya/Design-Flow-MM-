@@ -68,11 +68,9 @@ export function TulkeyScreen() {
             <div className="tulkey-empty-mascot">
               <img src={mitra.hi} alt="" />
             </div>
-            <p className="overline">Tulkey AI</p>
+            <p className="overline">Mitra AI</p>
             <h1 className="t-h-xl">Ask about Nepal’s market</h1>
-            <p className="t-body-s muted">
-              A word, a date, which site does the work. Not a pick.
-            </p>
+          
             <div className="tulkey-prompts">
               {tulkeyPrompts.map((prompt) => (
                 <button key={prompt} type="button" className="tulkey-prompt" onClick={() => ask(prompt)}>
@@ -100,7 +98,7 @@ export function TulkeyScreen() {
               ),
             )}
             {tulkeyThinking && (
-              <article className="tulkey-turn" aria-live="polite" aria-label="Tulkey is writing">
+              <article className="tulkey-turn" aria-live="polite" aria-label="Mitra is writing">
                 <span className="tulkey-turn-face">
                   <img src={mitra.thinking} alt="" />
                 </span>
@@ -115,13 +113,13 @@ export function TulkeyScreen() {
 
       <div className="tulkey-dock">
         <form className={`tulkey-composer ${listening ? "listening" : ""}`} onSubmit={onSubmit}>
-          <label className="vh" htmlFor="tulkey-ask">Ask Tulkey</label>
+          <label className="vh" htmlFor="tulkey-ask">Ask Mitra</label>
           <textarea
             id="tulkey-ask"
             ref={fieldRef}
             rows={1}
             value={listening ? "" : draft}
-            placeholder={listening ? "Listening…" : "Ask Tulkey"}
+            placeholder={listening ? "Listening…" : "Ask Mitra"}
             disabled={listening || tulkeyThinking}
             onChange={(event) => setDraft(event.target.value)}
             onKeyDown={(event) => {

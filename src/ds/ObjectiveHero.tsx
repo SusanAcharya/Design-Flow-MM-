@@ -15,7 +15,7 @@ export function ObjectiveHero({ compact = false }: { compact?: boolean }) {
           <img src={tulkey} alt="" />
         </span>
         <span className="tulkey-card-copy">
-          <span className="tulkey-card-kicker">Tulkey</span>
+          <span className="tulkey-card-kicker">Mitra</span>
           <strong>Nothing pinned</strong>
           <small>If a word comes up, I’m in the tab.</small>
         </span>

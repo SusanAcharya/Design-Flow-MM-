@@ -93,10 +93,15 @@ export function Onboarding() {
   return (
     <div className="ob-shell ob-hello">
       <div className="ob-hello-stage">
-        <img src={tulkey} alt="" />
-        <p className="ob-hello-brand">MoneyMitra · your guide</p>
-        <h1>Namaste. I’m Tulkey.</h1>
-      
+        <span className="ob-hello-art">
+          <img src={tulkey} alt="" />
+        </span>
+        <p className="ob-hello-brand">MoneyMitra</p>
+        <h1>
+          Namaste. I’m <span>Mitra</span>.
+        </h1>
+        <p className="ob-hello-copy">
+Your guide throughout your stock market journey        </p>
       </div>
       <div className="ob-hello-foot">
         <button type="button" className="btn btn-primary btn-lg btn-block" onClick={() => go("start")}>

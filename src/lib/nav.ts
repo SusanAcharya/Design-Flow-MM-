@@ -5,7 +5,7 @@ const tabIds: Route[] = ["home", "market", "ai", "portfolio", "discover"];
 
 /**
  * `origin` is the tab an objective was opened from, so a sitting reached from
- * Home keeps Home lit instead of jumping the highlight to Tulkey.
+ * Home keeps Home lit instead of jumping the highlight to Mitra.
  */
 export function activeTab(route: Route, origin?: Route): Route {
   if (route === "objective" || route === "objectives") return origin ?? "home";

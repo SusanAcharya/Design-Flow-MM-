@@ -11,6 +11,7 @@ import { SubscriptionScreen } from "../screens/Subscription";
 import { HappeningScreen } from "../screens/Happening";
 import { ObjectiveScreen, ObjectivesScreen } from "../screens/Objective";
 import { Onboarding, StartingPoint } from "../screens/Onboarding";
+import { SignInScreen, SignUpScreen } from "../screens/Auth";
 import { HoldingScreen, PortfolioScreen } from "../screens/Portfolio";
 import { StockScreen } from "../screens/Stock";
 import { DesktopChrome, MobileChrome } from "../shell/Chrome";
@@ -20,7 +21,8 @@ import { ScreenError, ScreenSkeleton } from "../ds/Loading";
 
 export function Prototype() {
   const { viewport, route, theme, uiFont, dataState } = useApp();
-  const onboarding = route === "onboarding" || route === "start";
+  const onboarding =
+    route === "onboarding" || route === "start" || route === "signin" || route === "signup";
   const screen = (() => {
     /* Studio drives these so every screen's loading and failed states can be reviewed. */
     if (!onboarding && dataState === "loading") return <ScreenSkeleton route={route} />;
@@ -28,6 +30,10 @@ export function Prototype() {
     switch (route) {
       case "onboarding":
         return <Onboarding />;
+      case "signin":
+        return <SignInScreen />;
+      case "signup":
+        return <SignUpScreen />;
       case "start":
         return <StartingPoint />;
       case "home":

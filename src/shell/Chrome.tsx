@@ -12,7 +12,7 @@ import type { Route } from "../lib/types";
 const tabs: { id: Route; label: string; icon: "home" | "market" | "tulkey" | "wallet" | "discover" }[] = [
   { id: "home", label: "Home", icon: "home" },
   { id: "market", label: "Market", icon: "market" },
-  { id: "ai", label: "Tulkey", icon: "tulkey" },
+  { id: "ai", label: "Mitra", icon: "tulkey" },
   { id: "portfolio", label: "Portfolio", icon: "wallet" },
   { id: "discover", label: "Explore", icon: "discover" },
 ];
@@ -87,7 +87,7 @@ function GlobalHeader() {
         </div>
       ) : route === "ai" ? (
         <div className="header-who compact">
-          <p className="t-h-s">Tulkey</p>
+          <p className="t-h-s">Mitra</p>
         </div>
       ) : route === "discover" ? (
         <div className="header-who compact">
@@ -147,7 +147,7 @@ export function MobileChrome({ children, showTabs }: { children: ReactNode; show
 const rail: { id: Route; label: string; icon: "home" | "market" | "discover" | "wallet" | "tulkey" }[] = [
   { id: "home", label: "Home", icon: "home" },
   { id: "market", label: "Market", icon: "market" },
-  { id: "ai", label: "Tulkey AI", icon: "tulkey" },
+  { id: "ai", label: "Mitra AI", icon: "tulkey" },
   { id: "portfolio", label: "Portfolio", icon: "wallet" },
   { id: "discover", label: "Explore", icon: "discover" },
 ];

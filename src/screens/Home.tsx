@@ -4,10 +4,13 @@ import { HappenIco } from "../ds/HappenList";
 import { BookNudge } from "../ds/BookNudge";
 import { AllocStrip, TapeSpark } from "../ds/charts";
 import { QuoteList } from "../ds/QuoteList";
+import { TickerMark } from "../ds/TickerMark";
 import {
   allotments,
   bookHappen,
   ipoPipeline,
+  listedQuotes,
+  watchStarters,
   watchlist,
   nepse,
   nepseSessionTicks,
@@ -194,7 +197,7 @@ function stepIcon(item: Objective): IconName {
 
 /**
  * Home's path card. A beginner who hasn't finished a sitting yet gets the whole
- * checklist with Tulkey on it; everyone else gets the one-line pill. Either way
+ * checklist with Mitra on it; everyone else gets the one-line pill. Either way
  * the arrow switches between the two forms.
  */
 function NextStepsCard() {
@@ -412,25 +415,96 @@ function JumpGrid() {
   );
 }
 
+/* An empty list is the moment to hand over three names, not a line of copy
+   about what a list is. Following one flips this card into the real preview. */
+function WatchlistStarter() {
+  const { go, watchlists, addToList, openSheet, flash, fulfillObjective } = useApp();
+  const list = watchlists[0];
+  const rows = watchStarters
+    .map((symbol) => listedQuotes.find((quote) => quote.symbol === symbol))
+    .filter((quote): quote is (typeof listedQuotes)[number] => Boolean(quote));
+
+  const follow = (symbol: string, name: string) => {
+    if (!list) return;
+    openSheet({
+      kind: "confirm",
+      title: `Follow ${symbol}?`,
+      body: `${name} lands on ${list.label} after every close. Following never buys kitta.`,
+      confirmLabel: "Follow",
+      cancelLabel: "Not now",
+      onConfirm: () => {
+        addToList(list.id, symbol);
+        fulfillObjective("watch");
+        flash({ message: `${symbol} added to ${list.label}.` });
+      },
+    });
+  };
+
+  return (
+    <div className="watch-start">
+      <p className="watch-start-lead">Nothing followed yet</p>
+      <p className="watch-start-sub">
+        Tap a star to follow a name. It never buys kitta — the company just lands here after every close.
+      </p>
+      <div className="watch-start-rows">
+        {rows.map((row) => (
+          <div className="watch-start-row" key={row.symbol}>
+            <button
+              type="button"
+              className="watch-start-main"
+              onClick={() => go("stock", { stock: row.symbol })}
+            >
+              <TickerMark symbol={row.symbol} />
+              <span className="watch-start-id">
+                <strong>{row.symbol}</strong>
+                <small>{row.name}</small>
+              </span>
+              <span className="watch-start-px">
+                <b>{npr(row.ltp, 2)}</b>
+                <em className={row.changePct < 0 ? "c-down" : "c-up"}>{pct(row.changePct)}</em>
+              </span>
+            </button>
+            <button
+              type="button"
+              className="watch-start-star"
+              onClick={() => follow(row.symbol, row.name)}
+              aria-label={`Follow ${row.symbol}`}
+            >
+              <Icon name="star" size={16} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <button type="button" className="text-link watch-start-more" onClick={() => go("market")}>
+        Browse the whole market ›
+      </button>
+    </div>
+  );
+}
+
 function WatchlistPreview() {
   const { go, watchlists } = useApp();
   /* Home mirrors the first list, so an add on the watchlist screen shows here. */
   const symbols = (watchlists[0]?.symbols ?? []).slice(0, 4);
+  /* Any listed name can be followed, so resolve the tape first and the seeded
+     watchlist second — otherwise a followed name silently vanishes from Home. */
   const rows = symbols
-    .map((symbol) => watchlist.find((row) => row.symbol === symbol))
-    .filter((row): row is (typeof watchlist)[number] => Boolean(row));
+    .map((symbol) => {
+      const quote = listedQuotes.find((row) => row.symbol === symbol);
+      if (quote) {
+        return { symbol: quote.symbol, name: quote.name, price: quote.ltp, changePct: quote.changePct };
+      }
+      const seeded = watchlist.find((row) => row.symbol === symbol);
+      return seeded
+        ? { symbol: seeded.symbol, name: seeded.name, price: seeded.price, changePct: seeded.changePct }
+        : null;
+    })
+    .filter((row): row is { symbol: string; name: string; price: number; changePct: number } => Boolean(row));
 
-  return (
-    <QuoteList
-      rows={rows.map((row) => ({
-        symbol: row.symbol,
-        name: row.name,
-        price: row.price,
-        changePct: row.changePct,
-      }))}
-      onRow={(symbol) => go("stock", { stock: symbol })}
-    />
-  );
+  /* Nothing followed yet — show real names to follow, not a box describing them. */
+  if (rows.length === 0) return <WatchlistStarter />;
+
+  return <QuoteList rows={rows} onRow={(symbol) => go("stock", { stock: symbol })} />;
 }
 
 function LearnBoard() {
@@ -452,18 +526,13 @@ function LearnBoard() {
 }
 
 function ConsultCard() {
-  const { openSheet } = useApp();
+  const { go } = useApp();
 
   return (
     <button
       type="button"
       className="consult-card"
-      onClick={() => openSheet({
-        kind: "quick",
-        title: "Book a quick call",
-        body: "An analyst sits with you on a short call. They walk a name through. They never place an order.",
-        note: "This prototype doesn’t book the slot yet.",
-      })}
+      onClick={() => go("subscription", { planPick: "pro", subIntent: "consult" })}
     >
       <span className="consult-faces" aria-hidden>
         <img src={mitra.chart} alt="" />

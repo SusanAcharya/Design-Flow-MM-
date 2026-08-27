@@ -35,6 +35,7 @@ import type {
   Sheet,
   Stage,
   StockTab,
+  SubIntent,
   Theme,
   Toast,
   UiFont,
@@ -56,6 +57,10 @@ type GoExtras = {
   persona?: PersonaId;
   objective?: string;
   alertSymbol?: string;
+  /** Land on Subscription with a tier already picked, ready to buy. */
+  planPick?: Plan;
+  /** Why they came — a consultation asks for a different opening line. */
+  subIntent?: SubIntent;
 };
 
 type AppState = {
@@ -108,7 +113,10 @@ type AppState = {
   homeTools: string[];
   avatar: string;
   watchlists: WatchList[];
+  hasWatchlist: boolean;
   alertSeed: string | null;
+  planSeed: Plan | null;
+  subIntent: SubIntent | null;
   setTheme: (theme: Theme) => void;
   setUiFont: (font: UiFont) => void;
   setViewport: (viewport: Viewport) => void;
@@ -139,12 +147,14 @@ type AppState = {
   toggleExploreFavorite: (id: string) => void;
   toggleHomeTool: (id: string) => void;
   setAvatar: (src: string) => void;
+  setHasWatchlist: (next: boolean) => void;
   createWatchlist: (label: string) => string;
   renameWatchlist: (id: string, label: string) => void;
   deleteWatchlist: (id: string) => void;
   addToList: (id: string, symbol: string) => void;
   removeFromList: (id: string, symbol: string) => void;
   clearAlertSeed: () => void;
+  clearSubSeed: () => void;
   go: (route: Route, extras?: GoExtras) => void;
   back: () => void;
   finishOnboarding: (result: OnboardingResult) => void;
@@ -243,10 +253,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [exploreFavorites, setExploreFavorites] = useState<string[]>(defaultExploreFavorites);
   const [homeTools, setHomeTools] = useState<string[]>([]);
   const [avatar, setAvatar] = useState<string>(`${import.meta.env.BASE_URL}characters/${memberCharacter}.png`);
+  const seededLists = () => watchLists.map((list) => ({ ...list, symbols: [...list.symbols] }));
+  const emptyLists = (): WatchList[] => [
+    { id: "main", label: "Main", blurb: "Names you check after close", symbols: [] },
+  ];
+  const [hasWatchlist, setHasWatchlistState] = useState(
+    param("watch", ["yes", "none"] as const, "yes") === "yes",
+  );
   const [watchlists, setWatchlists] = useState<WatchList[]>(() =>
-    watchLists.map((list) => ({ ...list, symbols: [...list.symbols] })),
+    param("watch", ["yes", "none"] as const, "yes") === "yes" ? seededLists() : emptyLists(),
   );
   const [alertSeed, setAlertSeed] = useState<string | null>(null);
+  const [planSeed, setPlanSeed] = useState<Plan | null>(null);
+  const [subIntent, setSubIntent] = useState<SubIntent | null>(null);
   const [, setStack] = useState<Route[]>([]);
   const prevStage = useRef<Stage>("base");
   const toastTimer = useRef<number>(0);
@@ -295,6 +314,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setStack((s) => [...s, route]);
     if (extras?.stock) setStock(extras.stock);
     if (extras?.alertSymbol) setAlertSeed(extras.alertSymbol);
+    if (next === "subscription") {
+      setPlanSeed(extras?.planPick ?? null);
+      setSubIntent(extras?.subIntent ?? null);
+    }
     if (extras?.stockTab) setStockTab(extras.stockTab);
     else if (next === "stock" && route !== "stock") setStockTab("Overview");
     if (extras?.marketTab) setMarketTab(extras.marketTab);
@@ -413,6 +436,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBrokerCode("33");
     setPlanState("free");
     setPlanCycle("annual");
+    setPlanSeed(null);
+    setSubIntent(null);
     setDataState("ready");
     setHasPortfolio(true);
     setPortfolioId("main");
@@ -424,7 +449,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setExploreFavorites(defaultExploreFavorites);
     setHomeTools([]);
     setAvatar(`${import.meta.env.BASE_URL}characters/${memberCharacter}.png`);
-    setWatchlists(watchLists.map((list) => ({ ...list, symbols: [...list.symbols] })));
+    setWatchlists(seededLists());
+    setHasWatchlistState(true);
     setAlertSeed(null);
     setSheet(null);
     setToast(null);
@@ -541,6 +567,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     );
   }, []);
   const clearAlertSeed = useCallback(() => setAlertSeed(null), []);
+  const clearSubSeed = useCallback(() => {
+    setPlanSeed(null);
+    setSubIntent(null);
+  }, []);
+  /* Studio switch: a member who follows names, or one who has not started. */
+  const setHasWatchlist = useCallback((next: boolean) => {
+    setHasWatchlistState(next);
+    setWatchlists(next ? seededLists() : emptyLists());
+    setWatchlistAdds([]);
+  }, []);
 
   const toggleHomeTool = useCallback((id: string) => {
     setHomeTools((current) =>
@@ -679,7 +715,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       homeTools,
       avatar,
       watchlists,
+      hasWatchlist,
       alertSeed,
+      planSeed,
+      subIntent,
       setTheme,
       setUiFont,
       setViewport,
@@ -708,12 +747,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       toggleExploreFavorite,
       toggleHomeTool,
       setAvatar,
+      setHasWatchlist,
       createWatchlist,
       renameWatchlist,
       deleteWatchlist,
       addToList,
       removeFromList,
       clearAlertSeed,
+      clearSubSeed,
       go,
       back,
       finishOnboarding,
@@ -786,17 +827,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
       homeTools,
       avatar,
       watchlists,
+      hasWatchlist,
       alertSeed,
+      planSeed,
+      subIntent,
       setStage,
       toggleExploreFavorite,
       toggleHomeTool,
       setAvatar,
+      setHasWatchlist,
       createWatchlist,
       renameWatchlist,
       deleteWatchlist,
       addToList,
       removeFromList,
       clearAlertSeed,
+      clearSubSeed,
       go,
       back,
       finishOnboarding,

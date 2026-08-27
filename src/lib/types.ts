@@ -9,6 +9,8 @@ export type HoldingMode = "add" | "detail";
 export type PersonaId = "maya" | "prakash" | "sita" | "anil";
 export type Route =
   | "onboarding"
+  | "signin"
+  | "signup"
   | "start"
   | "home"
   | "market"
@@ -49,6 +51,8 @@ export type MarketDesk =
 export type BrokerDesk = "hub" | "analysis" | "detail";
 
 export type Plan = "free" | "plus" | "pro";
+/** Why a member landed on Subscription — a consultation opens differently. */
+export type SubIntent = "consult";
 export type PlanCycle = "monthly" | "annual";
 export type MarketSession = "open" | "closed";
 export type MarketTab = "Overview" | "Movers" | "Sectors" | "Floor sheet" | "Events";

@@ -133,6 +133,9 @@
   --font-sans: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --font-mono: "IBM Plex Sans", ui-monospace, "SF Mono", Menlo, monospace;
 
+  /* The platform renders at 80% — it reads better than at 1:1, and matches
+     what a browser at 80% zoom shows. One number, change it here. */
+  --app-zoom: 0.8;
   --mobile-w: 390px;
   --mobile-h: 844px;
   --rail-w: 248px;
