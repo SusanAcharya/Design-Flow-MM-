@@ -521,49 +521,158 @@ export function BreadthField({
   );
 }
 
-function hashSeed(input: string) {
-  let n = 2166136261;
-  for (let i = 0; i < input.length; i += 1) {
-    n ^= input.charCodeAt(i);
-    n = Math.imul(n, 16777619);
-  }
-  return Math.abs(n);
+function shortNpr(value: number) {
+  const abs = Math.abs(value);
+  if (abs >= 1e7) return `${(value / 1e7).toFixed(2)}Cr`;
+  if (abs >= 1e5) return `${(value / 1e5).toFixed(2)}L`;
+  if (abs >= 1e3) return `${Math.round(value / 1e3)}k`;
+  return npr(value, 0);
 }
+
+/**
+ * The book's value over a range: straight segments between prints, a flat wash
+ * under the line, and a value scale on the right. Deliberately not the session
+ * chart — a portfolio is read as a shape over weeks, not scrubbed by the minute.
+ */
+export function BookTrend({ tape, hidden = false }: { tape: Tape; hidden?: boolean }) {
+  const uid = useId().replace(/:/g, "");
+  const W = 360;
+  const H = 148;
+  const padL = 4;
+  const padR = 44;
+  const padT = 12;
+  const padB = 20;
+  const plotH = H - padT - padB;
+
+  const geo = useMemo(() => {
+    /* The book is priced daily, so fill the gaps between marks with a steady
+       wobble: the shape stays true to the anchors, the line reads like a market. */
+    const anchors = tape.prints;
+    const gaps = Math.max(anchors.length - 1, 1);
+    const perGap = Math.max(1, Math.round(30 / gaps));
+    const spanTotal = Math.max(...anchors.map((p) => p.v)) - Math.min(...anchors.map((p) => p.v));
+    const wobble = (spanTotal || Math.abs(tape.last) * 0.01) * 0.14;
+    const dense: { v: number; t: string | null }[] = [];
+    for (let i = 0; i < gaps; i += 1) {
+      const from = anchors[i].v;
+      const to = anchors[i + 1].v;
+      for (let s = 0; s < perGap; s += 1) {
+        const k = s / perGap;
+        const step = i * perGap + s;
+        const jitter = s === 0 ? 0 : (Math.sin(step * 2.7) * 0.6 + Math.sin(step * 1.1) * 0.4) * wobble;
+        dense.push({ v: from + (to - from) * k + jitter, t: s === 0 ? anchors[i].t : null });
+      }
+    }
+    dense.push({ v: anchors[anchors.length - 1].v, t: anchors[anchors.length - 1].t });
+
+    const values = dense.map((p) => p.v);
+    const vmin = Math.min(...values);
+    const vmax = Math.max(...values);
+    const pad = (vmax - vmin) * 0.16 || 1;
+    const lo = vmin - pad;
+    const hi = vmax + pad;
+    const yOf = (v: number) => padT + (1 - (v - lo) / (hi - lo)) * plotH;
+    const n = Math.max(dense.length - 1, 1);
+    const pts = dense.map((p, i) => ({
+      x: padL + (i / n) * (W - padL - padR),
+      y: yOf(p.v),
+      t: p.t,
+    }));
+    const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(" ");
+    const base = padT + plotH;
+    const area = `${line} L${pts[pts.length - 1].x.toFixed(1)} ${base} L${pts[0].x.toFixed(1)} ${base} Z`;
+    const grid = [0, 0.5, 1].map((step) => ({
+      y: padT + step * plotH,
+      value: hi - step * (hi - lo),
+    }));
+    const ticks = pts.filter((p) => p.t) as { x: number; y: number; t: string }[];
+    return { pts, line, area, grid, ticks };
+  }, [tape, padT, plotH]);
+
+  const up = tape.last >= tape.prevClose;
+  const stroke = up ? "var(--up-base)" : "var(--down-base)";
+  const gid = `book-trend-${uid}`;
+  const ticks = geo.ticks;
+
+  return (
+    <svg className="book-trend" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Book value from ${tape.prints[0].t} to ${tape.prints[tape.prints.length - 1].t}`}>
+      <defs>
+        <linearGradient id={gid} gradientUnits="userSpaceOnUse" x1="0" y1={padT} x2="0" y2={padT + plotH}>
+          <stop offset="0%" stopColor={stroke} stopOpacity="0.18" />
+          <stop offset="100%" stopColor={stroke} stopOpacity="0.05" />
+        </linearGradient>
+      </defs>
+
+      {geo.grid.map((row) => (
+        <g key={row.y}>
+          <line className="book-trend-grid" x1={padL} x2={W - padR} y1={row.y} y2={row.y} />
+          {!hidden && (
+            <text className="book-trend-axis" x={W - padR + 8} y={row.y + 3.5}>
+              {shortNpr(row.value)}
+            </text>
+          )}
+        </g>
+      ))}
+
+      <path d={geo.area} fill={`url(#${gid})`} />
+      <path
+        className="book-trend-line"
+        d={geo.line}
+        fill="none"
+        stroke={stroke}
+        strokeWidth="2.4"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+      />
+
+      {ticks.map((tick) => (
+        <text key={tick.t} className="book-trend-tick" x={tick.x} y={H - 5}>
+          {tick.t}
+        </text>
+      ))}
+    </svg>
+  );
+}
+
+/**
+ * One shape for every sparkline in the app: a session that climbs through two
+ * dips. Direction flips it, size of the move sets how steep it reads, so rows
+ * stay comparable instead of each carrying its own random squiggle.
+ */
+const SPARK_SHAPE = [0.06, 0.18, 0.34, 0.28, 0.2, 0.36, 0.54, 0.46, 0.4, 0.58, 0.74, 0.68, 0.84, 0.96];
 
 export function Sparkline({
   changePct,
-  seed = "mm",
   width = 72,
   height = 28,
 }: {
   changePct: number;
-  seed?: string;
   width?: number;
   height?: number;
 }) {
-  const count = 14;
-  const start = 42;
-  const end = 42 + changePct * 1.15;
-  let s = hashSeed(seed) || 1;
-  const values = Array.from({ length: count }, (_, i) => {
-    s = (s * 16807) % 2147483647;
-    const t = i / (count - 1);
-    const noise = ((s % 21) - 10) * (i === 0 || i === count - 1 ? 0 : 0.55);
-    return start + (end - start) * t + noise;
-  });
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const pad = (max - min) * 0.22 || 1;
-  const xAt = (i: number) => (i / (count - 1)) * width;
-  const yAt = (v: number) =>
-    height - 2 - ((v - (min - pad)) / (max - min + 2 * pad)) * (height - 4);
-  const pts = values.map((v, i) => ({ x: xAt(i), y: yAt(v) }));
-  const line = smoothLine(pts, 1, height - 1);
   const up = changePct >= 0;
+  const strength = clamp(0.7 + Math.abs(changePct) / 8, 0.7, 1);
+  const count = SPARK_SHAPE.length;
+  const xAt = (i: number) => (i / (count - 1)) * width;
+  const top = 2.5;
+  const span = height - top * 2;
+  const pts = SPARK_SHAPE.map((v, i) => {
+    const swing = (v - 0.5) * strength * (up ? 1 : -1);
+    return { x: xAt(i), y: top + (0.5 - swing) * span };
+  });
+  const line = smoothLine(pts, 1, height - 1);
   const stroke = up ? "var(--up-base)" : "var(--down-base)";
   return (
-    <svg className={`sparkline ${up ? "up" : "down"}`} viewBox={`0 0 ${width} ${height}`} width={width} height={height} aria-hidden>
-      <path d={line} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    <svg
+      className={`sparkline ${up ? "up" : "down"}`}
+      viewBox={`0 0 ${width} ${height}`}
+      width={width}
+      height={height}
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <path d={line} fill="none" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }
@@ -743,11 +852,14 @@ export function TapeSpark({
   width = 96,
   height = 32,
   positive,
+  smooth = true,
 }: {
   values: number[];
   width?: number;
   height?: number;
   positive?: boolean;
+  /** Off draws the prints as they came in — the tape, not a curve. */
+  smooth?: boolean;
 }) {
   if (values.length < 2) return null;
   const uid = useId().replace(/:/g, "");
@@ -758,7 +870,9 @@ export function TapeSpark({
   const yAt = (v: number) =>
     height - 2 - ((v - (min - pad)) / (max - min + 2 * pad)) * (height - 4);
   const pts = values.map((v, i) => ({ x: xAt(i), y: yAt(v) }));
-  const line = smoothLine(pts, 1, height - 1);
+  const line = smooth
+    ? smoothLine(pts, 1, height - 1)
+    : pts.map((p, i) => `${i ? "L" : "M"}${p.x.toFixed(2)} ${p.y.toFixed(2)}`).join(" ");
   const last = values[values.length - 1];
   const up = positive ?? last >= values[0];
   const stroke = up ? "var(--up-base)" : "var(--down-base)";

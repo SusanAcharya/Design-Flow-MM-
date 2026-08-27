@@ -1,8 +1,14 @@
 import { useApp } from "../lib/state";
-import { AlertsScreen, DiscoverScreen, IpoScreen, LearnScreen, LessonScreen, MoreScreen, SearchScreen } from "../screens/Discover";
+import { AlertsScreen, NotificationsScreen } from "../screens/Alerts";
+import { DiscoverScreen, IpoScreen, LearnScreen, LessonScreen, MoreScreen, SearchScreen } from "../screens/Discover";
 import { TulkeyScreen } from "../screens/Tulkey";
-import { BasketsScreen, BrokersScreen, HomeScreen, WatchlistScreen } from "../screens/Home";
+import { BasketsScreen, HomeScreen, WatchlistScreen } from "../screens/Home";
 import { MarketScreen } from "../screens/Market";
+import { MarketDeskScreen } from "../screens/MarketDesk";
+import { BrokersScreen } from "../screens/Brokers";
+import { ProfileScreen } from "../screens/Profile";
+import { SubscriptionScreen } from "../screens/Subscription";
+import { HappeningScreen } from "../screens/Happening";
 import { ObjectiveScreen, ObjectivesScreen } from "../screens/Objective";
 import { Onboarding, StartingPoint } from "../screens/Onboarding";
 import { HoldingScreen, PortfolioScreen } from "../screens/Portfolio";
@@ -10,11 +16,15 @@ import { StockScreen } from "../screens/Stock";
 import { DesktopChrome, MobileChrome } from "../shell/Chrome";
 import { Overlays } from "../shell/Overlays";
 import { HomeFab, TulkeyVoiceOverlay } from "../ds/TulkeyVoice";
+import { ScreenError, ScreenSkeleton } from "../ds/Loading";
 
 export function Prototype() {
-  const { viewport, route, theme, uiFont } = useApp();
+  const { viewport, route, theme, uiFont, dataState } = useApp();
   const onboarding = route === "onboarding" || route === "start";
   const screen = (() => {
+    /* Studio drives these so every screen's loading and failed states can be reviewed. */
+    if (!onboarding && dataState === "loading") return <ScreenSkeleton route={route} />;
+    if (!onboarding && dataState === "error") return <ScreenError />;
     switch (route) {
       case "onboarding":
         return <Onboarding />;
@@ -24,6 +34,10 @@ export function Prototype() {
         return <HomeScreen />;
       case "market":
         return <MarketScreen />;
+      case "market-desk":
+        return <MarketDeskScreen />;
+      case "profile":
+        return <ProfileScreen />;
       case "discover":
         return <DiscoverScreen />;
       case "ai":
@@ -50,6 +64,12 @@ export function Prototype() {
         return <HoldingScreen />;
       case "alerts":
         return <AlertsScreen />;
+      case "notifications":
+        return <NotificationsScreen />;
+      case "subscription":
+        return <SubscriptionScreen />;
+      case "happening":
+        return <HappeningScreen />;
       case "watchlist":
         return <WatchlistScreen />;
       case "brokers":

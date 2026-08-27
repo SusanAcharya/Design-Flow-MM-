@@ -24,10 +24,9 @@ export function replyTo(question: string): { text: string; sittingId: string | n
   const q = question.trim();
   const sitting = getObjectiveByTitle(q);
   if (sitting) {
-    const where = sitting.how.map((step) => step.platform).join(" · ");
     return {
       sittingId: sitting.id,
-      text: `${sitting.know[0]}\n\nWhere this actually happens: ${where}.\n\nI explain the words and the platform. I never say what to buy or sell.`,
+      text: `${sitting.points.join("\n\n")}\n\nI explain the words and the platform. I never say what to buy or sell.`,
     };
   }
 

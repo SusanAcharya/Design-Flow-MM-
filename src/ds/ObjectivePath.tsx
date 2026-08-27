@@ -37,23 +37,27 @@ function QuietRow({
 function Fold({
   label,
   count,
+  defaultOpen = false,
   children,
 }: {
   label: string;
   count: number;
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   if (count === 0) return null;
   return (
     <div className="obj-fold">
       <button
         type="button"
-        className="obj-fold-toggle"
+        className={`obj-fold-toggle${open ? " open" : ""}`}
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
       >
-        {open ? `Hide ${label}` : `View ${label} · ${count}`}
+        <span>{label}</span>
+        <em>{count}</em>
+        <i aria-hidden />
       </button>
       {open && <div className="obj-fold-list">{children}</div>}
     </div>
@@ -61,9 +65,9 @@ function Fold({
 }
 
 export function ObjectivePath() {
-  const { go, route, objectiveId, pathFinished, setViewingObjectiveId, stage, personaId } = useApp();
+  const { go, route, objectiveId, pathFinished, objectivesDone, setViewingObjectiveId, stage, personaId, viewport } = useApp();
   const pinned = homeObjectiveId(objectiveId, stage, personaId);
-  const { done, now, later, learned, total } = pathProgress(pinned, pathFinished);
+  const { done, now, later, learned, total } = pathProgress(pinned, pathFinished, objectivesDone);
   const current = now ?? getObjective(pinned);
   const next = later[0] ?? null;
   const rest = later.slice(1);
@@ -94,7 +98,7 @@ export function ObjectivePath() {
           </span>
           <strong>{current.title}</strong>
           <small>{current.cardSub}</small>
-          <em>{current.kind === "do" ? (current.cta ?? "Open") : "Open"} ›</em>
+          <em>{current.feature?.ctaLabel ?? "Watch"} ›</em>
         </button>
       ) : null}
 
@@ -112,7 +116,7 @@ export function ObjectivePath() {
         ))}
       </Fold>
 
-      <Fold label="later" count={rest.length}>
+      <Fold label="later" count={rest.length} defaultOpen={viewport === "web"}>
         {rest.map((item) => (
           <QuietRow key={item.id} item={item} status="left" />
         ))}

@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { UserAvatar } from "../ds/UserAvatar";
-import { Button } from "../ds/primitives";
-import { Icon } from "../ds/Icon";
+import { TickerMark } from "../ds/TickerMark";
+import { Button, SearchField } from "../ds/primitives";
+import { Icon, type IconName } from "../ds/Icon";
 import {
   circuitCopy,
   compareRows,
+  listedQuotes,
   metrics,
   nabil,
   nabilLedger,
+  user,
 } from "../lib/data";
 import { npr, signed } from "../lib/format";
 import {
@@ -18,8 +21,8 @@ import {
   type PortfolioId,
   type PortfolioKind,
 } from "../lib/portfolio";
-import { planFeatures, planMeta } from "../lib/explore";
-import { activeTab } from "../lib/nav";
+import { characterCast, memberSince, planFeatures, planIds, planMeta, referralCode } from "../lib/explore";
+import { activeTab, jumpDestinations } from "../lib/nav";
 import { stageMeta, stageOrder } from "../lib/stage";
 import { useApp } from "../lib/state";
 import type { Plan, PlanCycle, Route, Stage } from "../lib/types";
@@ -205,51 +208,70 @@ function QuickSheet({ title, body, note }: { title: string; body: string; note?:
   );
 }
 
+/* The drawer is the whole map of the app: who you are, the five tabs, then the
+   places people ask for by name. */
+const drawerTabs: { id: Route; label: string; icon: "home" | "market" | "tulkey" | "wallet" | "discover" }[] = [
+  { id: "home", label: "Home", icon: "home" },
+  { id: "market", label: "Market", icon: "market" },
+  { id: "ai", label: "Tulkey AI", icon: "tulkey" },
+  { id: "portfolio", label: "Portfolio", icon: "wallet" },
+  { id: "discover", label: "Explore", icon: "discover" },
+];
+
 function NavigationSheet() {
-  const { go, closeSheet, openSheet, stage, route } = useApp();
-  const current = activeTab(route);
-  const routeTo = (next: Route) => {
+  const { go, closeSheet, plan, route, objectiveOrigin } = useApp();
+  const current = activeTab(route, objectiveOrigin);
+  const meta = planMeta[plan];
+  const routeTo = (next: Route, extras?: { brokerDesk?: "hub" | "analysis" }) => {
     closeSheet();
-    go(next);
+    go(next, extras);
   };
+
   return (
-    <>
-      <div className="drawer-profile">
-        <UserAvatar size={36} />
-        <span>
-          <strong className="t-h-s">Sandip</strong>
-          <small>{stageMeta[stage].label}</small>
+    <div className="drawer">
+      <button type="button" className={`drawer-card plan-${plan}`} onClick={() => routeTo("profile")}>
+        <UserAvatar size={44} />
+        <span className="drawer-card-id">
+          <span className="drawer-card-name">
+            <strong>{user.fullName}</strong>
+            <em className={`tier-pill tier-${plan}`}>{meta.label}</em>
+          </span>
+          <small>{plan === "free" ? `Member since ${memberSince}` : meta.renew}</small>
         </span>
-        <button type="button" className="icon-btn" onClick={() => openSheet({ kind: "profile" })} aria-label="Profile">
-          <Icon name="chev" size={16} />
-        </button>
-      </div>
+      </button>
+
       <nav className="drawer-nav" aria-label="Primary">
-        <button type="button" className={current === "home" ? "on" : ""} onClick={() => routeTo("home")}>
-          <Icon name="home" size={18} /><span>Home</span>
-        </button>
-        <button type="button" className={current === "market" ? "on" : ""} onClick={() => routeTo("market")}>
-          <Icon name="market" size={18} /><span>Market</span>
-        </button>
-        <button type="button" className={current === "ai" ? "on" : ""} onClick={() => routeTo("ai")}>
-          <Icon name="tulkey" size={18} /><span>Tulkey</span>
-        </button>
-        <button type="button" className={current === "portfolio" ? "on" : ""} onClick={() => routeTo("portfolio")}>
-          <Icon name="wallet" size={18} /><span>Portfolio</span>
-        </button>
-        <button type="button" className={current === "discover" ? "on" : ""} onClick={() => routeTo("discover")}>
-          <Icon name="discover" size={18} /><span>Explore</span>
-        </button>
+        {drawerTabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={current === tab.id ? "on" : ""}
+            aria-current={current === tab.id ? "page" : undefined}
+            onClick={() => routeTo(tab.id)}
+          >
+            <Icon name={tab.icon} size={18} />
+            <span>{tab.label}</span>
+          </button>
+        ))}
       </nav>
-      <p className="overline" style={{ margin: "18px 0 6px" }}>Go here</p>
+
+      <p className="overline drawer-label">Jump to</p>
       <div className="drawer-links">
-        <button type="button" onClick={() => routeTo("watchlist")}><span>Watching</span><Icon name="chev" size={15} /></button>
-        <button type="button" onClick={() => routeTo("brokers")}><span>Brokers</span><Icon name="chev" size={15} /></button>
-        <button type="button" onClick={() => routeTo("baskets")}><span>Baskets</span><Icon name="chev" size={15} /></button>
-        <button type="button" onClick={() => routeTo("objectives")}><span>Objectives</span><Icon name="chev" size={15} /></button>
-        <button type="button" onClick={() => routeTo("discover")}><span>Tools & screener</span><Icon name="chev" size={15} /></button>
+        {jumpDestinations.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => routeTo(item.route, item.brokerDesk ? { brokerDesk: item.brokerDesk } : undefined)}
+          >
+            <span className="drawer-link-ico" aria-hidden>
+              <Icon name={item.icon} size={16} />
+            </span>
+            <span className="drawer-link-label">{item.label}</span>
+            <Icon name="chev" size={15} />
+          </button>
+        ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -582,6 +604,15 @@ function PortfolioMenuSheet() {
             <span>
               <strong>Edit portfolio</strong>
               <small>Rename, set the type, or mark this book as primary.</small>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button type="button" onClick={() => openSheet({ kind: "portfolio-import" })}>
+            <span className="pf-menu-ico" aria-hidden><Icon name="doc" size={18} /></span>
+            <span>
+              <strong>Import holdings</strong>
+              <small>Paste a broker statement or bring rows in from your TMS.</small>
             </span>
           </button>
         </li>
@@ -959,6 +990,347 @@ function PortfolioImportStepsSheet({ source, fileName }: { source: "file" | "tms
   );
 }
 
+function PasswordSheet() {
+  const { closeSheet, flash } = useApp();
+  const [current, setCurrent] = useState("");
+  const [next, setNext] = useState("");
+  const [again, setAgain] = useState("");
+
+  const save = () => {
+    if (!current || !next || !again) {
+      flash({ message: "Fill every field to change the password." });
+      return;
+    }
+    if (next !== again) {
+      flash({ message: "The new passwords do not match." });
+      return;
+    }
+    closeSheet();
+    flash({ message: "Password updated. This is a prototype — nothing was stored." });
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">Change password</p>
+          <p className="t-body-xs muted">Demo only. Nothing is written to a server.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="stack" style={{ gap: 12, marginTop: 16 }}>
+        <label className="field">
+          Current password
+          <input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} autoComplete="current-password" />
+        </label>
+        <label className="field">
+          New password
+          <input type="password" value={next} onChange={(e) => setNext(e.target.value)} autoComplete="new-password" />
+        </label>
+        <label className="field">
+          Confirm new password
+          <input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" />
+        </label>
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <Button variant="primary" size="md" block onClick={save}>Save password</Button>
+      </div>
+    </>
+  );
+}
+
+function HelpSheet() {
+  const { closeSheet, go } = useApp();
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">Help & support</p>
+          <p className="t-body-xs muted">Tulkey explains the words. It never picks a stock.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="stack" style={{ gap: 8, marginTop: 16 }}>
+        <button
+          type="button"
+          className="row"
+          style={{ paddingLeft: 0, paddingRight: 0 }}
+          onClick={() => {
+            closeSheet();
+            go("ai");
+          }}
+        >
+          <span className="profile-row-ico"><Icon name="tulkey" size={16} /></span>
+          <div className="row-main">
+            <p className="t-h-s">Ask Tulkey</p>
+            <p className="row-sub">Plain-language answers in the app</p>
+          </div>
+          <Icon name="chev" size={15} />
+        </button>
+        <div className="row" style={{ paddingLeft: 0, paddingRight: 0 }}>
+          <span className="profile-row-ico"><Icon name="mail" size={16} /></span>
+          <div className="row-main">
+            <p className="t-h-s">Write to us</p>
+            <p className="row-sub">hello@moneymitra.com · prototype address</p>
+          </div>
+        </div>
+      </div>
+      <p className="t-body-xs muted" style={{ marginTop: 14 }}>
+        Educational only. Support will not tell you what to buy or sell.
+      </p>
+    </>
+  );
+}
+
+function ReferralSheet() {
+  const { closeSheet, flash } = useApp();
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">Referral code</p>
+          <p className="t-body-xs muted">Share this. They get a month of Plus when they join — in this demo.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="profile-referral">
+        <code>{referralCode}</code>
+        <Button
+          variant="secondary"
+          size="md"
+          onClick={() => flash({ message: `${referralCode} copied. Nothing left this device.` })}
+        >
+          Copy
+        </Button>
+      </div>
+      <p className="t-body-xs muted" style={{ marginTop: 12 }}>
+        You get a month of Plus too when a friend starts. No payment is taken here.
+      </p>
+    </>
+  );
+}
+
+/* Pick a face from the cast, or bring your own picture. */
+function AvatarSheet() {
+  const { closeSheet, avatar, setAvatar, flash } = useApp();
+  const base = import.meta.env.BASE_URL;
+
+  const onFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatar(String(reader.result));
+      closeSheet();
+      flash({ message: "Picture updated." });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">Your picture</p>
+          <p className="t-body-xs muted">Pick a face, or upload your own.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="face-grid">
+        {characterCast.map((name) => {
+          const src = `${base}characters/${name}.png`;
+          return (
+            <button
+              key={name}
+              type="button"
+              className={`face-pick${avatar === src ? " on" : ""}`}
+              aria-label={name}
+              aria-pressed={avatar === src}
+              onClick={() => {
+                setAvatar(src);
+                closeSheet();
+                flash({ message: "Picture updated." });
+              }}
+            >
+              <img src={src} alt="" />
+            </button>
+          );
+        })}
+      </div>
+      <label className="face-upload">
+        <input type="file" accept="image/*" onChange={onFile} />
+        <span>Upload a picture</span>
+      </label>
+      <p className="foot-note">The picture stays on this device. Nothing is sent anywhere.</p>
+    </>
+  );
+}
+
+/* Search every listed name and add one to this list. */
+function WatchAddSheet() {
+  const { closeSheet, sheet, watchlists, addToList, flash, fulfillObjective } = useApp();
+  const [query, setQuery] = useState("");
+  if (sheet?.kind !== "watch-add") return null;
+  const list = watchlists.find((item) => item.id === sheet.listId);
+  const q = query.trim().toLowerCase();
+  const rows = listedQuotes.filter((quote) => {
+    if (list?.symbols.includes(quote.symbol)) return false;
+    if (!q) return true;
+    return `${quote.symbol} ${quote.name}`.toLowerCase().includes(q);
+  });
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">Add to {list?.label ?? "list"}</p>
+          <p className="t-body-xs muted">Following never buys kitta.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="watch-add-search">
+        <SearchField placeholder="Company or symbol" value={query} onChange={setQuery} />
+      </div>
+      <div className="watch-add-list">
+        {rows.slice(0, 8).map((quote) => (
+          <button
+            key={quote.symbol}
+            type="button"
+            className="watch-add-row"
+            onClick={() => {
+              addToList(sheet.listId, quote.symbol);
+              fulfillObjective("watch");
+              closeSheet();
+              flash({ message: `${quote.symbol} added to ${list?.label ?? "the list"}.` });
+            }}
+          >
+            <TickerMark symbol={quote.symbol} />
+            <span className="watch-add-id">
+              <strong>{quote.symbol}</strong>
+              <small>{quote.name}</small>
+            </span>
+            <span className="text-link">Add</span>
+          </button>
+        ))}
+        {rows.length === 0 && <p className="foot-note">Nothing matches that name.</p>}
+      </div>
+    </>
+  );
+}
+
+/* Name a new list, or rename one that exists. */
+function WatchNameSheet() {
+  const { closeSheet, sheet, watchlists, createWatchlist, renameWatchlist, flash } = useApp();
+  const existing = sheet?.kind === "watch-name" && sheet.listId
+    ? watchlists.find((list) => list.id === sheet.listId)
+    : undefined;
+  const [label, setLabel] = useState(existing?.label ?? "");
+  if (sheet?.kind !== "watch-name") return null;
+
+  const save = () => {
+    const name = label.trim();
+    if (!name) return;
+    if (existing) {
+      renameWatchlist(existing.id, name);
+      flash({ message: `Renamed to ${name}.` });
+    } else {
+      createWatchlist(name);
+      flash({ message: `${name} created.` });
+    }
+    closeSheet();
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">{existing ? "Rename list" : "New list"}</p>
+          <p className="t-body-xs muted">A list is a name for names. Nothing is bought.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <label className="pf-field pf-field-wide">
+        <span>List name</span>
+        <input
+          value={label}
+          autoFocus
+          placeholder="Banks I follow"
+          onChange={(event) => setLabel(event.target.value)}
+          onKeyDown={(event) => event.key === "Enter" && save()}
+        />
+      </label>
+      <div className="pf-form-save">
+        <button type="button" className="pf-quick-btn primary block" disabled={!label.trim()} onClick={save}>
+          {existing ? "Save name" : "Create list"}
+        </button>
+      </div>
+    </>
+  );
+}
+
+/* One sheet for "what do you want to do with this?" — short, no preamble. */
+function ActionsSheet() {
+  const { closeSheet, sheet } = useApp();
+  if (sheet?.kind !== "actions") return null;
+
+  return (
+    <ul className="pf-menu tight" aria-label={sheet.title}>
+      {sheet.actions.map((action) => (
+        <li key={action.label}>
+          <button
+            type="button"
+            className={action.danger ? "danger" : undefined}
+            onClick={() => {
+              closeSheet();
+              action.onSelect();
+            }}
+          >
+            {action.icon && (
+              <span className="pf-menu-ico" aria-hidden>
+                <Icon name={action.icon as IconName} size={17} />
+              </span>
+            )}
+            <span>
+              <strong>{action.label}</strong>
+              {action.sub && <small>{action.sub}</small>}
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function ConfirmSheet() {
+  const { closeSheet, sheet } = useApp();
+  if (sheet?.kind !== "confirm") return null;
+
+  const confirm = () => {
+    sheet.onConfirm();
+    closeSheet();
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">{sheet.title}</p>
+          <p className="t-body-xs muted">{sheet.body}</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="btn-row" style={{ marginTop: 16 }}>
+        <Button variant={sheet.danger ? "danger" : "primary"} size="md" onClick={confirm}>
+          {sheet.confirmLabel}
+        </Button>
+        <Button variant="secondary" size="md" onClick={closeSheet}>
+          {sheet.cancelLabel ?? "Cancel"}
+        </Button>
+      </div>
+    </>
+  );
+}
+
 function PortfolioDeleteSheet() {
   const { closeSheet, flash, portfolioId, portfolioNames, openPortfolioIds, deletePortfolio } = useApp();
   const name = portfolioNames[portfolioId];
@@ -1001,7 +1373,7 @@ function PlansSheet() {
   const price = cycle === "annual" ? planMeta[pick].annual : planMeta[pick].monthly;
 
   const confirm = () => {
-    setPlan(pick);
+    setPlan(pick, { cycle });
     closeSheet();
     if (pick === "free") {
       flash({ message: "You’re on Free. Screeners and alerts stay off this plan." });
@@ -1022,7 +1394,7 @@ function PlansSheet() {
       </div>
 
       <div className="plans-list">
-        {(["free", "pro", "guru"] as Plan[]).map((id) => {
+        {planIds.map((id) => {
           const item = planMeta[id];
           const on = pick === id;
           const amount = cycle === "annual" ? item.annual : item.monthly;
@@ -1036,6 +1408,7 @@ function PlansSheet() {
               <span>
                 <strong>{item.label}</strong>
                 {plan === id && <em>Current</em>}
+                <small>{item.blurb}</small>
               </span>
               <b>{amount === 0 ? "Rs 0" : `Rs ${amount.toLocaleString("en-IN")}${cycle === "annual" ? " / yr" : " / mo"}`}</b>
             </button>
@@ -1048,8 +1421,8 @@ function PlansSheet() {
           <tr>
             <th>Includes</th>
             <th>Free</th>
+            <th>Plus</th>
             <th>Pro</th>
-            <th>Guru</th>
           </tr>
         </thead>
         <tbody>
@@ -1057,8 +1430,8 @@ function PlansSheet() {
             <tr key={row.name}>
               <td>{row.name}</td>
               <td>{row.free ? "Yes" : "—"}</td>
+              <td>{row.plus ? "Yes" : "—"}</td>
               <td>{row.pro ? "Yes" : "—"}</td>
-              <td>{row.guru ? "Yes" : "—"}</td>
             </tr>
           ))}
         </tbody>
@@ -1155,6 +1528,34 @@ export function Overlays() {
       )}
       {sheet?.kind === "plans" && (
         <SheetFrame tall onClose={closeSheet}><PlansSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "password" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><PasswordSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "help" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><HelpSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "referral" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><ReferralSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "avatar" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><AvatarSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "watch-add" && (
+        <SheetFrame tall onClose={closeSheet} labelledBy="sheet-title"><WatchAddSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "watch-name" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><WatchNameSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "actions" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title">
+          <ActionsSheet />
+        </SheetFrame>
+      )}
+      {sheet?.kind === "confirm" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title">
+          <ConfirmSheet />
+        </SheetFrame>
       )}
       {sheet?.kind === "correct" && (
         <SheetFrame onClose={closeSheet}><CorrectSheet /></SheetFrame>

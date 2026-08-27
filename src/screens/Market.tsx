@@ -23,6 +23,7 @@ import {
   nepseSession,
   sectors,
   type TapePrint,
+  listedQuotes,
 } from "../lib/data";
 import { npr, pct, signed } from "../lib/format";
 import { useApp } from "../lib/state";
@@ -122,6 +123,73 @@ function FloorBrokerList({
   );
 }
 
+type FilterOption = { id: string; label: string };
+
+/* The movers filters actually filter — each chip opens its own short menu. */
+function FilterChip({
+  options,
+  value,
+  onPick,
+}: {
+  options: FilterOption[];
+  value: string;
+  onPick: (id: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const current = options.find((option) => option.id === value) ?? options[0];
+  const active = value !== options[0].id;
+  return (
+    <div className={`mkt-filter${open ? " open" : ""}`}>
+      <button
+        type="button"
+        className={`chip${active ? " chip-on" : " chip-quiet"}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((was) => !was)}
+      >
+        {current.label} ▾
+      </button>
+      {open && (
+        <ul className="mkt-filter-menu" role="listbox">
+          {options.map((option) => (
+            <li key={option.id}>
+              <button
+                type="button"
+                role="option"
+                aria-selected={option.id === value}
+                className={option.id === value ? "on" : ""}
+                onClick={() => {
+                  onPick(option.id);
+                  setOpen(false);
+                }}
+              >
+                {option.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const priceBands: FilterOption[] = [
+  { id: "any", label: "Any price" },
+  { id: "under500", label: "Under 500" },
+  { id: "500to1000", label: "500 – 1,000" },
+  { id: "over1000", label: "Over 1,000" },
+];
+
+const turnoverBands: FilterOption[] = [
+  { id: "any", label: "Any turnover" },
+  { id: "over1", label: "Over 1 Cr" },
+  { id: "over5", label: "Over 5 Cr" },
+];
+
+function quoteFor(symbol: string) {
+  return listedQuotes.find((row) => row.symbol === symbol);
+}
+
 function moverRows(view: MoverView, limit?: number) {
   const source = limit ? moverBoards[view].slice(0, limit) : moverBoards[view];
   return source.map((row) => ({
@@ -159,7 +227,7 @@ function MarketBlock({
 }
 
 function IndexStrip() {
-  const { openSheet } = useApp();
+  const { go } = useApp();
 
   return (
     <div className="idx-strip" role="list" aria-label="Market indices">
@@ -171,14 +239,7 @@ function IndexStrip() {
             type="button"
             className="idx-card"
             role="listitem"
-            onClick={() =>
-              openSheet({
-                kind: "quick",
-                title: item.label,
-                body: item.body,
-                note: "An index is a picture of a group. It is not a price you can buy.",
-              })
-            }
+            onClick={() => go("market-desk", { marketDesk: "indices", marketIndex: item.id })}
           >
             <span className="idx-card-label">{item.label}</span>
             <b className="idx-card-value">{npr(item.value, 2)}</b>
@@ -186,7 +247,7 @@ function IndexStrip() {
               {signed(item.change, 2)} ({pct(item.changePct)})
             </em>
             <span className="idx-card-spark">
-              <Sparkline changePct={item.changePct} seed={item.id} width={160} height={26} />
+              <Sparkline changePct={item.changePct} width={160} height={26} />
             </span>
           </button>
         );
@@ -203,7 +264,7 @@ type MarketTool = {
 };
 
 function MarketTools() {
-  const { go, openSheet, setMarketTab } = useApp();
+  const { go, setMarketTab, viewport } = useApp();
   const [more, setMore] = useState(false);
 
   const tools: MarketTool[] = [
@@ -211,19 +272,13 @@ function MarketTools() {
       id: "summary",
       label: "Market Summary",
       icon: "clipboard",
-      run: () =>
-        openSheet({
-          kind: "quick",
-          title: "Market summary",
-          body: `NEPSE ${npr(nepse.value, 2)}, ${signed(nepse.change, 2)} (${pct(nepse.changePct)}). ${nepse.rose} rose, ${nepse.fell} fell, turnover ${nepse.traded}.`,
-          note: "This is today’s session so far. It is not a recommendation.",
-        }),
+      run: () => go("market-desk", { marketDesk: "summary" }),
     },
     {
       id: "sectors",
       label: "Sector Summary",
       icon: "pie",
-      run: () => setMarketTab("Sectors"),
+      run: () => go("market-desk", { marketDesk: "sectors" }),
     },
     {
       id: "floor",
@@ -235,19 +290,13 @@ function MarketTools() {
       id: "range",
       label: "52 W change",
       icon: "range",
-      run: () => go("stock", { stock: "NABIL" }),
+      run: () => go("market-desk", { marketDesk: "week-change" }),
     },
     {
       id: "live",
       label: "Live Market",
       icon: "pulse",
-      run: () =>
-        openSheet({
-          kind: "quick",
-          title: "Live market",
-          body: `Last print ${nepse.liveAt}, ${nepse.date}. The tape on this page is the session so far.`,
-          note: "Live is a delayed print, not a promise.",
-        }),
+      run: () => go("market-desk", { marketDesk: "live" }),
     },
     {
       id: "charts",
@@ -259,53 +308,42 @@ function MarketTools() {
       id: "price",
       label: "Stock price",
       icon: "coin",
-      run: () => go("search"),
+      run: () => go("market-desk", { marketDesk: "price" }),
     },
     {
       id: "movers",
       label: "Market movers",
       icon: "movers",
-      run: () => setMarketTab("Movers"),
+      run: () => go("market-desk", { marketDesk: "movers" }),
     },
     {
       id: "gainloss",
       label: "Gain and losses",
       icon: "percent",
-      run: () => setMarketTab("Movers"),
+      run: () => go("market-desk", { marketDesk: "gain-loss" }),
     },
     {
       id: "data",
       label: "NEPSE Data",
       icon: "doc",
-      run: () =>
-        openSheet({
-          kind: "quick",
-          title: "NEPSE data",
-          body: `${nepse.companies} companies, ${nepse.kitta} kitta traded, ${npr(nepse.transactions)} transactions. Turnover ${nepse.traded}.`,
-          note: "Published session figures, not a forecast.",
-        }),
+      run: () => go("market-desk", { marketDesk: "nepse-data" }),
     },
     {
       id: "indices",
       label: "Market indices",
       icon: "index",
-      run: () =>
-        openSheet({
-          kind: "quick",
-          title: "Market indices",
-          body: "NEPSE, Sensitive, Float, Banking and Hydro sit in the strip at the top of this page. Each is a group average.",
-          note: "None of them is a share you can buy.",
-        }),
+      run: () => go("market-desk", { marketDesk: "indices" }),
     },
     {
       id: "depth",
       label: "Market depth",
       icon: "depth",
-      run: () => go("stock", { stock: "NABIL", stockTab: "Analysis" }),
+      run: () => go("market-desk", { marketDesk: "depth" }),
     },
   ];
 
-  const shown = more ? tools : tools.slice(0, 4);
+  /* Web has the room for two rows before the toggle earns its place. */
+  const shown = more ? tools : tools.slice(0, viewport === "web" ? 8 : 4);
 
   return (
     <section className="market-block mkt-tools-block">
@@ -342,6 +380,9 @@ function MarketTools() {
 export function MarketScreen() {
   const { flash, go, openSheet, session, viewport, marketTab: tab, setMarketTab } = useApp();
   const [moverView, setMoverView] = useState<MoverView>("gainers");
+  const [moverSector, setMoverSector] = useState("any");
+  const [moverPrice, setMoverPrice] = useState("any");
+  const [moverTurnover, setMoverTurnover] = useState("any");
   const [sectorSort, setSectorSort] = useState<(typeof sectorSorts)[number]>("By change");
   const [floorView, setFloorView] = useState<(typeof floorViews)[number]>("By broker");
   const [scrub, setScrub] = useState<TapePrint | null>(null);
@@ -361,6 +402,29 @@ export function MarketScreen() {
 
   const explain = (title: string, body: string, note?: string) =>
     openSheet({ kind: "quick", title, body, note });
+
+  const sectorOptions: FilterOption[] = useMemo(() => {
+    const names = new Set(
+      moverBoards[moverView].map((row) => quoteFor(row.symbol)?.sector).filter(Boolean) as string[],
+    );
+    return [{ id: "any", label: "All sectors" }, ...[...names].sort().map((name) => ({ id: name, label: name }))];
+  }, [moverView]);
+
+  const filtered = useMemo(
+    () =>
+      moverRows(moverView).filter((row) => {
+        const quote = quoteFor(row.symbol);
+        if (moverSector !== "any" && quote?.sector !== moverSector) return false;
+        if (moverPrice === "under500" && row.price >= 500) return false;
+        if (moverPrice === "500to1000" && (row.price < 500 || row.price > 1000)) return false;
+        if (moverPrice === "over1000" && row.price <= 1000) return false;
+        const cr = Number.parseFloat(quote?.turnover ?? "0");
+        if (moverTurnover === "over1" && !(cr > 1)) return false;
+        if (moverTurnover === "over5" && !(cr > 5)) return false;
+        return true;
+      }),
+    [moverView, moverSector, moverPrice, moverTurnover],
+  );
 
   return (
     <div className="market-screen">
@@ -473,8 +537,11 @@ export function MarketScreen() {
           </div>
           </div>
 
-          <div className="market-web-update">
+          <div className="market-web-tools">
             <MarketTools />
+          </div>
+
+          <div className="market-web-update">
             <MarketBlock title="Market update">
               <HappenList
                 items={marketHappen}
@@ -523,9 +590,6 @@ export function MarketScreen() {
 
             <MarketBlock title="Floor sheet" action="Full sheet ›" onAction={() => setMarketTab("Floor sheet")}>
               <FloorBrokerList rows={floorBrokers.slice(0, 3)} onOpen={() => setMarketTab("Floor sheet")} />
-              <p className="foot-note">
-                The floor sheet records trades that already happened. It is not the live order book.
-              </p>
             </MarketBlock>
 
             <MarketBlock title="Coming up" action="Events ›" onAction={() => setMarketTab("Events")}>
@@ -545,9 +609,6 @@ export function MarketScreen() {
 
       {tab === "Movers" && (
         <>
-          <p className="market-intro">
-            Biggest moves today. A jump is a fact, not a cue to chase it.
-          </p>
           <div className="market-filters">
             {moverViews.map((item) => (
               <Chip
@@ -560,15 +621,31 @@ export function MarketScreen() {
             ))}
           </div>
           <div className="market-filters quiet">
-            <span className="chip chip-quiet">All sectors ▾</span>
-            <span className="chip chip-quiet">Any price ▾</span>
-            <span className="chip chip-quiet">Traded today ▾</span>
+            <FilterChip options={sectorOptions} value={moverSector} onPick={setMoverSector} />
+            <FilterChip options={priceBands} value={moverPrice} onPick={setMoverPrice} />
+            <FilterChip options={turnoverBands} value={moverTurnover} onPick={setMoverTurnover} />
+            {filtered.length !== moverRows(moverView).length && (
+              <button
+                type="button"
+                className="chip chip-quiet"
+                onClick={() => {
+                  setMoverSector("any");
+                  setMoverPrice("any");
+                  setMoverTurnover("any");
+                }}
+              >
+                Clear
+              </button>
+            )}
           </div>
           <MarketBlock>
-            <QuoteList
-              rows={moverRows(moverView)}
-              onRow={(symbol) => go("stock", { stock: symbol })}
-            />
+            {filtered.length > 0 ? (
+              <QuoteList rows={filtered} onRow={(symbol) => go("stock", { stock: symbol })} />
+            ) : (
+              <p className="foot-note" style={{ padding: "18px 14px" }}>
+                No name on this board matches those filters.
+              </p>
+            )}
           </MarketBlock>
           <p className="market-intro">
             “Circuit” means the price reached its daily limit. It says nothing about what the company is worth.
@@ -592,9 +669,6 @@ export function MarketScreen() {
 
       {tab === "Sectors" && (
         <>
-          <p className="market-intro">
-            A sector index groups companies doing similar business, so you can see whether a move is about one company or the whole industry.
-          </p>
           <div className="market-filters">
             {sectorSorts.map((item) => (
               <Chip key={item} selected={sectorSort === item} onClick={() => setSectorSort(item)}>
@@ -817,9 +891,6 @@ export function MarketScreen() {
 
       {tab === "Events" && (
         <>
-          <p className="market-intro">
-            Corporate actions and primary-market dates. Application still happens on MeroShare / C-ASBA.
-          </p>
           <MarketBlock>
             {marketEvents.map((event) => (
               <div className="row" key={event.title}>
@@ -841,9 +912,6 @@ export function MarketScreen() {
         </>
       )}
 
-      <p className="disclaimer">
-        Last official print. Trading still happens in TMS — we don’t place orders.
-      </p>
     </div>
   );
 }

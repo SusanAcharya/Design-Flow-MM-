@@ -2,24 +2,34 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import { defaultExploreFavorites } from "./explore";
-import { getObjectiveByTitle, nextOnPath } from "./objectives";
+import { defaultExploreFavorites, memberCharacter } from "./explore";
+import { watchLists } from "./data";
+
+export type WatchList = { id: string; label: string; blurb?: string; symbols: string[] };
+import { activeTab } from "./nav";
+import { linkedRoute, param } from "./deeplink";
+import { getObjective, getObjectiveByTitle, nextOnPath } from "./objectives";
 import { replyTo, type TulkeyMessage } from "./tulkey";
 import { portfolioList, type PortfolioId, type PortfolioKind } from "./portfolio";
 import type { PersonaId } from "./types";
 import { stageToast, titleObjective } from "./stage";
 import type {
   Circuit,
+  DataState,
   HoldingMode,
+  MarketDesk,
   MarketSession,
   MarketTab,
+  BrokerDesk,
   OnboardingResult,
   Plan,
+  PlanCycle,
   PortfolioTab,
   Route,
   Sheet,
@@ -35,12 +45,17 @@ type GoExtras = {
   stock?: string;
   stockTab?: StockTab;
   marketTab?: MarketTab;
+  marketDesk?: MarketDesk;
+  marketIndex?: string;
+  brokerDesk?: BrokerDesk;
+  brokerCode?: string;
   portfolioTab?: PortfolioTab;
   lesson?: string;
   holdingMode?: HoldingMode;
   holding?: string;
   persona?: PersonaId;
   objective?: string;
+  alertSymbol?: string;
 };
 
 type AppState = {
@@ -53,10 +68,19 @@ type AppState = {
   stock: string;
   stockTab: StockTab;
   marketTab: MarketTab;
+  marketDesk: MarketDesk;
+  marketIndex: string;
+  brokerDesk: BrokerDesk;
+  brokerCode: string;
   portfolioTab: PortfolioTab;
   portfolioId: PortfolioId;
   holdingSymbol: string;
   plan: Plan;
+  planCycle: PlanCycle;
+  /** Studio switch for reviewing loading, refreshing and failed fetches. */
+  dataState: DataState;
+  /** Studio switch for the no-portfolio-yet state. */
+  hasPortfolio: boolean;
   lesson: string;
   onboarded: boolean;
   personaId: PersonaId | null;
@@ -65,8 +89,15 @@ type AppState = {
   viewingObjectiveId: string | null;
   pathFinished: boolean;
   hideHomeObjectives: boolean;
+  /** null follows the default rule: open until one objective is marked done. */
+  setupOpen: boolean | null;
+  objectivesCompleted: number;
+  objectivesDone: string[];
+  /** Tab an objective was opened from, so the nav highlight stays put. */
+  objectiveOrigin: Route;
   setViewingObjectiveId: (id: string | null) => void;
   setHideHomeObjectives: (hide: boolean) => void;
+  setSetupOpen: (open: boolean | null) => void;
   sheet: Sheet | null;
   toast: Toast | null;
   circuit: Circuit;
@@ -74,6 +105,10 @@ type AppState = {
   holdingMode: HoldingMode;
   correctedKitta: number | null;
   exploreFavorites: string[];
+  homeTools: string[];
+  avatar: string;
+  watchlists: WatchList[];
+  alertSeed: string | null;
   setTheme: (theme: Theme) => void;
   setUiFont: (font: UiFont) => void;
   setViewport: (viewport: Viewport) => void;
@@ -84,6 +119,10 @@ type AppState = {
   setObjectiveId: (id: string | null) => void;
   setStockTab: (tab: StockTab) => void;
   setMarketTab: (tab: MarketTab) => void;
+  setMarketDesk: (desk: MarketDesk) => void;
+  setMarketIndex: (id: string) => void;
+  setBrokerDesk: (desk: BrokerDesk) => void;
+  setBrokerCode: (code: string) => void;
   setPortfolioTab: (tab: PortfolioTab) => void;
   setPortfolioId: (id: PortfolioId) => void;
   portfolioNames: Record<PortfolioId, string>;
@@ -94,8 +133,18 @@ type AppState = {
   savePortfolio: (id: PortfolioId, patch: { name: string; kind: PortfolioKind; primary: boolean }) => void;
   createPortfolio: (patch: { name: string; kind: PortfolioKind; primary: boolean }) => boolean;
   deletePortfolio: (id: PortfolioId) => void;
-  setPlan: (plan: Plan) => void;
+  setPlan: (plan: Plan, extras?: { cycle?: PlanCycle }) => void;
+  setDataState: (next: DataState) => void;
+  setHasPortfolio: (next: boolean) => void;
   toggleExploreFavorite: (id: string) => void;
+  toggleHomeTool: (id: string) => void;
+  setAvatar: (src: string) => void;
+  createWatchlist: (label: string) => string;
+  renameWatchlist: (id: string, label: string) => void;
+  deleteWatchlist: (id: string) => void;
+  addToList: (id: string, symbol: string) => void;
+  removeFromList: (id: string, symbol: string) => void;
+  clearAlertSeed: () => void;
   go: (route: Route, extras?: GoExtras) => void;
   back: () => void;
   finishOnboarding: (result: OnboardingResult) => void;
@@ -103,7 +152,7 @@ type AppState = {
   resetDemo: () => void;
   completeObjective: (opts?: { stay?: boolean }) => void;
   fulfillObjective: (id: string) => boolean;
-  addToWatchlist: (symbol: string) => void;
+  addToWatchlist: (symbol: string) => boolean;
   watchlistAdds: string[];
   openSheet: (sheet: Sheet) => void;
   closeSheet: () => void;
@@ -132,15 +181,19 @@ const defaultPortfolioKinds = Object.fromEntries(
 ) as Record<PortfolioId, PortfolioKind>;
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark");
+  const [theme, setTheme] = useState<Theme>(param("theme", ["dark", "light"] as const, "dark"));
   const [uiFont, setUiFont] = useState<UiFont>("plex");
-  const [viewport, setViewport] = useState<Viewport>("mobile");
-  const [stage, setStageState] = useState<Stage>("base");
-  const [route, setRoute] = useState<Route>("onboarding");
+  const [viewport, setViewport] = useState<Viewport>(param("viewport", ["mobile", "web"] as const, "mobile"));
+  const [stage, setStageState] = useState<Stage>(param("stage", ["base", "explorer", "primary", "secondary", "value", "active"] as const, "base"));
+  const [route, setRoute] = useState<Route>(linkedRoute ?? "onboarding");
   const [session, setSession] = useState<MarketSession>("closed");
   const [stock, setStock] = useState("NABIL");
   const [stockTab, setStockTab] = useState<StockTab>("Overview");
-  const [marketTab, setMarketTab] = useState<MarketTab>("Overview");
+  const [marketTab, setMarketTab] = useState<MarketTab>(param("tab", ["Overview", "Movers", "Sectors", "Floor sheet", "Events"] as const, "Overview"));
+  const [marketDesk, setMarketDesk] = useState<MarketDesk>("summary");
+  const [marketIndex, setMarketIndex] = useState("nepse");
+  const [brokerDesk, setBrokerDesk] = useState<BrokerDesk>(param("desk", ["hub", "analysis", "detail"] as const, "hub"));
+  const [brokerCode, setBrokerCode] = useState("33");
   const [portfolioTab, setPortfolioTab] = useState<PortfolioTab>("Overview");
   const [portfolioId, setPortfolioId] = useState<PortfolioId>("main");
   const [portfolioNames, setPortfolioNames] = useState<Record<PortfolioId, string>>(defaultPortfolioNames);
@@ -148,27 +201,50 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [primaryPortfolioId, setPrimaryPortfolioId] = useState<PortfolioId>("main");
   const [openPortfolioIds, setOpenPortfolioIds] = useState<PortfolioId[]>(defaultOpenPortfolios);
   const [holdingSymbol, setHoldingSymbol] = useState("NABIL");
-  const [plan, setPlan] = useState<Plan>("free");
+  const [plan, setPlanState] = useState<Plan>(param("plan", ["free", "plus", "pro"] as const, "free"));
+  const [dataState, setDataState] = useState<DataState>(param("data", ["ready", "loading", "refreshing", "error"] as const, "ready"));
+  const [hasPortfolio, setHasPortfolio] = useState(param("portfolio", ["yes", "none"] as const, "yes") === "yes");
+  const [planCycle, setPlanCycle] = useState<PlanCycle>("annual");
   const [lesson, setLesson] = useState("");
-  const [onboarded, setOnboarded] = useState(false);
+  const [onboarded, setOnboarded] = useState(linkedRoute !== null);
   const [personaId, setPersonaId] = useState<PersonaId | null>(null);
   const [onboardingPersona, setOnboardingPersona] = useState<PersonaId | null>(null);
   const [objectiveId, setObjectiveIdState] = useState<string | null>("share");
   const [viewingObjectiveId, setViewingObjectiveId] = useState<string | null>("share");
   const [pathFinished, setPathFinished] = useState(false);
   const [hideHomeObjectives, setHideHomeObjectives] = useState(false);
+  const [setupOpen, setSetupOpen] = useState<boolean | null>(null);
+  const [objectivesDone, setObjectivesDone] = useState<string[]>([]);
+  const [objectiveOrigin, setObjectiveOrigin] = useState<Route>("home");
+  const objectivesCompleted = objectivesDone.length;
   const [watchlistAdds, setWatchlistAdds] = useState<string[]>([]);
-  const [sheet, setSheet] = useState<Sheet | null>(null);
+  /* ?sheet=navigation opens a drawer or sheet straight from a link, for review. */
+  const [sheet, setSheet] = useState<Sheet | null>(() => {
+    const kind = param(
+      "sheet",
+      ["navigation", "profile", "plans", "help", "referral", "avatar", "watch-add", "none"] as const,
+      "none",
+    );
+    if (kind === "none") return null;
+    if (kind === "watch-add") return { kind, listId: watchLists[0].id };
+    return { kind };
+  });
   const [toast, setToast] = useState<Toast | null>(null);
   const [circuit, setCircuit] = useState<Circuit>("off");
   const [densityLocked, setDensityLocked] = useState(false);
   const [holdingMode, setHoldingMode] = useState<HoldingMode>("add");
   const [correctedKitta, setCorrectedKitta] = useState<number | null>(null);
-  const [bookNudgeDismissed, setBookNudgeDismissed] = useState(false);
+  const [bookNudgeDismissed, setBookNudgeDismissed] = useState(param("nudge", ["show", "dismissed"] as const, "show") === "dismissed");
   const [tulkeyMessages, setTulkeyMessages] = useState<TulkeyMessage[]>([]);
   const [tulkeyThinking, setTulkeyThinking] = useState(false);
   const [tulkeyVoiceOpen, setTulkeyVoiceOpen] = useState(false);
   const [exploreFavorites, setExploreFavorites] = useState<string[]>(defaultExploreFavorites);
+  const [homeTools, setHomeTools] = useState<string[]>([]);
+  const [avatar, setAvatar] = useState<string>(`${import.meta.env.BASE_URL}characters/${memberCharacter}.png`);
+  const [watchlists, setWatchlists] = useState<WatchList[]>(() =>
+    watchLists.map((list) => ({ ...list, symbols: [...list.symbols] })),
+  );
+  const [alertSeed, setAlertSeed] = useState<string | null>(null);
   const [, setStack] = useState<Route[]>([]);
   const prevStage = useRef<Stage>("base");
   const toastTimer = useRef<number>(0);
@@ -216,10 +292,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const go = useCallback((next: Route, extras?: GoExtras) => {
     setStack((s) => [...s, route]);
     if (extras?.stock) setStock(extras.stock);
+    if (extras?.alertSymbol) setAlertSeed(extras.alertSymbol);
     if (extras?.stockTab) setStockTab(extras.stockTab);
     else if (next === "stock" && route !== "stock") setStockTab("Overview");
     if (extras?.marketTab) setMarketTab(extras.marketTab);
     else if (next === "market" && route !== "market") setMarketTab("Overview");
+    if (extras?.marketDesk) setMarketDesk(extras.marketDesk);
+    else if (next === "market-desk" && route !== "market-desk") setMarketDesk("summary");
+    if (extras?.marketIndex) setMarketIndex(extras.marketIndex);
+    if (extras?.brokerCode) {
+      setBrokerCode(extras.brokerCode);
+      setBrokerDesk(extras.brokerDesk ?? "detail");
+    } else if (extras?.brokerDesk) {
+      setBrokerDesk(extras.brokerDesk);
+    } else if (next === "brokers" && route !== "brokers") {
+      setBrokerDesk("hub");
+    }
     if (extras?.portfolioTab) setPortfolioTab(extras.portfolioTab);
     else if (next === "portfolio" && route !== "portfolio") setPortfolioTab("Overview");
     if (extras?.holding) setHoldingSymbol(extras.holding);
@@ -235,6 +323,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     if (next === "objective") {
       setViewingObjectiveId(extras?.objective ?? objectiveId);
+    }
+    if ((next === "objective" || next === "objectives") && route !== "objective" && route !== "objectives") {
+      setObjectiveOrigin(activeTab(route));
     }
     if (next === "start") setOnboardingPersona(extras?.persona ?? null);
     if (next === "holding") setHoldingMode(extras?.holdingMode ?? "add");
@@ -263,6 +354,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setViewingObjectiveId(result.objectiveId);
     setPathFinished(false);
     setHideHomeObjectives(false);
+    setSetupOpen(null);
+    setObjectivesDone([]);
     setWatchlistAdds([]);
     setPersonaId(result.personaId);
     setOnboardingPersona(null);
@@ -282,6 +375,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setViewingObjectiveId("share");
     setPathFinished(false);
     setHideHomeObjectives(false);
+    setSetupOpen(null);
+    setObjectivesDone([]);
     setWatchlistAdds([]);
     setPersonaId(null);
     setOnboardingPersona(null);
@@ -302,13 +397,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setViewingObjectiveId("share");
     setPathFinished(false);
     setHideHomeObjectives(false);
+    setSetupOpen(null);
+    setObjectivesDone([]);
     setWatchlistAdds([]);
     setRoute("onboarding");
     setStack([]);
     setStock("NABIL");
     setStockTab("Overview");
     setMarketTab("Overview");
-    setPlan("free");
+    setMarketDesk("summary");
+    setMarketIndex("nepse");
+    setBrokerDesk("hub");
+    setBrokerCode("33");
+    setPlanState("free");
+    setPlanCycle("annual");
+    setDataState("ready");
+    setHasPortfolio(true);
     setPortfolioId("main");
     setPortfolioTab("Overview");
     setPortfolioNames(defaultPortfolioNames);
@@ -316,6 +420,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPrimaryPortfolioId("main");
     setOpenPortfolioIds(defaultOpenPortfolios);
     setExploreFavorites(defaultExploreFavorites);
+    setHomeTools([]);
+    setAvatar(`${import.meta.env.BASE_URL}characters/${memberCharacter}.png`);
+    setWatchlists(watchLists.map((list) => ({ ...list, symbols: [...list.symbols] })));
+    setAlertSeed(null);
     setSheet(null);
     setToast(null);
     setCircuit("off");
@@ -340,7 +448,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!opts?.stay) setRoute("home");
       return;
     }
-    const next = nextOnPath(objectiveId);
+    const done = objectivesDone.includes(objectiveId) ? objectivesDone : [...objectivesDone, objectiveId];
+    setObjectivesDone(done);
+    setSetupOpen(null);
+    const next = nextOnPath(objectiveId, done);
     if (next) {
       setObjectiveIdState(next.id);
       setViewingObjectiveId(next.id);
@@ -356,17 +467,41 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setStack([]);
     }
     setSheet(null);
-  }, [flash, objectiveId]);
+  }, [flash, objectiveId, objectivesDone]);
 
+  /**
+   * Ticks a sitting off from the action itself — saving a holding, adding a name.
+   * Works even when the objective isn't the one currently pinned on Home.
+   */
   const fulfillObjective = useCallback((id: string) => {
-    if (objectiveId !== id) return false;
-    completeObjective({ stay: true });
+    const objective = getObjective(id);
+    if (!objective || objectivesDone.includes(id)) return false;
+    const done = [...objectivesDone, id];
+    setObjectivesDone(done);
+    setSetupOpen(null);
+    if (objectiveId === id) {
+      const next = nextOnPath(id, done);
+      setObjectiveIdState(next ? next.id : null);
+      setViewingObjectiveId(next ? next.id : null);
+      if (!next) setPathFinished(true);
+      flash({
+        message: next ? `${objective.title} — done. Next up: ${next.title}` : "That’s the last objective on this path.",
+      });
+    } else {
+      flash({ message: `${objective.title} — done.` });
+    }
     return true;
-  }, [completeObjective, objectiveId]);
+  }, [flash, objectiveId, objectivesDone]);
 
+  // The Market sitting finishes when a company is actually opened, not on the visit.
+  useEffect(() => {
+    if (route === "stock") fulfillObjective("market");
+  }, [route, fulfillObjective]);
+
+  /** Returns true when this add also finished the watchlist objective. */
   const addToWatchlist = useCallback((symbol: string) => {
     setWatchlistAdds((current) => (current.includes(symbol) ? current : [...current, symbol]));
-    fulfillObjective("watch");
+    return fulfillObjective("watch");
   }, [fulfillObjective]);
 
   const toggleExploreFavorite = useCallback((id: string) => {
@@ -375,6 +510,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (current.length >= 4) return current;
       return [...current, id];
     });
+  }, []);
+  const createWatchlist = useCallback((label: string) => {
+    const id = `wl${Date.now()}`;
+    setWatchlists((current) => [...current, { id, label, blurb: "Your list", symbols: [] }]);
+    return id;
+  }, []);
+  const renameWatchlist = useCallback((id: string, label: string) => {
+    setWatchlists((current) => current.map((list) => (list.id === id ? { ...list, label } : list)));
+  }, []);
+  const deleteWatchlist = useCallback((id: string) => {
+    setWatchlists((current) => (current.length <= 1 ? current : current.filter((list) => list.id !== id)));
+  }, []);
+  const addToList = useCallback((id: string, symbol: string) => {
+    setWatchlists((current) =>
+      current.map((list) =>
+        list.id === id && !list.symbols.includes(symbol)
+          ? { ...list, symbols: [...list.symbols, symbol] }
+          : list,
+      ),
+    );
+  }, []);
+  const removeFromList = useCallback((id: string, symbol: string) => {
+    setWatchlists((current) =>
+      current.map((list) =>
+        list.id === id ? { ...list, symbols: list.symbols.filter((item) => item !== symbol) } : list,
+      ),
+    );
+  }, []);
+  const clearAlertSeed = useCallback(() => setAlertSeed(null), []);
+
+  const toggleHomeTool = useCallback((id: string) => {
+    setHomeTools((current) =>
+      current.includes(id) ? current.filter((item) => item !== id) : [...current, id],
+    );
   }, []);
   const openSheet = useCallback((next: Sheet) => setSheet(next), []);
   const closeSheet = useCallback(() => setSheet(null), []);
@@ -440,8 +609,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOpenPortfolioIds((current) => [...current, id]);
     savePortfolio(id, { name: title, kind: patch.kind, primary: patch.primary });
     setPortfolioId(id);
+    fulfillObjective("book");
     return true;
-  }, [openPortfolioIds, savePortfolio]);
+  }, [fulfillObjective, openPortfolioIds, savePortfolio]);
 
   const deletePortfolio = useCallback((id: PortfolioId) => {
     setOpenPortfolioIds((current) => {
@@ -451,6 +621,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPrimaryPortfolioId((primary) => (primary === id ? remaining[0] : primary));
       return remaining;
     });
+  }, []);
+
+  const setPlan = useCallback((next: Plan, extras?: { cycle?: PlanCycle }) => {
+    setPlanState(next);
+    setPlanCycle(next === "free" ? "annual" : extras?.cycle ?? "annual");
   }, []);
 
   const value = useMemo(
@@ -464,10 +639,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       stock,
       stockTab,
       marketTab,
+      marketDesk,
+      marketIndex,
+      brokerDesk,
+      brokerCode,
       portfolioTab,
       portfolioId,
       holdingSymbol,
       plan,
+      planCycle,
+      dataState,
+      hasPortfolio,
+      setDataState,
+      setHasPortfolio,
       lesson,
       onboarded,
       personaId,
@@ -476,8 +660,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       viewingObjectiveId,
       pathFinished,
       hideHomeObjectives,
+      setupOpen,
+      objectivesCompleted,
+      objectivesDone,
+      objectiveOrigin,
       setViewingObjectiveId,
       setHideHomeObjectives,
+      setSetupOpen,
       sheet,
       toast,
       circuit,
@@ -485,6 +674,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       holdingMode,
       correctedKitta,
       exploreFavorites,
+      homeTools,
+      avatar,
+      watchlists,
+      alertSeed,
       setTheme,
       setUiFont,
       setViewport,
@@ -495,6 +688,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setObjectiveId,
       setStockTab,
       setMarketTab,
+      setMarketDesk,
+      setMarketIndex,
+      setBrokerDesk,
+      setBrokerCode,
       setPortfolioTab,
       setPortfolioId,
       portfolioNames,
@@ -507,6 +704,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       deletePortfolio,
       setPlan,
       toggleExploreFavorite,
+      toggleHomeTool,
+      setAvatar,
+      createWatchlist,
+      renameWatchlist,
+      deleteWatchlist,
+      addToList,
+      removeFromList,
+      clearAlertSeed,
       go,
       back,
       finishOnboarding,
@@ -541,6 +746,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       stock,
       stockTab,
       marketTab,
+      marketDesk,
+      marketIndex,
+      brokerDesk,
+      brokerCode,
       portfolioTab,
       portfolioId,
       portfolioNames,
@@ -549,6 +758,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       openPortfolioIds,
       holdingSymbol,
       plan,
+      planCycle,
+      dataState,
+      hasPortfolio,
       lesson,
       onboarded,
       personaId,
@@ -557,6 +769,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       viewingObjectiveId,
       pathFinished,
       hideHomeObjectives,
+      setupOpen,
+      objectivesCompleted,
+      objectivesDone,
+      objectiveOrigin,
       watchlistAdds,
       sheet,
       toast,
@@ -565,8 +781,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
       holdingMode,
       correctedKitta,
       exploreFavorites,
+      homeTools,
+      avatar,
+      watchlists,
+      alertSeed,
       setStage,
       toggleExploreFavorite,
+      toggleHomeTool,
+      setAvatar,
+      createWatchlist,
+      renameWatchlist,
+      deleteWatchlist,
+      addToList,
+      removeFromList,
+      clearAlertSeed,
       go,
       back,
       finishOnboarding,

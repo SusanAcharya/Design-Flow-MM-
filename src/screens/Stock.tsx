@@ -3,8 +3,8 @@ import { Icon } from "../ds/Icon";
 import { Badge, Button, Chip, Explain, MovePill, Overline } from "../ds/primitives";
 import { SessionWalk } from "../ds/charts";
 import { MetricLink } from "../shell/Overlays";
+import { GreedMeter } from "../ds/GreedMeter";
 import {
-  holdings,
   nabil,
   nabilAnalysis,
   nabilCompany,
@@ -15,6 +15,7 @@ import {
   nabilSession,
   nabilWeek,
   nabilYear,
+  stockTake,
   type Tape,
   type TapePrint,
 } from "../lib/data";
@@ -122,13 +123,12 @@ function StockSection({
 }
 
 export function StockScreen() {
-  const { back, flash, go, openSheet, session, setStockTab, stockTab: tab, viewport } = useApp();
+  const { back, flash, go, openSheet, session, setStockTab, stockTab: tab, viewport, addToWatchlist } = useApp();
   const [range, setRange] = useState<Range>("1D");
   const [chartMode, setChartMode] = useState<"line" | "candles">("line");
   const [showRsi, setShowRsi] = useState(false);
   const [showAllReadings, setShowAllReadings] = useState(false);
   const [scrub, setScrub] = useState<TapePrint | null>(null);
-  const owned = holdings.find((holding) => holding.symbol === nabil.symbol);
   const tape =
     range === "1W"
       ? nabilWeek
@@ -155,7 +155,9 @@ export function StockScreen() {
           <button
             className="icon-btn stock-star"
             aria-label="Watchlist"
-            onClick={() => flash({ message: "NABIL is on your watchlist." })}
+            onClick={() => {
+              if (!addToWatchlist(nabil.symbol)) flash({ message: "NABIL is on your watchlist." });
+            }}
           >
             <Icon name="star" />
           </button>
@@ -170,7 +172,7 @@ export function StockScreen() {
       )}
       {viewport === "web" && (
         <div className="pad" style={{ paddingBottom: 8 }}>
-          <button className="text-link" onClick={back}>‹ Market</button>
+          <button className="text-link web-back" onClick={back}>‹ Market</button>
           <p className="t-ticker" style={{ marginTop: 8 }}>{nabil.symbol}</p>
           <p className="t-body-s muted">{nabil.name} · {nabil.sector}</p>
         </div>
@@ -245,36 +247,23 @@ export function StockScreen() {
 
       {tab === "Overview" && (
         <>
-          {owned && (
-            <div className="own-card stock-own">
-              <Overline>You own this</Overline>
-              <div className="own-grid">
-                <div><div className="k">Units</div><div className="v">{nabil.kitta} kitta</div></div>
-                <div><div className="k">Value now</div><div className="v">{npr(nabil.value)}</div></div>
-                <div><div className="k">Overall</div><div className="v c-down">{signed(nabil.overall)}</div></div>
-              </div>
-              <div className="stock-own-foot">
-                <span>Average cost {npr(nabil.avg, 2)} · bought with own money</span>
-                <button className="text-link" onClick={() => go("holding", { holdingMode: "detail" })}>Detail ›</button>
-              </div>
-            </div>
-          )}
-
-          <div className="stock-ex-div">
-            <Overline>Why it moved today</Overline>
-            <p>
-              NABIL trades without its 10% cash dividend today. Part of this fall is the dividend leaving the price, not the business changing.
-            </p>
-            <Explain onClick={() => explain(
-              "What is ex-dividend?",
-              "On the ex-date, a share trades without the upcoming dividend. Its price often drops by roughly that cash amount.",
-              "That adjustment is not, by itself, a sudden change in the company.",
-            )}>
-              What is ex-dividend?
-            </Explain>
+          <div className="stock-read">
+            <section className="take-card">
+              <header className="take-head">
+                <span className="take-ico" aria-hidden>
+                  <Icon name="tulkey" size={17} />
+                </span>
+                <span className="overline">Tulkey&rsquo;s take</span>
+              </header>
+              <p className="take-body">{stockTake.summary}</p>
+              <button type="button" className="text-link" onClick={() => go("ai")}>
+                Ask Tulkey about {nabil.symbol} &rsaquo;
+              </button>
+            </section>
+            <GreedMeter symbol={nabil.symbol} />
           </div>
 
-          <StockSection title="Key numbers" action="Tap any number to explain it" />
+          <StockSection title="Key numbers" action="" />
           {[
             { id: "pe", label: "P/E", value: nabil.pe.toFixed(1) },
             { id: null, label: "P/B", value: nabil.pb.toFixed(2) },

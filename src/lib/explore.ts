@@ -1,5 +1,5 @@
 import type { IconName } from "../ds/Icon";
-import type { MarketTab, Route, Sheet, StockTab } from "./types";
+import type { BrokerDesk, MarketDesk, MarketTab, Plan, PlanCycle, Route, Sheet, StockTab } from "./types";
 
 export type ExploreCategoryId = "account" | "market" | "intel" | "media";
 
@@ -14,7 +14,7 @@ export type ExploreTool = {
   category: ExploreCategoryId;
   group: string;
   kind?: "portal";
-  go?: { route: Route; stock?: string; stockTab?: StockTab; marketTab?: MarketTab; lesson?: string };
+  go?: { route: Route; stock?: string; stockTab?: StockTab; marketTab?: MarketTab; marketDesk?: MarketDesk; brokerDesk?: BrokerDesk; brokerCode?: string; lesson?: string };
   sheet?: Sheet;
   soon?: { body: string };
   handoff?: { platform: string; body: string };
@@ -49,13 +49,13 @@ export const exploreTools: ExploreTool[] = [
     id: "brokers",
     title: "Brokers",
     short: "Brokers",
-    purpose: "Licensed houses and floor activity",
-    keywords: "brokers tms licensed capital",
+    purpose: "Floor leaders, houses, and executed flow",
+    keywords: "brokers tms licensed capital chirfaar analysis floorsheet",
     icon: "building",
     tone: "teal",
     category: "account",
     group: "Account",
-    go: { route: "brokers" },
+    go: { route: "brokers", brokerDesk: "hub" },
   },
   {
     id: "baskets",
@@ -104,7 +104,7 @@ export const exploreTools: ExploreTool[] = [
     tone: "teal",
     category: "market",
     group: "Live trading",
-    go: { route: "market", marketTab: "Overview" },
+    go: { route: "market-desk", marketDesk: "live" },
   },
   {
     id: "floorsheet",
@@ -122,13 +122,13 @@ export const exploreTools: ExploreTool[] = [
     id: "depth",
     title: "Market Depth",
     short: "Depth",
-    purpose: "Bid and ask on a company page",
-    keywords: "market depth bid ask order book",
+    purpose: "Bid and ask on several names at once",
+    keywords: "market depth bid ask order book bulk",
     icon: "depth",
     tone: "teal",
     category: "market",
     group: "Live trading",
-    go: { route: "stock", stock: "NABIL", stockTab: "Analysis" },
+    go: { route: "market-desk", marketDesk: "depth" },
   },
   {
     id: "charts",
@@ -202,7 +202,7 @@ export const exploreTools: ExploreTool[] = [
     tone: "teal",
     category: "market",
     group: "Market statistics",
-    go: { route: "market", marketTab: "Overview" },
+    go: { route: "market-desk", marketDesk: "indices" },
   },
   {
     id: "sectors",
@@ -214,7 +214,7 @@ export const exploreTools: ExploreTool[] = [
     tone: "teal",
     category: "market",
     group: "Market statistics",
-    go: { route: "market", marketTab: "Sectors" },
+    go: { route: "market-desk", marketDesk: "sectors" },
   },
   {
     id: "fiftytwo",
@@ -226,7 +226,7 @@ export const exploreTools: ExploreTool[] = [
     tone: "teal",
     category: "market",
     group: "Market statistics",
-    go: { route: "stock", stock: "NABIL" },
+    go: { route: "market-desk", marketDesk: "week-change" },
   },
   {
     id: "movers",
@@ -238,7 +238,55 @@ export const exploreTools: ExploreTool[] = [
     tone: "teal",
     category: "market",
     group: "Market statistics",
-    go: { route: "market", marketTab: "Movers" },
+    go: { route: "market-desk", marketDesk: "movers" },
+  },
+  {
+    id: "summary",
+    title: "Market Summary",
+    short: "Summary",
+    purpose: "Index, breadth and session totals",
+    keywords: "market summary nepse session turnover",
+    icon: "clipboard",
+    tone: "teal",
+    category: "market",
+    group: "Market statistics",
+    go: { route: "market-desk", marketDesk: "summary" },
+  },
+  {
+    id: "gain-loss",
+    title: "Gainers & Losers",
+    short: "Gain/loss",
+    purpose: "Top percentage moves, 1 day or 1 week",
+    keywords: "gainers losers gain loss percent",
+    icon: "percent",
+    tone: "teal",
+    category: "market",
+    group: "Market statistics",
+    go: { route: "market-desk", marketDesk: "gain-loss" },
+  },
+  {
+    id: "price-board",
+    title: "Stock Price",
+    short: "Prices",
+    purpose: "Last traded prices across names",
+    keywords: "stock price ltp last traded",
+    icon: "coin",
+    tone: "teal",
+    category: "market",
+    group: "Market statistics",
+    go: { route: "market-desk", marketDesk: "price" },
+  },
+  {
+    id: "nepse-data",
+    title: "NEPSE Data",
+    short: "NEPSE data",
+    purpose: "Published session figures",
+    keywords: "nepse data kitta transactions listed",
+    icon: "doc",
+    tone: "teal",
+    category: "market",
+    group: "Market statistics",
+    go: { route: "market-desk", marketDesk: "nepse-data" },
   },
 
   {
@@ -521,37 +569,136 @@ export function filterExploreTools(query: string) {
   );
 }
 
+export const planIds: Plan[] = ["free", "plus", "pro"];
+
 export const planMeta = {
   free: {
     id: "free" as const,
     label: "Free",
     kicker: "FREE MEMBER",
     renew: "Upgrade when a screener or alert would help",
+    blurb: "Tape, one watchlist, and the words.",
     monthly: 0,
     annual: 0,
+  },
+  plus: {
+    id: "plus" as const,
+    label: "Plus",
+    kicker: "PLUS MEMBER",
+    renew: "Renews with this cycle",
+    blurb: "Alerts, screener and compare.",
+    monthly: 299,
+    annual: 2490,
   },
   pro: {
     id: "pro" as const,
     label: "Pro",
     kicker: "PRO MEMBER",
-    renew: "Renews in 180 days",
-    monthly: 299,
-    annual: 2490,
-  },
-  guru: {
-    id: "guru" as const,
-    label: "Guru",
-    kicker: "GURU MEMBER",
-    renew: "Renews in 180 days",
+    renew: "Renews with this cycle",
+    blurb: "Depth, valuators and newsletters on top.",
     monthly: 799,
     annual: 6990,
   },
 };
 
 export const planFeatures = [
-  { name: "Market tape and index", free: true, pro: true, guru: true },
-  { name: "One watchlist", free: true, pro: true, guru: true },
-  { name: "Price and event alerts", free: false, pro: true, guru: true },
-  { name: "Screener and compare", free: false, pro: true, guru: true },
-  { name: "Depth, valuators, newsletters", free: false, pro: false, guru: true },
+  { name: "Market tape and index", free: true, plus: true, pro: true },
+  { name: "One watchlist", free: true, plus: true, pro: true },
+  { name: "Price and event alerts", free: false, plus: true, pro: true },
+  { name: "Screener and compare", free: false, plus: true, pro: true },
+  { name: "Depth, valuators, newsletters", free: false, plus: false, pro: true },
+];
+
+export const memberSince = "2 Shrawan 2083";
+export const referralCode = "SANDIP-MM";
+
+export function planTerm(plan: Plan, cycle: PlanCycle) {
+  if (plan === "free") {
+    return { started: "—", ending: "—" };
+  }
+  return {
+    started: "26 Bhadra 2083",
+    ending: cycle === "monthly" ? "26 Ashwin 2083" : "26 Bhadra 2084",
+  };
+}
+
+/* ── Subscription page ──────────────────────────────────────────────────────
+   Three tiers, one character each, and the same rows compared across all. */
+export const planCharacters: Record<Plan, string> = {
+  free: "deepak",
+  plus: "sarita",
+  pro: "kiran",
+};
+
+/** The cast a member can pick from for their own picture. */
+export const characterCast = [
+  "deepak",
+  "sarita",
+  "kiran",
+  "anil",
+  "maya",
+  "sita",
+  "prakash",
+  "bina",
+  "nabin",
+];
+
+/** The face the demo member starts with. */
+export const memberCharacter = "deepak";
+
+export const planHighlights: Record<Plan, string[]> = {
+  free: ["Live tape and the index", "One watchlist, one book", "Every term explained"],
+  plus: ["Price alerts that reach you", "Screener, compare and baskets", "Broker statement import"],
+  pro: ["Market depth and floorsheet history", "Valuators and the weekly letter", "Tulkey without a daily cap"],
+};
+
+export type PerkValue = string | boolean;
+
+export const planPerkGroups: {
+  title: string;
+  rows: { name: string; free: PerkValue; plus: PerkValue; pro: PerkValue }[];
+}[] = [
+  {
+    title: "Market",
+    rows: [
+      { name: "Live tape and NEPSE index", free: true, plus: true, pro: true },
+      { name: "Movers, sectors and indices", free: true, plus: true, pro: true },
+      { name: "Floorsheet and broker analysis", free: "Top 5", plus: "Full day", pro: "Day + history" },
+      { name: "Market depth", free: false, plus: false, pro: true },
+    ],
+  },
+  {
+    title: "Your book",
+    rows: [
+      { name: "Watchlists", free: "1", plus: "10", pro: "Unlimited" },
+      { name: "Portfolios", free: "1", plus: "5", pro: "Unlimited" },
+      { name: "Broker statement import", free: false, plus: true, pro: true },
+      { name: "Charges and tax summary", free: false, plus: true, pro: true },
+    ],
+  },
+  {
+    title: "Alerts",
+    rows: [
+      { name: "Price alerts", free: false, plus: "20 live", pro: "Unlimited" },
+      { name: "Corporate action notices", free: true, plus: true, pro: true },
+      { name: "Email delivery", free: false, plus: true, pro: true },
+    ],
+  },
+  {
+    title: "Tools",
+    rows: [
+      { name: "Baskets", free: "Open ones", plus: "All", pro: "All" },
+      { name: "Screener and compare", free: false, plus: true, pro: true },
+      { name: "Valuators — WACC, DCF", free: false, plus: false, pro: true },
+      { name: "Tulkey AI", free: "5 a day", plus: "50 a day", pro: "Unlimited" },
+    ],
+  },
+  {
+    title: "Learning",
+    rows: [
+      { name: "Stock courses", free: "First lesson", plus: "All", pro: "All" },
+      { name: "Weekly newsletter", free: false, plus: false, pro: true },
+      { name: "Support", free: "Help centre", plus: "Email", pro: "Priority" },
+    ],
+  },
 ];

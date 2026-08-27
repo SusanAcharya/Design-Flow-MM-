@@ -1,7 +1,7 @@
 import { useApp } from "../lib/state";
 import { Prototype } from "../prototype/Prototype";
 import { studioObjectives } from "../lib/objectives";
-import type { Circuit, Plan, Route, Stage, UiFont } from "../lib/types";
+import type { Circuit, DataState, Plan, Route, Stage, UiFont } from "../lib/types";
 
 const screens: { id: Route; label: string }[] = [
   { id: "onboarding", label: "Onboarding" },
@@ -10,6 +10,7 @@ const screens: { id: Route; label: string }[] = [
   { id: "ai", label: "Tulkey AI" },
   { id: "objective", label: "Objective" },
   { id: "market", label: "Market" },
+  { id: "market-desk", label: "Market tools" },
   { id: "stock", label: "Stock detail" },
   { id: "portfolio", label: "Portfolio" },
   { id: "watchlist", label: "Watchlist" },
@@ -20,7 +21,11 @@ const screens: { id: Route; label: string }[] = [
   { id: "learn", label: "Learn" },
   { id: "ipo", label: "IPO" },
   { id: "more", label: "More / Tools" },
+  { id: "profile", label: "Profile" },
   { id: "alerts", label: "Alerts" },
+  { id: "notifications", label: "Notifications" },
+  { id: "subscription", label: "Subscription" },
+  { id: "happening", label: "What\u2019s happening" },
 ];
 
 const stages: { id: Stage; label: string }[] = [
@@ -37,6 +42,13 @@ const circuits: { id: Circuit; label: string }[] = [
   { id: "index5", label: "Index 5%" },
   { id: "index8", label: "Index 8%" },
   { id: "stock15", label: "Stock 15%" },
+];
+
+const dataStates: { id: DataState; label: string }[] = [
+  { id: "ready", label: "Ready" },
+  { id: "loading", label: "Loading" },
+  { id: "refreshing", label: "Refreshing" },
+  { id: "error", label: "Failed" },
 ];
 
 const fonts: { id: UiFont; label: string }[] = [
@@ -68,6 +80,10 @@ export function Studio() {
     setCircuit,
     plan,
     setPlan,
+    dataState,
+    setDataState,
+    hasPortfolio,
+    setHasPortfolio,
     route,
     go,
     resetDemo,
@@ -162,12 +178,33 @@ export function Studio() {
         <label>
           Plan
           <div className="seg">
-            {(["free", "pro", "guru"] as Plan[]).map((id) => (
+            {(["free", "plus", "pro"] as Plan[]).map((id) => (
               <button key={id} className={plan === id ? "on" : ""} onClick={() => setPlan(id)}>
-                {id === "free" ? "Free" : id === "pro" ? "Pro" : "Guru"}
+                {id === "free" ? "Free" : id === "plus" ? "Plus" : "Pro"}
               </button>
             ))}
           </div>
+        </label>
+
+        <label>
+          Portfolio
+          <div className="seg">
+            <button className={hasPortfolio ? "on" : ""} onClick={() => setHasPortfolio(true)}>
+              Added
+            </button>
+            <button className={!hasPortfolio ? "on" : ""} onClick={() => setHasPortfolio(false)}>
+              None
+            </button>
+          </div>
+        </label>
+
+        <label>
+          Data
+          <select value={dataState} onChange={(e) => setDataState(e.target.value as DataState)}>
+            {dataStates.map((d) => (
+              <option key={d.id} value={d.id}>{d.label}</option>
+            ))}
+          </select>
         </label>
 
         <label>

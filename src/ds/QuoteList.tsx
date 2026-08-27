@@ -33,7 +33,7 @@ export function QuoteList({
             <small>{row.name}</small>
           </span>
           {spark && (
-            <Sparkline changePct={row.changePct} seed={row.symbol} width={56} height={24} />
+            <Sparkline changePct={row.changePct} width={56} height={24} />
           )}
           <span className="quote-list-meta">
             <b>{npr(row.price, 2)}</b>

@@ -1,17 +1,31 @@
 import { useState } from "react";
 
+/* One mark per listed company — keep this in step with public/tickers. */
 const art = new Set([
   "nabil",
-  "upper",
   "nica",
+  "gbime",
+  "adbl",
+  "nlic",
+  "upper",
+  "chcl",
+  "ridi",
+  "api",
+  "bhl",
+  "ahl",
   "shivm",
   "hdl",
+  "sapil",
+  "mepdl",
   "sohl",
-  "chcl",
-  "gbime",
-  "ridi",
-  "nric",
+  "bbc",
+  "nlo",
+  "cfcl",
+  "gufl",
+  "avyan",
+  "aclbsl",
   "ntc",
+  "nric",
 ]);
 
 export function TickerMark({ symbol, size }: { symbol: string; size?: "sm" }) {

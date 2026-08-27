@@ -2,10 +2,10 @@ import { useEffect, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import { UserAvatar } from "../ds/UserAvatar";
 import { SearchField, StatusBar } from "../ds/primitives";
-import { alerts, user } from "../lib/data";
+import { LoadBar } from "../ds/Loading";
+import { nepse, notifications, user } from "../lib/data";
 import { planMeta } from "../lib/explore";
-import { activeTab } from "../lib/nav";
-import { stageMeta } from "../lib/stage";
+import { activeTab, jumpDestinations } from "../lib/nav";
 import { useApp } from "../lib/state";
 import type { Route } from "../lib/types";
 
@@ -20,13 +20,13 @@ const tabs: { id: Route; label: string; icon: "home" | "market" | "tulkey" | "wa
 const tabRoots: Route[] = ["home", "market", "ai", "discover", "portfolio"];
 
 function AvatarButton() {
-  const { openSheet } = useApp();
+  const { go } = useApp();
   return (
     <button
       type="button"
       className="avatar-btn"
-      aria-label="Profile and level"
-      onClick={() => openSheet({ kind: "profile" })}
+      aria-label="Profile and account"
+      onClick={() => go("profile")}
     >
       <UserAvatar size={40} />
     </button>
@@ -34,11 +34,10 @@ function AvatarButton() {
 }
 
 function Identity({ compact = false }: { compact?: boolean }) {
-  const { stage } = useApp();
   return (
     <div className={`header-who ${compact ? "compact" : ""}`}>
       <p className="t-h-s">Namaste, {user.name}</p>
-      {!compact && <p className="t-label-s c-muted">{stageMeta[stage].label}</p>}
+      {!compact && <p className="t-label-s c-muted">{nepse.date}</p>}
     </div>
   );
 }
@@ -59,12 +58,12 @@ function SessionChip() {
 
 function AlertButton() {
   const { go } = useApp();
-  const unread = alerts.length > 0;
+  const unread = notifications.some((item) => !item.read);
   return (
     <button
       className={`icon-btn header-icon ${unread ? "has-dot" : ""}`}
-      onClick={() => go("alerts")}
-      aria-label="Alerts"
+      onClick={() => go("notifications")}
+      aria-label="Notifications"
     >
       <Icon name="bell" size={19} />
     </button>
@@ -116,13 +115,14 @@ function GlobalHeader() {
 }
 
 export function MobileChrome({ children, showTabs }: { children: ReactNode; showTabs: boolean }) {
-  const { go, route } = useApp();
-  const current = activeTab(route);
+  const { go, route, objectiveOrigin } = useApp();
+  const current = activeTab(route, objectiveOrigin);
   const showGlobal = showTabs && tabRoots.includes(route);
   return (
     <>
       <StatusBar />
       {showGlobal && <GlobalHeader />}
+      <LoadBar />
       <div className="app-scroll">{children}</div>
       {showTabs && (
         <nav className="tab-bar">
@@ -159,8 +159,8 @@ export function DesktopChrome({
   children: ReactNode;
   showNav: boolean;
 }) {
-  const { go, route, plan, openSheet } = useApp();
-  const current = activeTab(route);
+  const { go, route, plan, objectiveOrigin } = useApp();
+  const current = activeTab(route, objectiveOrigin);
   const searching = route === "search";
 
   useEffect(() => {
@@ -200,14 +200,36 @@ export function DesktopChrome({
             </button>
           ))}
         </nav>
-        <p className="rail-note">Tulkey explains the words and the site. It never picks a stock.</p>
-        <button type="button" className="plan-card" onClick={() => openSheet({ kind: "plans" })}>
-          <p className="t-label-l">{plan === "free" ? "Free plan" : `${planMeta[plan].label} plan`}</p>
-          <p className="t-body-xs muted">
-            {plan === "free"
-              ? "Screener, alerts and compare come with Pro."
-              : planMeta[plan].renew}
-          </p>
+
+        {/* The same named places the mobile drawer carries. */}
+        <div className="rail-jump">
+          <p className="overline rail-label">Jump to</p>
+          {jumpDestinations.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              className="rail-jump-item"
+              onClick={() => go(item.route, item.brokerDesk ? { brokerDesk: item.brokerDesk } : undefined)}
+            >
+              <span className="rail-jump-ico" aria-hidden>
+                <Icon name={item.icon} size={15} />
+              </span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <button type="button" className={`rail-account drawer-card plan-${plan}`} onClick={() => go("profile")}>
+          <UserAvatar size={36} />
+          <span className="drawer-card-id">
+            <span className="drawer-card-name">
+              <strong>{user.name}</strong>
+              <em className={`tier-pill tier-${plan}`}>{planMeta[plan].label}</em>
+            </span>
+            <small>
+              {plan === "free" ? "Screener and alerts come with Plus" : planMeta[plan].renew}
+            </small>
+          </span>
         </button>
       </aside>
       <div className="web-main">
@@ -228,6 +250,7 @@ export function DesktopChrome({
             <AvatarButton />
           </div>
         </header>
+        <LoadBar />
         <div className="web-body">
           <div className="app-scroll">{children}</div>
         </div>

@@ -57,6 +57,7 @@ const files = {
   idcard: `${import.meta.env.BASE_URL}icons/idcard.svg`,
   vault: `${import.meta.env.BASE_URL}icons/vault.svg`,
   clipboard: `${import.meta.env.BASE_URL}icons/clipboard.svg`,
+  plus: `${import.meta.env.BASE_URL}icons/plus.svg`,
 };
 
 export type IconName = keyof typeof files;

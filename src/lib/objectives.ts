@@ -1,9 +1,9 @@
-import type { PersonaId, Stage } from "./types";
+import type { PersonaId, Route, Stage } from "./types";
 import { getPersona } from "./personas";
 import { titleObjective } from "./stage";
 
-export type ObjectiveKind = "learn" | "do";
-export type DoAction = "book" | "alert" | "watch";
+export type ObjectiveKind = "learn" | "feature";
+export type DoAction = "book" | "watch" | "basket" | "broker" | "market";
 
 export type Objective = {
   id: string;
@@ -14,14 +14,21 @@ export type Objective = {
   title: string;
   cardSub: string;
   tulkeyLine: string;
-  know: string[];
-  how: { step: string; platform: string }[];
-  videoLabel: string;
+  /** Two short lines. The video carries the lesson; this is the recap. */
+  points: string[];
+  videoLabel?: string;
+  /** Lessons send you to the page where the lesson is visible. */
+  lessonCta?: { line: string; ctaLabel: string; route: Route };
+  /** Feature sittings send you into the product and finish on the action there. */
+  feature?: {
+    route: Route;
+    ctaLabel: string;
+    doneWhen: string;
+  };
   doAction?: DoAction;
-  cta?: string;
 };
 
-/** Linear track. Learn first, then things you do in the app. */
+/** Watch first, then use the product. Feature sittings tick off on the action, not the visit. */
 export const curriculum: Objective[] = [
   {
     id: "share",
@@ -29,19 +36,15 @@ export const curriculum: Objective[] = [
     kind: "learn",
     level: "The market",
     duration: "60s",
-    title: "Understanding the share market",
-    cardSub: "What NEPSE is, and what a share actually is.",
-    tulkeyLine: "We’ll start at the beginning. Nothing to buy.",
-    know: [
-      "NEPSE is Nepal’s stock exchange. The number on Home is an index of many companies together — not a company you can buy.",
-      "A share is a slice of ownership in a listed company. Kitta is the unit. Price going up or down changes the value of that slice.",
-      "MoneyMitra explains this. It never tells you which company to own, and it never places an order.",
-    ],
-    how: [
-      { step: "Index, movers and breadth live on Market. They are a record, not a call.", platform: "MoneyMitra" },
-      { step: "Buying or selling a listed company still happens in TMS at a licensed broker.", platform: "TMS · your broker" },
+    title: "How the share market works",
+    cardSub: "Watch this first. Nothing to buy.",
+    tulkeyLine: "Sixty seconds, then you’ll know what NEPSE is.",
+    points: [
+      "A share is a slice of a company. Kitta is the unit.",
+      "The index is many companies together — not a thing you buy.",
     ],
     videoLabel: "What the share market is",
+    lessonCta: { line: "Check out the Market page", ctaLabel: "Open Market", route: "market" },
   },
   {
     id: "terms",
@@ -49,103 +52,123 @@ export const curriculum: Objective[] = [
     kind: "learn",
     level: "The words",
     duration: "90s",
-    title: "The terms you’ll keep seeing",
-    cardSub: "Kitta, LTP, book close, circuit — in plain words.",
-    tulkeyLine: "These words show up a lot. Here’s what they actually are.",
-    know: [
-      "Kitta is one unit of a share. IPO applications are usually counted in kitta, often with a 10-kitta minimum.",
-      "LTP is the last traded print, with a time. It is not a live promise and not a recommendation.",
-      "Book close is the company’s record date for a dividend or AGM. After the ex-date the share usually trades without that cash.",
-      "A circuit is the maximum a share may rise or fall in one session. Hitting it is a trading rule, not a verdict on the company.",
-    ],
-    how: [
-      { step: "Tap a word with an info mark when it shows up. The sheet uses the same definition as the lesson.", platform: "MoneyMitra" },
-      { step: "Orders, if you place them later, still go through TMS.", platform: "TMS · your broker" },
+    title: "The words you’ll keep seeing",
+    cardSub: "Kitta, LTP, book close, circuit.",
+    tulkeyLine: "Four words that show up on every screen.",
+    points: [
+      "LTP is the last print. Book close is the record date.",
+      "A circuit caps how far a share moves in a day.",
     ],
     videoLabel: "Kitta, LTP, book close, circuit",
+    lessonCta: { line: "Check out a company page", ctaLabel: "Open NABIL", route: "stock" },
   },
   {
-    id: "read",
+    id: "market",
     n: 3,
-    kind: "learn",
-    level: "The words",
-    duration: "90s",
-    title: "What book close actually means",
-    cardSub: "Dividends, ex-date, and P/E — not a verdict.",
-    tulkeyLine: "Using a name you already know as the example. Not a pick.",
-    know: [
-      "On the ex-date the share usually trades without the cash dividend. The price often drops by about that amount. That is the cash leaving the price, not a sudden change in the company.",
-      "Book close is the date the company freezes its list for that dividend or AGM. Holding through it is a fact about the register, not advice.",
-      "P/E compares price with earnings per share. It describes valuation. It is not a buy or sell signal.",
-    ],
-    how: [
-      { step: "Companies announce dividends, book closure and AGMs. We surface dates; the company is the source.", platform: "Company / NEPSE notices" },
-      { step: "Capital-gains tax uses your actual cost if you sell. We can show inputs; we do not file tax.", platform: "IRD rules · your records" },
-    ],
-    videoLabel: "Book close, dividend, P/E",
-  },
-  {
-    id: "book",
-    n: 4,
-    kind: "do",
-    doAction: "book",
-    cta: "Add a holding",
-    level: "Your book",
+    kind: "feature",
+    level: "MoneyMitra",
     duration: "Your move",
-    title: "Add a holding to your portfolio",
-    cardSub: "Paste a note or enter kitta. Completes when you save.",
-    tulkeyLine: "This one isn’t a lesson. It completes when the holding is in your book.",
-    know: [
-      "A holding here is a record of kitta you already have. It is not an order, and MoneyMitra cannot read your broker.",
-      "Paste a contract note or type symbol, kitta, price and date. You review every field before it is saved.",
+    title: "Market",
+    cardSub: "The day’s board — index, movers, floor sheet.",
+    tulkeyLine: "Open one company and see how a name reads.",
+    points: [
+      "Index, movers, sectors and the floor sheet.",
+      "A record of the session. Never an order.",
     ],
-    how: [
-      { step: "Add what you already hold. Nothing is bought or sold.", platform: "MoneyMitra" },
-      { step: "Listed trades still happen in TMS.", platform: "TMS · your broker" },
-    ],
-    videoLabel: "How a holding is recorded",
-  },
-  {
-    id: "alert",
-    n: 5,
-    kind: "do",
-    doAction: "alert",
-    cta: "Create an alert",
-    level: "Your book",
-    duration: "Your move",
-    title: "Create an alert",
-    cardSub: "Price, event, or IPO. Completes when you save the rule.",
-    tulkeyLine: "You set the rule. We remind. We never place an order off the back of it.",
-    know: [
-      "An alert is a reminder you wrote — a price, a date, or an IPO close. It is not a recommendation to act.",
-      "Turning one on does not buy or sell kitta.",
-    ],
-    how: [
-      { step: "Pick a name, a rule, and save it. Completes this objective.", platform: "MoneyMitra" },
-    ],
-    videoLabel: "What an alert is",
+    doAction: "market",
+    feature: {
+      route: "market",
+      ctaLabel: "Open Market",
+      doneWhen: "Done when you open a company.",
+    },
   },
   {
     id: "watch",
-    n: 6,
-    kind: "do",
-    doAction: "watch",
-    cta: "Add to a watchlist",
-    level: "Your book",
+    n: 4,
+    kind: "feature",
+    level: "MoneyMitra",
     duration: "Your move",
-    title: "Add a name to a watchlist",
-    cardSub: "Follow a scrip. Completes when the name is on a list.",
-    tulkeyLine: "Watching is not buying. The list is yours to check after close.",
-    know: [
-      "A watchlist is names you want to see again. Following never buys kitta.",
-      "You can keep more than one list — banks, hydro, weekend reads.",
+    title: "Watchlist",
+    cardSub: "Names you follow, without buying them.",
+    tulkeyLine: "Watching is not buying.",
+    points: [
+      "Names you want to see again, in one place.",
+      "Keep more than one list — banks, hydro, weekend reads.",
     ],
-    how: [
-      { step: "Add a name that isn’t on the list yet. That completes this objective.", platform: "MoneyMitra" },
+    doAction: "watch",
+    feature: {
+      route: "watchlist",
+      ctaLabel: "Open watchlist",
+      doneWhen: "Done when a name is on your list.",
+    },
+  },
+  {
+    id: "book",
+    n: 5,
+    kind: "feature",
+    level: "MoneyMitra",
+    duration: "Your move",
+    title: "Portfolio",
+    cardSub: "Your own book of the kitta you hold.",
+    tulkeyLine: "Add what you already hold. Nothing gets bought.",
+    points: [
+      "Kitta you already own, with cost and date.",
+      "Paste a contract note or type it in.",
     ],
-    videoLabel: "What a watchlist is",
+    doAction: "book",
+    feature: {
+      route: "portfolio",
+      ctaLabel: "Open portfolio",
+      doneWhen: "Done when a holding is saved.",
+    },
+  },
+  {
+    id: "baskets",
+    n: 6,
+    kind: "feature",
+    level: "MoneyMitra",
+    duration: "Your move",
+    title: "Baskets",
+    cardSub: "Several names in one view.",
+    tulkeyLine: "A way of looking at a group. Not a product.",
+    points: [
+      "Companies grouped by theme — banks, hydro, the fallers.",
+      "Same prints, same dates. Opening one buys nothing.",
+    ],
+    doAction: "basket",
+    feature: {
+      route: "baskets",
+      ctaLabel: "Open baskets",
+      doneWhen: "Done when you open a basket.",
+    },
+  },
+  {
+    id: "brokers",
+    n: 7,
+    kind: "feature",
+    level: "MoneyMitra",
+    duration: "Your move",
+    title: "Brokers",
+    cardSub: "Who traded today, and how TMS fits in.",
+    tulkeyLine: "Buying still happens at a licensed broker.",
+    points: [
+      "Executed turnover and the buy/sell split.",
+      "Orders are placed in TMS, never here.",
+    ],
+    doAction: "broker",
+    feature: {
+      route: "brokers",
+      ctaLabel: "Open brokers",
+      doneWhen: "Done when you open a broker.",
+    },
   },
 ];
+
+export const courseCta = {
+  title: "Want the long version?",
+  body: "Check out our range of courses — IPOs to book close.",
+  label: "Browse courses",
+};
 
 export type Knowledge = "nothing" | "terms" | "demat" | "tms" | "regular";
 
@@ -179,23 +202,23 @@ export function pathOptions(q1: Knowledge): PathPick[] {
       ];
     case "terms":
       return [
-        { id: "words", title: "Start at the terms", sub: "Kitta, book close, circuit — then your book.", objectiveId: "terms", stage: "explorer" },
-        { id: "review", title: "From the very beginning anyway", sub: "Understanding the share market first.", objectiveId: "share", stage: "explorer" },
+        { id: "words", title: "Start at the terms", sub: "Kitta, book close, circuit — then the app.", objectiveId: "terms", stage: "explorer" },
+        { id: "review", title: "From the very beginning anyway", sub: "How the share market works, first.", objectiveId: "share", stage: "explorer" },
       ];
     case "demat":
       return [
-        { id: "read", title: "Book close and dividends", sub: "Then add a holding, an alert, a watchlist.", objectiveId: "read", stage: "primary" },
+        { id: "market", title: "Show me around the app", sub: "Market, watchlist, portfolio, baskets.", objectiveId: "market", stage: "primary" },
         { id: "review", title: "From the very beginning anyway", sub: "Start at the share market.", objectiveId: "share", stage: "explorer" },
       ];
     case "tms":
       return [
-        { id: "book", title: "Add what you already hold", sub: "Then an alert and a watchlist.", objectiveId: "book", stage: "secondary" },
-        { id: "alert", title: "Alert and watchlist", sub: "If the book is already in.", objectiveId: "alert", stage: "secondary" },
+        { id: "book", title: "Add what you already hold", sub: "Then baskets and brokers.", objectiveId: "book", stage: "secondary" },
+        { id: "watch", title: "Start with a watchlist", sub: "Names first, book after.", objectiveId: "watch", stage: "secondary" },
       ];
     case "regular":
       return [
-        { id: "book", title: "Holdings, then alerts and a watchlist", sub: "Skip the lessons. Set the book up.", objectiveId: "book", stage: "active" },
-        { id: "alert", title: "Just the last two: alert and watchlist", sub: "If the book is already in.", objectiveId: "alert", stage: "active" },
+        { id: "book", title: "Set the book up first", sub: "Skip the lessons. Portfolio, then the rest.", objectiveId: "book", stage: "active" },
+        { id: "baskets", title: "Just the extras", sub: "Baskets and broker flow.", objectiveId: "baskets", stage: "active" },
       ];
   }
 }
@@ -217,10 +240,10 @@ export function homeObjectiveId(
   return titleObjective[stage];
 }
 
-export function nextOnPath(id: string): Objective | null {
+export function nextOnPath(id: string, done: string[] = []): Objective | null {
   const i = curriculum.findIndex((o) => o.id === id);
-  if (i < 0 || i >= curriculum.length - 1) return null;
-  return curriculum[i + 1];
+  if (i < 0) return null;
+  return curriculum.slice(i + 1).find((o) => !done.includes(o.id)) ?? null;
 }
 
 export function getObjectiveByTitle(title: string): Objective | null {
@@ -228,18 +251,18 @@ export function getObjectiveByTitle(title: string): Objective | null {
   if (!t) return null;
   const exact = curriculum.find((o) => o.title.toLowerCase() === t);
   if (exact) return exact;
-  if (t.includes("p/e") || t.includes("ex-dividend") || t.includes("dividend") || t.includes("book close")) {
-    return getObjective("read");
-  }
-  if (t.includes("alert")) return getObjective("alert");
+  if (t.includes("basket")) return getObjective("baskets");
+  if (t.includes("broker") || t.includes("tms")) return getObjective("brokers");
   if (t.includes("watch")) return getObjective("watch");
   if (t.includes("holding") || t.includes("portfolio")) return getObjective("book");
+  if (t.includes("p/e") || t.includes("dividend") || t.includes("book close")) return getObjective("terms");
   if (t.includes("kitta") || t.includes("circuit") || t.includes("ltp")) return getObjective("terms");
-  if (t.includes("nepse") || t.includes("share") || t.includes("market")) return getObjective("share");
+  if (t.includes("nepse") || t.includes("share")) return getObjective("share");
+  if (t.includes("market")) return getObjective("market");
   return null;
 }
 
-export function pathProgress(currentId: string | null, finished = false) {
+export function pathProgress(currentId: string | null, finished = false, doneIds: string[] = []) {
   const total = curriculum.length;
   if (finished) {
     return {
@@ -251,14 +274,16 @@ export function pathProgress(currentId: string | null, finished = false) {
     };
   }
   const now = getObjective(currentId);
+  const isDone = (o: Objective) => doneIds.includes(o.id) || (!!now && o.n < now.n);
+  const done = curriculum.filter((o) => o.id !== now?.id && isDone(o));
   if (!now) {
-    return { done: [] as Objective[], now: null, later: curriculum, learned: 0, total };
+    return { done, now: null, later: curriculum.filter((o) => !isDone(o)), learned: done.length, total };
   }
   return {
-    done: curriculum.filter((o) => o.n < now.n),
+    done,
     now,
-    later: curriculum.filter((o) => o.n > now.n),
-    learned: now.n - 1,
+    later: curriculum.filter((o) => o.n > now.n && !isDone(o)),
+    learned: done.length,
     total,
   };
 }

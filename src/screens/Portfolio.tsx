@@ -1,11 +1,13 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
-import { SectorDonut, SessionWalk } from "../ds/charts";
+import { AllocStrip, BookTrend, SectorDonut } from "../ds/charts";
 import { BookNudge } from "../ds/BookNudge";
 import { Explain, Overline, SectionHead } from "../ds/primitives";
 import { TickerMark } from "../ds/TickerMark";
+import { HappenList, type HappenItem } from "../ds/HappenList";
 import {
   allotments,
+  bookHappen,
   bookRangeTape,
   ipoPipeline,
   type BookRange,
@@ -21,7 +23,6 @@ import {
   contributors,
   eventsFor,
   glossary,
-  bestPerformer,
   incomeFor,
   incomeTabs,
   perfRanges,
@@ -158,15 +159,64 @@ function useExplain() {
 
 /* ---------------------------------------------------------------- Overview */
 
+/** The value chart, as a tier of the hero card rather than a block of its own. */
+function HeroTrend({ hidden }: { hidden: boolean }) {
+  const { totals: b } = useBook();
+  const [range, setRange] = useState<BookRange>("1M");
+  const tape = useMemo(
+    () => bookRangeTape(b.marketValue, b.dayPl, b.unrealised, range),
+    [range, b],
+  );
+  const change = tape.last - tape.prevClose;
+
+  return (
+    <div className="pf-hero-trend">
+      <div className="pf-hero-trend-head">
+        <span>{range} change</span>
+        <b className={tone(change)}>{signedMoney(change, hidden)}</b>
+        <em className={tone(change)}>
+          {hidden ? VEIL : `(${pct((change / tape.prevClose) * 100)})`}
+        </em>
+      </div>
+      <div className="pf-hero-trend-chart">
+        <BookTrend tape={tape} hidden={hidden} />
+      </div>
+      <div className="range-pills" role="tablist" aria-label="Performance range">
+        {perfRanges.map((item) => (
+          <button
+            key={item}
+            type="button"
+            role="tab"
+            aria-selected={range === item}
+            className={range === item ? "on" : ""}
+            onClick={() => setRange(item)}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Spec §3.2 — one card, four tiers: value, today, the parts, the sum. */
-function HeroCard({ hidden }: { hidden: boolean }) {
-  const { totals: b, holdings } = useBook();
-  const { go, portfolioId } = useApp();
+function HeroCard({ hidden, setHidden }: { hidden: boolean; setHidden: (v: boolean) => void }) {
+  const { totals: b } = useBook();
+  const { portfolioId } = useApp();
   const explain = useExplain();
-  const best = bestPerformer(holdings);
   const reminders = attentionFor(portfolioId);
 
   const cells = [
+    {
+      id: "today",
+      label: "Today’s change",
+      value: signedMoney(b.dayPl, hidden),
+      sub: hidden ? undefined : pct(b.dayPlPct),
+      klass: tone(b.dayPl),
+      title: "Today’s change",
+      body: `Since yesterday's close this book moved Rs ${npr(b.dayPl)} (${pct(b.dayPlPct)}). It counts only price moves on shares you hold today.`,
+      note: "A day move is noise until it repeats. It is not your return.",
+    },
     {
       id: "invested",
       label: "Invested",
@@ -197,23 +247,34 @@ function HeroCard({ hidden }: { hidden: boolean }) {
           : `Rs ${npr(b.realised)} locked in by completed sales, after selling charges and capital gain tax.`,
       note: "Kept separate from unrealised P/L on purpose.",
     },
-    {
-      id: "dividends",
-      label: "Dividends",
-      value: b.dividends === 0 ? "No records" : money(b.dividends, hidden),
-      klass: b.dividends === 0 ? "dim" : undefined,
-      title: "Recorded dividends",
-      body:
-        b.dividends === 0
-          ? "No dividend has been recorded against this portfolio yet. That is not the same as a verified Rs 0."
-          : `Rs ${npr(b.dividends)} of dividend income recorded against these holdings, net of tax where you entered it.`,
-      note: "Only what you recorded, never an estimate.",
-    },
   ];
 
   return (
     <div className="pf-hero">
       <div className="pf-hero-card">
+        <div className="pf-hero-acts">
+          <button
+            type="button"
+            className={`pf-hero-chip${reminders.length > 0 ? " on" : ""}`}
+            aria-label={
+              reminders.length === 0
+                ? "Reminders: nothing waiting"
+                : `Reminders: ${reminders.length}`
+            }
+            onClick={() => {
+              if (reminders.length === 0) {
+                explain("Reminders", "Nothing is waiting on this book right now. Deadlines, missing prices and events will show up here.");
+                return;
+              }
+              document.getElementById("pf-reminders")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }}
+          >
+            <Icon name="alert" size={15} />
+            {reminders.length > 0 && <em>{reminders.length}</em>}
+          </button>
+          <EyeBtn hidden={hidden} onClick={() => setHidden(!hidden)} />
+        </div>
+
         <button
           type="button"
           className="pf-hero-top"
@@ -230,60 +291,11 @@ function HeroCard({ hidden }: { hidden: boolean }) {
             <b>{money(b.marketValue, hidden)}</b>
           </span>
           <span className="pf-hero-sub">
-            {b.count} {b.count === 1 ? "holding" : "holdings"} · {b.note}
+            {b.count} {b.count === 1 ? "holding" : "holdings"}
           </span>
         </button>
 
-        <div className="pf-hero-facts">
-          <button
-            type="button"
-            className="pf-fact"
-            onClick={() =>
-              explain(
-                "Units",
-                `You hold ${npr(b.kitta)} kitta across ${b.count} ${b.count === 1 ? "company" : "companies"}. Kitta is the unit of stock in Nepal.`,
-                "Quantity on each holding is also shown as kitta.",
-              )
-            }
-          >
-            <span>Units</span>
-            <b>{hidden ? VEIL : `${npr(b.kitta)} kitta`}</b>
-          </button>
-          <button
-            type="button"
-            className="pf-fact"
-            disabled={!best}
-            onClick={() => {
-              if (!best) return;
-              go("holding", { holdingMode: "detail", holding: best.symbol });
-            }}
-          >
-            <span>Best performer</span>
-            {best ? (
-              <b className={tone(best.plPct)}>
-                {best.symbol} <em>{hidden ? VEIL : pct(best.plPct)}</em>
-              </b>
-            ) : (
-              <b className="dim">—</b>
-            )}
-          </button>
-        </div>
-
-        <button
-          type="button"
-          className="pf-hero-remind"
-          onClick={() => {
-            if (reminders.length === 0) {
-              explain("Reminders", "Nothing is waiting on this book right now. Deadlines, missing prices and events will show up here.");
-              return;
-            }
-            document.getElementById("pf-reminders")?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }}
-        >
-          <span>Reminders</span>
-          <b>{reminders.length}</b>
-          <i aria-hidden>›</i>
-        </button>
+        <HeroTrend hidden={hidden} />
 
         <div className="pf-hero-grid">
           {cells.map((cell) => (
@@ -326,42 +338,6 @@ function HeroCard({ hidden }: { hidden: boolean }) {
   );
 }
 
-function Performance({ hidden }: { hidden: boolean }) {
-  const { totals: b } = useBook();
-  const [range, setRange] = useState<BookRange>("1M");
-  const tape = useMemo(
-    () => bookRangeTape(b.marketValue, b.dayPl, b.unrealised, range),
-    [range, b],
-  );
-  const change = tape.last - tape.prevClose;
-
-  return (
-    <PfBlock title="Performance" note={<>Portfolio value · {range} · Rs</>}>
-      <div className="pf-perf-line">
-        <b className={tone(change)}>{signedMoney(change, hidden)}</b>
-        <em className={tone(change)}>{hidden ? VEIL : pct((change / tape.prevClose) * 100)}</em>
-      </div>
-      <div className="pf-perf-chart">
-        <SessionWalk tape={tape} compact showVolume={false} />
-      </div>
-      <div className="range-pills" role="tablist" aria-label="Performance range">
-        {perfRanges.map((item) => (
-          <button
-            key={item}
-            type="button"
-            role="tab"
-            aria-selected={range === item}
-            className={range === item ? "on" : ""}
-            onClick={() => setRange(item)}
-          >
-            {item}
-          </button>
-        ))}
-      </div>
-    </PfBlock>
-  );
-}
-
 function AttentionBlock() {
   const { go, openSheet, portfolioId } = useApp();
   const items = attentionFor(portfolioId);
@@ -383,7 +359,7 @@ function AttentionBlock() {
   };
 
   return (
-    <PfBlock title="Reminders" note="Deadlines and missing data for this book">
+    <PfBlock title="Reminders">
       <div id="pf-reminders">
         {items.length === 0 ? (
           <p className="foot-note" style={{ padding: "4px 15px 12px" }}>
@@ -424,7 +400,7 @@ function HoldingRowCard({ row, hidden, onOpen }: { row: Holding; hidden: boolean
           <span className="pf-hcard-id">
             <strong className="t-ticker">{row.symbol}</strong>
             <small>{row.name}</small>
-            <b className="pf-hcard-qty">{hidden ? VEIL : `${npr(row.kitta)} kitta · ${npr(row.ltp, 2)}`}</b>
+            <b className="pf-hcard-qty">{hidden ? VEIL : `${npr(row.kitta)} kitta · Rs ${npr(row.ltp, 2)}`}</b>
           </span>
         </button>
         <button
@@ -436,7 +412,10 @@ function HoldingRowCard({ row, hidden, onOpen }: { row: Holding; hidden: boolean
         >
           <span className="pf-hcard-ltp">
             <b>{money(row.marketValue, hidden)}</b>
-            <em className={tone(row.dayPl)}>{signedMoney(row.dayPl, hidden)}</em>
+            <em className={tone(row.dayPl)}>
+              <i>Today</i>
+              {signedMoney(row.dayPl, hidden)}
+            </em>
           </span>
           <span className="pf-hcard-caret" aria-hidden />
         </button>
@@ -455,22 +434,24 @@ function HoldingRowCard({ row, hidden, onOpen }: { row: Holding; hidden: boolean
             <i>Total return</i>
             <b className={tone(row.totalPl)}>
               {signedMoney(row.totalPl, hidden)}
-              <em>{pct(row.plPct)}</em>
+              <em>({pct(row.plPct)})</em>
             </b>
           </span>
-          {(row.incomplete || soon) && (
-            <span className="pf-hcard-l4">
-              {row.incomplete && <span className="pf-flag warn">Estimated</span>}
-              {soon && (
-                <span className="pf-flag accent">
-                  {soon.daysLeft}d to {soon.kind === "deadline" ? "deadline" : "event"}
-                </span>
-              )}
-            </span>
-          )}
-          <button type="button" className="pf-hcard-open" onClick={onOpen}>
-            View position ›
-          </button>
+          <div className="pf-hcard-foot">
+            <button type="button" className="pf-hcard-open" onClick={onOpen}>
+              View position ›
+            </button>
+            {(row.incomplete || soon) && (
+              <span className="pf-hcard-flags">
+                {row.incomplete && <span className="pf-flag warn">Estimated</span>}
+                {soon && (
+                  <span className="pf-flag accent">
+                    {soon.daysLeft}d to {soon.kind === "deadline" ? "deadline" : "event"}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -630,36 +611,16 @@ function TxnRow({ row, hidden, onOpen }: { row: Txn; hidden: boolean; onOpen: ()
   );
 }
 
-function OverviewTab({ hidden }: { hidden: boolean }) {
-  const { go, openSheet, portfolioId } = useApp();
+function OverviewTab({ hidden, setHidden }: { hidden: boolean; setHidden: (v: boolean) => void }) {
+  const { go, openSheet } = useApp();
   const { holdings, totals: b } = useBook();
   const [advanced, setAdvanced] = useState(false);
-  const recent = activityFor(portfolioId).slice(0, 3);
   const top = holdings.slice(0, 3);
 
   return (
     <div className="pf-grid">
       <div className="pf-col-main">
-        <HeroCard hidden={hidden} />
-
-        <div className="pf-quick">
-          <button type="button" className="pf-quick-btn primary" onClick={() => go("holding", { holdingMode: "add" })}>
-            <Icon name="wallet" size={16} />
-            Add transaction
-          </button>
-          <button
-            type="button"
-            className="pf-quick-btn"
-            onClick={() => openSheet({ kind: "portfolio-import" })}
-          >
-            <Icon name="doc" size={16} />
-            Import
-          </button>
-          <button type="button" className="pf-quick-btn" onClick={() => go("portfolio", { portfolioTab: "Holdings" })}>
-            <Icon name="table" size={16} />
-            Holdings
-          </button>
-        </div>
+        <HeroCard hidden={hidden} setHidden={setHidden} />
 
         {b.incompleteCount > 0 && (
           <button
@@ -685,8 +646,6 @@ function OverviewTab({ hidden }: { hidden: boolean }) {
           </button>
         )}
 
-        <Performance hidden={hidden} />
-
         <PfBlock
           title="Holdings"
           note={b.count > 3 ? `3 of ${b.count} · ${money(b.marketValue, hidden)}` : `${b.count} ${b.count === 1 ? "position" : "positions"} · ${money(b.marketValue, hidden)}`}
@@ -705,29 +664,21 @@ function OverviewTab({ hidden }: { hidden: boolean }) {
           </div>
         </PfBlock>
 
-        {recent.length > 0 && (
-          <PfBlock
-            title="Recent activity"
-            action="View all ›"
-            onAction={() => go("portfolio", { portfolioTab: "Activity" })}
-          >
-            <ul className="pf-txn-list">
-              {recent.map((row) => (
-                <TxnRow
-                  key={row.id}
-                  row={row}
-                  hidden={hidden}
-                  onOpen={() => go("holding", { holdingMode: "detail", holding: row.symbol })}
-                />
-              ))}
-            </ul>
-          </PfBlock>
-        )}
       </div>
 
       <div className="pf-col-side">
         <AttentionBlock />
         <IncomeSummary hidden={hidden} />
+        <PfBlock
+          title="What's happening"
+          action="View more ›"
+          onAction={() => go("happening")}
+        >
+          <HappenList
+            items={bookHappen.slice(0, 3)}
+            onOpen={(item: HappenItem) => item.stock && go("stock", { stock: item.stock })}
+          />
+        </PfBlock>
       </div>
 
       <div className="pf-col-full">
@@ -1308,8 +1259,8 @@ function AnalyticsTab({ hidden }: { hidden: boolean }) {
 
 /* ------------------------------------------------------------------ Screen */
 
-function PortfolioHeader({ hidden, setHidden }: { hidden: boolean; setHidden: (v: boolean) => void }) {
-  const { openSheet } = useApp();
+function PortfolioHeader() {
+  const { go, openSheet } = useApp();
   const { totals: b } = useBook();
 
   return (
@@ -1329,7 +1280,14 @@ function PortfolioHeader({ hidden, setHidden }: { hidden: boolean; setHidden: (v
         </button>
       </div>
       <div className="pf-head-acts">
-        <EyeBtn hidden={hidden} onClick={() => setHidden(!hidden)} />
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label="Add transaction"
+          onClick={() => go("holding", { holdingMode: "add" })}
+        >
+          <Icon name="plus" size={19} />
+        </button>
         <button
           type="button"
           className="icon-btn"
@@ -1343,9 +1301,57 @@ function PortfolioHeader({ hidden, setHidden }: { hidden: boolean; setHidden: (v
   );
 }
 
+/* Spec §14 — no portfolio yet. One screen: what lands here, and the two ways in. */
+const zeroAlloc = [
+  { short: "BANKS", pct: 42, color: "#5b8cff" },
+  { short: "HYDRO", pct: 26, color: "#32e36a" },
+  { short: "MFG", pct: 18, color: "#f08c00" },
+  { short: "OTHER", pct: 14, color: "#8b8b8b" },
+];
+
+function PortfolioEmpty() {
+  const { go, openSheet } = useApp();
+  return (
+    <div className="pf-screen pf-zero">
+      <div className="pf-zero-art" aria-hidden>
+        <div className="pf-zero-card">
+          <span className="book-card-head">
+            <span>Your portfolio</span>
+            <em>after you add</em>
+          </span>
+          <span className="book-card-figures ghost">
+            <b>Rs —.—</b>
+            <em>+Rs —</em>
+          </span>
+          <AllocStrip rows={zeroAlloc} ghost legend={false} />
+        </div>
+      </div>
+
+      <div className="pf-zero-copy">
+        <h2>Nothing in your book yet</h2>
+        <p>Add one buy and this page fills in — value, average cost, P/L and the split.</p>
+      </div>
+
+      <div className="pf-quick">
+        <button type="button" className="pf-quick-btn primary" onClick={() => go("holding", { holdingMode: "add" })}>
+          <Icon name="plus" size={16} />
+          Add a holding
+        </button>
+        <button type="button" className="pf-quick-btn" onClick={() => openSheet({ kind: "portfolio-import" })}>
+          <Icon name="doc" size={16} />
+          Import
+        </button>
+      </div>
+
+    </div>
+  );
+}
+
 export function PortfolioScreen() {
-  const { go, stage, openSheet, bookNudgeDismissed, dismissBookNudge, portfolioTab: tab, setPortfolioTab } = useApp();
+  const { go, stage, openSheet, hasPortfolio, bookNudgeDismissed, dismissBookNudge, portfolioTab: tab, setPortfolioTab } = useApp();
   const [hidden, setHidden] = useState(false);
+
+  if (!hasPortfolio) return <PortfolioEmpty />;
 
   /* Spec §14 — no portfolio: explain, then offer add or import. */
   if (stage === "explorer") {
@@ -1368,7 +1374,7 @@ export function PortfolioScreen() {
 
     return (
       <div className="pf-screen">
-        <PortfolioHeader hidden={hidden} setHidden={setHidden} />
+        <PortfolioHeader />
         <div className="pf-empty-hero">
           <h2>Add your first holding</h2>
           <p>
@@ -1404,7 +1410,7 @@ export function PortfolioScreen() {
   if (stage === "primary") {
     return (
       <div className="pf-screen">
-        <PortfolioHeader hidden={hidden} setHidden={setHidden} />
+        <PortfolioHeader />
         <div className="pad"><Overline>IPO pipeline</Overline></div>
         <div className="pad" style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <p className="t-display-l">{npr(ipoPipeline.value)}</p>
@@ -1432,7 +1438,7 @@ export function PortfolioScreen() {
 
   return (
     <div className="pf-screen">
-      <PortfolioHeader hidden={hidden} setHidden={setHidden} />
+      <PortfolioHeader />
 
       <div className="tabs pf-tabs">
         {tabs.map((item) => (
@@ -1443,7 +1449,7 @@ export function PortfolioScreen() {
       </div>
 
       <div className={`pf-body pf-body-${tab.toLowerCase()}`}>
-        {tab === "Overview" && <OverviewTab hidden={hidden} />}
+        {tab === "Overview" && <OverviewTab hidden={hidden} setHidden={setHidden} />}
         {tab === "Holdings" && <HoldingsTab hidden={hidden} />}
         {tab === "Allocation" && <AllocationBlock hidden={hidden} />}
         {tab === "Activity" && <ActivityTab hidden={hidden} />}
@@ -1794,8 +1800,9 @@ export function HoldingScreen() {
   return (
     <TransactionForm
       onSaved={() => {
-        fulfillObjective("book");
-        flash({ message: "Holding saved. We don’t place orders." });
+        if (!fulfillObjective("book")) {
+          flash({ message: "Holding saved. We don’t place orders." });
+        }
         go("portfolio");
       }}
     />

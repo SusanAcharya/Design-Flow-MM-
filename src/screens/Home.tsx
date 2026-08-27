@@ -1,36 +1,26 @@
-import { Children, useState, type ReactNode } from "react";
+import { Children, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import { HappenIco } from "../ds/HappenList";
 import { BookNudge } from "../ds/BookNudge";
-import {
-  Button,
-  Chip,
-  Delta,
-  SearchField,
-  SectionHead,
-} from "../ds/primitives";
 import { AllocStrip, TapeSpark } from "../ds/charts";
 import { QuoteList } from "../ds/QuoteList";
 import {
   allotments,
-  basketCatalog,
   bookHappen,
-  brokerHighlights,
-  brokerTable,
   ipoPipeline,
-  namesOnWatchList,
+  watchlist,
   nepse,
   nepseSession,
   portfolio,
   secondaryBook,
-  watchlist,
-  watchLists,
   stripAlloc,
 } from "../lib/data";
 import { bookFor } from "../lib/portfolio";
 import { npr, pct } from "../lib/format";
-import { isBaseHome } from "../lib/stage";
-import { homeObjectiveId, pathProgress } from "../lib/objectives";
+import { curriculum, homeObjectiveId, pathProgress, type Objective } from "../lib/objectives";
+import { getExploreTool } from "../lib/explore";
+import type { IconName } from "../ds/Icon";
+import type { Route } from "../lib/types";
 import { personas } from "../lib/personas";
 import { useApp } from "../lib/state";
 
@@ -72,7 +62,9 @@ function FeedGroup({
 }
 
 function NepseHero() {
-  const { go } = useApp();
+  const { go, viewport } = useApp();
+  /* A wider viewBox on web keeps the tape from stretching out of proportion. */
+  const web = viewport === "web";
   const down = nepse.changePct < 0;
   const spark = nepseSession.prints.map((print) => print.v);
 
@@ -81,7 +73,7 @@ function NepseHero() {
       <span className="nepse-hero-line">
         <span className="nepse-hero-kicker">NEPSE</span>
         <b className="nepse-hero-value">{npr(nepse.value, 2)}</b>
-        <TapeSpark values={spark} width={140} height={28} positive={!down} />
+        <TapeSpark values={spark} width={web ? 420 : 140} height={web ? 150 : 28} positive={!down} smooth={false} />
         <em className={down ? "c-down" : "c-up"}>{pct(nepse.changePct)}</em>
       </span>
       <span className="nepse-meta">
@@ -96,24 +88,33 @@ function NepseHero() {
 const emptyAlloc = [{ short: "EMPTY", pct: 100, color: "var(--border-strong)" }];
 
 function BookSummary({ empty = false }: { empty?: boolean }) {
+  const { go } = useApp();
+  /* An empty book has nothing to report — the ghost figures already say so. */
+  if (empty) return null;
   return (
-    <span className="book-summary">
-      <span className="book-summary-label">What's happening</span>
-      {empty ? (
-        <span className="book-summary-empty">Nothing moved in your book yet. Add kitta and this fills in.</span>
-      ) : (
-        bookHappen.map((item) => (
-          <span key={item.title} className="happen-row">
-            <HappenIco kind={item.kind} />
-            <span className="happen-row-copy">
-              <strong>{item.title}</strong>
-              <small>{item.sub}</small>
-            </span>
-            <em>{item.context}</em>
+    <div className="book-summary">
+      <div className="book-summary-head">
+        <span className="book-summary-label">What's happening</span>
+        <button type="button" className="text-link" onClick={() => go("happening")}>
+          See everything ›
+        </button>
+      </div>
+      {bookHappen.map((item) => (
+        <button
+          key={item.title}
+          type="button"
+          className="happen-row"
+          onClick={() => (item.stock ? go("stock", { stock: item.stock }) : go("happening"))}
+        >
+          <HappenIco kind={item.kind} />
+          <span className="happen-row-copy">
+            <strong>{item.title}</strong>
+            <small>{item.sub}</small>
           </span>
-        ))
-      )}
-    </span>
+          <em>{item.context}</em>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -137,55 +138,155 @@ function BookCard({ empty = false }: { empty?: boolean }) {
   const down = today < 0;
 
   return (
-    <button
-      type="button"
-      className="book-card"
-      onClick={() => {
-        setPortfolioId(primaryPortfolioId);
-        go("portfolio");
-      }}
-    >
-      <span className="book-card-head">
-        <span>Your portfolio</span>
-        <span className="book-card-open">Open ›</span>
-      </span>
-      <span className="book-card-figures">
-        <b>Rs {npr(value)}</b>
-        <em className={empty || today === 0 ? "muted" : down ? "c-down" : "c-up"}>
-          {down ? "−" : "+"}Rs {npr(Math.abs(today))}
-        </em>
-      </span>
-      <AllocStrip rows={empty ? emptyAlloc : stripAlloc(primary.sectors)} legend={false} />
+    <div className="book-card">
+      <button
+        type="button"
+        className="book-card-tap"
+        onClick={() => {
+          setPortfolioId(primaryPortfolioId);
+          go("portfolio");
+        }}
+      >
+        <span className="book-card-head">
+          <span>Your portfolio</span>
+          <span className="book-card-open">Open ›</span>
+        </span>
+        <span className="book-card-figures">
+          <b>Rs {npr(value)}</b>
+          <em className={empty || today === 0 ? "muted" : down ? "c-down" : "c-up"}>
+            {down ? "−" : "+"}Rs {npr(Math.abs(today))}
+          </em>
+        </span>
+        <AllocStrip rows={empty ? emptyAlloc : stripAlloc(primary.sectors)} legend={false} />
+      </button>
       <BookSummary empty={empty} />
-    </button>
+    </div>
   );
 }
 
+function stepIcon(item: Objective): IconName {
+  if (item.doAction === "book") return "wallet";
+  if (item.doAction === "watch") return "star";
+  if (item.doAction === "market") return "market";
+  if (item.doAction === "basket") return "pie";
+  if (item.doAction === "broker") return "building";
+  if (item.id === "terms") return "book";
+  return "learn";
+}
+
+/**
+ * Home's path card. A beginner who hasn't finished a sitting yet gets the whole
+ * checklist with Tulkey on it; everyone else gets the one-line pill. Either way
+ * the arrow switches between the two forms.
+ */
 function NextStepsCard() {
-  const { go, objectiveId, pathFinished, hideHomeObjectives, stage, personaId } = useApp();
+  const {
+    go,
+    objectiveId,
+    pathFinished,
+    hideHomeObjectives,
+    stage,
+    personaId,
+    setupOpen,
+    setSetupOpen,
+    objectivesCompleted,
+    objectivesDone,
+  } = useApp();
   const pinned = homeObjectiveId(objectiveId, stage, personaId);
-  const { now, total, learned } = pathProgress(pinned, pathFinished);
+  const { now, total, learned } = pathProgress(pinned, pathFinished, objectivesDone);
   if (hideHomeObjectives || pathFinished || !now) return null;
   const last = total - learned === 1;
+  const beginner = personaId === "maya" || personaId === "prakash" || personaId === null;
+  const open = setupOpen ?? (beginner && objectivesCompleted === 0);
+
+  if (!open) {
+    return (
+      <div className="next-steps">
+        <button type="button" className="next-steps-main" onClick={() => go("objectives")}>
+          <span className="next-steps-n">{learned}/{total}</span>
+          <span className="next-steps-copy">
+            {last ? `One step left: ${now.title}` : `Next steps: ${now.title}`}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="next-steps-expand"
+          aria-label="Expand next steps"
+          aria-expanded={false}
+          onClick={() => setSetupOpen(true)}
+        >
+          <Icon name="chev" size={14} />
+        </button>
+      </div>
+    );
+  }
+
+  const preview = [
+    now,
+    ...curriculum.filter((item) => item.n > now.n && !objectivesDone.includes(item.id)),
+  ].slice(0, 3);
 
   return (
-    <button type="button" className="next-steps" onClick={() => go("objectives")}>
-      <span className="next-steps-n">{now.n}/{total}</span>
-      <span className="next-steps-copy">
-        {last ? `One step left: ${now.title}` : `Next steps: ${now.title}`}
-      </span>
-      <span className="next-steps-go">{last ? "Finish" : "Open"} ›</span>
-    </button>
+    <section className="setup-card" aria-labelledby="setup-title">
+      <header className="setup-head">
+        <div className="setup-head-copy">
+          <strong id="setup-title">Get set up</strong>
+          <small>{learned}/{total}</small>
+        </div>
+        <button
+          type="button"
+          className="setup-collapse"
+          aria-label="Collapse next steps"
+          aria-expanded
+          onClick={() => setSetupOpen(false)}
+        >
+          <Icon name="chev" size={14} />
+        </button>
+      </header>
+
+      <div className="setup-body">
+        <ul className="setup-list">
+          {preview.map((item) => {
+            const current = item.id === now.id;
+            return (
+              <li key={item.id}>
+                <button
+                  type="button"
+                  className={`setup-step${current ? " now" : ""}`}
+                  onClick={() => go("objective", { objective: item.id })}
+                >
+                  <span className={`setup-glyph ${item.kind}`} aria-hidden>
+                    <Icon name={stepIcon(item)} size={16} />
+                  </span>
+                  <span className="setup-step-copy">
+                    <strong>{item.title}</strong>
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <img className="setup-guide" src={`${import.meta.env.BASE_URL}characters/setup-guide.png`} alt="" />
+      </div>
+
+      <footer className="setup-foot">
+        <button type="button" className="text-link" onClick={() => go("objectives")}>
+          View all objectives
+        </button>
+      </footer>
+    </section>
   );
 }
 
 function HomeTop() {
-  const { stage, go, bookNudgeDismissed } = useApp();
+  const { stage, go, bookNudgeDismissed, hasPortfolio } = useApp();
+  /* No book yet, by persona or by the studio switch — Home shows the ghost, not figures. */
+  const noBook = !hasPortfolio || stage === "explorer";
 
   return (
     <div className="home-top">
       <NepseHero />
-      {stage === "primary" ? (
+      {stage === "primary" && hasPortfolio ? (
         <>
           <button type="button" className="book-card" onClick={() => go("portfolio")}>
             <span className="book-card-head">
@@ -213,7 +314,7 @@ function HomeTop() {
             ))}
           </div>
         </>
-      ) : stage === "explorer" ? (
+      ) : noBook ? (
         bookNudgeDismissed ? <BookCard empty /> : null
       ) : (
         <BookCard />
@@ -233,61 +334,60 @@ function AddPortfolioCta() {
   );
 }
 
-const featuredBasketIds = ["hydro-b", "banks-b", "sip", "earn", "stars", "list", "leaders", "mom", "large", "exdate"];
-const basketShort: Record<string, string> = {
-  "hydro-b": "Hydro",
-  "banks-b": "Banks",
-  sip: "SIP",
-  earn: "Earnings",
-  stars: "Stars",
-  list: "Listings",
-  leaders: "Leaders",
-  mom: "Momentum",
-  large: "Large",
-  exdate: "Ex-date",
-};
+/** Six places people ask for by name, straight off Home. */
+const jumpTiles: { id: string; label: string; icon: IconName; tool?: string; route?: Route; brokerDesk?: "hub" | "analysis" }[] = [
+  { id: "alerts", label: "Alerts", icon: "bell", route: "alerts" },
+  { id: "baskets", label: "Baskets", icon: "pie", route: "baskets" },
+  { id: "brokers", label: "Brokers", icon: "building", route: "brokers", brokerDesk: "analysis" },
+  { id: "ai-zone", label: "AI Zone", icon: "tulkey", route: "ai" },
+  { id: "mf-holdings", label: "MF Holdings", icon: "coins", tool: "mutual-funds" },
+];
 
-function BasketMark({ id }: { id: string }) {
-  const [failed, setFailed] = useState(false);
-  const src = `${import.meta.env.BASE_URL}baskets/${id}.svg`;
-  if (failed) {
-    return (
-      <span className="basket-cover" aria-hidden>
-        <img src={`${import.meta.env.BASE_URL}baskets/default.svg`} alt="" />
-      </span>
-    );
-  }
+function JumpGrid() {
+  const { go, openSheet, homeTools } = useApp();
+
+  /* The five that ship, plus anything added from Explore. */
+  const tiles = [
+    ...jumpTiles,
+    ...homeTools
+      .map((id) => getExploreTool(id))
+      .filter((tool) => Boolean(tool))
+      .map((tool) => ({
+        id: tool!.id,
+        label: tool!.short,
+        icon: tool!.icon,
+        tool: tool!.id,
+        route: undefined,
+        brokerDesk: undefined,
+      })),
+  ];
+
+  const open = (tile: (typeof jumpTiles)[number]) => {
+    if (tile.route) {
+      go(tile.route, tile.brokerDesk ? { brokerDesk: tile.brokerDesk } : undefined);
+      return;
+    }
+    const tool = tile.tool ? getExploreTool(tile.tool) : null;
+    if (!tool) return;
+    if (tool.sheet) openSheet(tool.sheet);
+    else if (tool.soon) openSheet({ kind: "quick", title: tool.title, body: tool.soon.body });
+    else if (tool.go) go(tool.go.route, { marketTab: tool.go.marketTab, lesson: tool.go.lesson, marketDesk: tool.go.marketDesk, brokerDesk: tool.go.brokerDesk });
+  };
+
   return (
-    <span className="basket-cover" aria-hidden>
-      <img src={src} alt="" onError={() => setFailed(true)} />
-    </span>
-  );
-}
-
-function FreeBasketsRail() {
-  const { openSheet } = useApp();
-  const rows = featuredBasketIds
-    .map((id) => basketCatalog.find((item) => item.id === id))
-    .filter((item): item is (typeof basketCatalog)[number] => Boolean(item));
-
-  return (
-    <div className="broker-icon-rail" role="list">
-      {rows.map((basket) => (
+    <div className="jump-rail" role="list">
+      {tiles.map((tile) => (
         <button
-          key={basket.id}
+          key={tile.id}
           type="button"
-          className="broker-icon"
+          className="jump-tile"
           role="listitem"
-          aria-label={basket.title}
-          onClick={() => openSheet({
-            kind: "quick",
-            title: basket.title,
-            body: "This group reuses today’s prints with the same dates and definitions. Opening it does not buy kitta, and it is not a recommendation.",
-            note: "Compare on Market if you want the underlying names.",
-          })}
+          onClick={() => open(tile)}
         >
-          <BasketMark id={basket.id} />
-          <small>{basketShort[basket.id] ?? basket.title.split(" ")[0]}</small>
+          <span className="jump-glyph" aria-hidden>
+            <Icon name={tile.icon} size={20} />
+          </span>
+          <small>{tile.label}</small>
         </button>
       ))}
     </div>
@@ -295,8 +395,12 @@ function FreeBasketsRail() {
 }
 
 function WatchlistPreview() {
-  const { go } = useApp();
-  const rows = namesOnWatchList("main").slice(0, 4);
+  const { go, watchlists } = useApp();
+  /* Home mirrors the first list, so an add on the watchlist screen shows here. */
+  const symbols = (watchlists[0]?.symbols ?? []).slice(0, 4);
+  const rows = symbols
+    .map((symbol) => watchlist.find((row) => row.symbol === symbol))
+    .filter((row): row is (typeof watchlist)[number] => Boolean(row));
 
   return (
     <QuoteList
@@ -317,11 +421,11 @@ function LearnBoard() {
   const sita = personas.find((p) => p.id === "sita") ?? personas[0];
 
   return (
-    <button type="button" className="learn-byte" onClick={() => go("objective", { objective: "read" })}>
+    <button type="button" className="learn-byte" onClick={() => go("objective", { objective: "terms" })}>
       <span className="learn-byte-copy">
         <small>Learn</small>
-        <strong>What book close actually means</strong>
-        <span>90 seconds, with your own holding</span>
+        <strong>The words you’ll keep seeing</strong>
+        <span>90 seconds — kitta, LTP, book close</span>
         <em>Read it ›</em>
       </span>
       <span className="learn-byte-art" aria-hidden>
@@ -363,17 +467,17 @@ function ConsultCard() {
 }
 
 function HomeFeedStack() {
-  const { stage, go } = useApp();
-  const base = isBaseHome(stage);
-  const showAdd = base || stage === "explorer";
+  const { stage, go, hasPortfolio } = useApp();
+  /* The nudge is for an empty book only — never beside a card showing real value. */
+  const showAdd = !hasPortfolio || stage === "explorer";
 
   return (
     <div className="home-you">
       <NextStepsCard />
       <HomeTop />
       {showAdd && <AddPortfolioCta />}
-      <FeedGroup label="Top free baskets" tone="book" action="All ›" onAction={() => go("baskets")}>
-        <FreeBasketsRail />
+      <FeedGroup label="Jump straight to" tone="book" action="All tools ›" onAction={() => go("discover")}>
+        <JumpGrid />
       </FeedGroup>
       <div className="home-split">
         <FeedGroup label="Watchlist" tone="list" action="View full ›" onAction={() => go("watchlist")}>
@@ -392,285 +496,11 @@ function HomeFeedStack() {
   );
 }
 
-function PageFrame({ title, children }: { title: string; children: ReactNode }) {
-  const { back, viewport } = useApp();
-  return (
-    <div>
-      {viewport === "mobile" && (
-        <div className="app-bar">
-          <button type="button" className="icon-btn" onClick={back} aria-label="Back">
-            <Icon name="back" />
-          </button>
-          <h1>{title}</h1>
-        </div>
-      )}
-      {viewport === "web" && (
-        <div className="pad" style={{ paddingTop: 12, paddingBottom: 4 }}>
-          <button type="button" className="text-link" onClick={back}>‹ Home</button>
-        </div>
-      )}
-      {children}
-    </div>
-  );
-}
+export { WatchlistScreen } from "./Watchlist";
 
-export function WatchlistScreen() {
-  const { go, addToWatchlist, watchlistAdds, flash } = useApp();
-  const [listId, setListId] = useState(watchLists[0].id);
-  const [query, setQuery] = useState("");
-  const active = watchLists.find((list) => list.id === listId) ?? watchLists[0];
-  const extras = listId === "main"
-    ? watchlistAdds.flatMap((symbol) => {
-        const row = watchlist.find((item) => item.symbol === symbol);
-        if (!row || active.symbols.includes(symbol)) return [];
-        return [row];
-      })
-    : [];
-  const rows = [...namesOnWatchList(active.id), ...extras].filter((row) => {
-    const hay = `${row.symbol} ${row.name}`.toLowerCase();
-    return hay.includes(query.trim().toLowerCase());
-  });
-  const suggestions = watchlist.filter((row) =>
-    !active.symbols.includes(row.symbol) && !watchlistAdds.includes(row.symbol),
-  );
+export { BrokersScreen } from "./Brokers";
 
-  return (
-    <PageFrame title="Watchlist">
-    <div className="home-you tab-feed">
-      <FeedGroup label="Your lists" tone="list">
-        <div className="cluster">
-          <div className="feed-kicker">
-            <div>
-              <p className="t-h-s">{active.label}</p>
-              <p className="t-body-s muted">{active.blurb}</p>
-            </div>
-            <span className="t-body-xs muted">{rows.length} names</span>
-          </div>
-          <div className="mover-pills" role="tablist" aria-label="Watchlists">
-            {watchLists.map((list) => (
-              <Chip key={list.id} selected={listId === list.id} onClick={() => setListId(list.id)}>
-                {list.label}
-              </Chip>
-            ))}
-          </div>
-          <SearchField placeholder="Search this list" value={query} onChange={setQuery} />
-        </div>
-      </FeedGroup>
-      <FeedGroup label="On this list" tone="move">
-        {rows.length > 0 ? (
-          <QuoteList
-            rows={rows.map((row) => ({
-              symbol: row.symbol,
-              name: row.name,
-              price: row.price,
-              changePct: row.changePct,
-            }))}
-            onRow={(symbol) => go("stock", { stock: symbol })}
-          />
-        ) : (
-          <p className="t-body-s muted">Nothing on this list matches that search.</p>
-        )}
-      </FeedGroup>
-      <FeedGroup label="Follow another" tone="book">
-        <div className="cta-well">
-          <p className="t-h-s">Add a name to {active.label}</p>
-          <p className="t-body-s muted">Following never buys kitta. Completes the watchlist objective when you add.</p>
-          {suggestions.slice(0, 3).map((row) => (
-            <button
-              key={row.symbol}
-              type="button"
-              className="row"
-              onClick={() => {
-                addToWatchlist(row.symbol);
-                flash({ message: `${row.symbol} is on ${active.label}.` });
-                setListId("main");
-              }}
-            >
-              <div className="row-main">
-                <p className="t-h-s">{row.symbol}</p>
-                <p className="row-sub">{row.name}</p>
-              </div>
-              <span className="text-link">Add ›</span>
-            </button>
-          ))}
-          <Button variant="secondary" size="md" onClick={() => go("search")}>Find another scrip</Button>
-        </div>
-      </FeedGroup>
-    </div>
-    </PageFrame>
-  );
-}
-
-export function BrokersScreen() {
-  const { go, openSheet, session } = useApp();
-  const explainBroker = (row: (typeof brokerTable)[number]) => openSheet({
-    kind: "quick",
-    title: `Broker ${row.code}`,
-    body: `${row.name} turned over ${npr(row.turnover, 1)} Cr in the sampled session. Buy ${row.buyPct}% / sell ${row.sellPct}% is the split of executed kitta — many clients, not one person.`,
-    note: "Observed activity only. MoneyMitra does not rank brokers or tell you where to open TMS.",
-  });
-  const tmsSheet = () => openSheet({
-    kind: "quick",
-    title: "How a TMS account works",
-    body: "TMS is your broker’s trading terminal. You open it with a licensed broker, then place orders there. MoneyMitra never holds cash or submits those orders.",
-    note: "This is not a list of brokers to pick. Check SEBON’s licensed list.",
-  });
-
-  return (
-    <PageFrame title="Brokers">
-    <div className="home-you tab-feed">
-      <FeedGroup label="Floor today" tone="market">
-        <div className="cluster">
-          <div className="feed-kicker">
-            <div>
-              <p className="overline">NEPSE · floor</p>
-              <p className="t-h-s">Executed flow · {nepse.date}</p>
-            </div>
-            <span className={`time-pill ${session === "open" ? "live" : ""}`}>
-              {session === "open" ? nepse.liveAt : nepse.closedAt}
-            </span>
-          </div>
-          <div className="figure-line">
-            <p className="hero-num">{npr(nepse.value, 2)}</p>
-            <Delta value={nepse.changePct} />
-          </div>
-          <p className="figure-note">Turnover {npr(nepse.turnoverCr, 2)} Cr · Volume {nepse.volume}</p>
-          <div className="hl-grid">
-            {brokerHighlights.map((item) => (
-              <button key={item.label} type="button" className="hl-card marked" onClick={() => go("market")}>
-                <span className={`broker-mark ${item.tone}`}>{item.mark}</span>
-                <small>{item.label}</small>
-                <strong>{item.value}</strong>
-                <em>{item.sub}</em>
-              </button>
-            ))}
-          </div>
-        </div>
-      </FeedGroup>
-      <FeedGroup label="Your broker" tone="book">
-        <div className="cta-well">
-          <p className="overline">TMS</p>
-          <p className="t-h-s">Need a trading account?</p>
-          <p className="t-body-s muted">
-            Opening TMS happens at a licensed broker. MoneyMitra can explain the step. It does not open the account or place an order.
-          </p>
-          <Button variant="primary" size="md" onClick={tmsSheet}>How TMS works</Button>
-        </div>
-      </FeedGroup>
-      <FeedGroup label="On the sheet" tone="list">
-        <div className="cluster">
-          <SectionHead title="Brokers" action="Floor sheet ›" onAction={() => go("market")} />
-          {brokerTable.map((row) => (
-            <article key={row.code} className="broker-card">
-              <div className="broker-card-top">
-                <span className="broker-mark">{row.code}</span>
-                <div className="quote-id">
-                  <p className="t-h-s">{row.name}</p>
-                  <small>Broker no. {row.code}</small>
-                </div>
-                <span className={`delta ${row.netCr < 0 ? "delta-down" : "delta-up"}`}>
-                  {row.netCr < 0 ? "Net seller" : "Net buyer"}
-                </span>
-              </div>
-              <div className="broker-card-stats">
-                <div>
-                  <small>Today</small>
-                  <b>{npr(row.turnover, 1)} Cr</b>
-                </div>
-                <div>
-                  <small>Avg 30 days</small>
-                  <b>{npr(row.avg30, 1)} Cr</b>
-                </div>
-                <div>
-                  <small>Buy / sell</small>
-                  <b>{row.buyPct}% · {row.sellPct}%</b>
-                </div>
-              </div>
-              <div className="btn-row">
-                <Button variant="secondary" size="sm" onClick={() => explainBroker(row)}>Explain</Button>
-                <Button variant="primary" size="sm" onClick={tmsSheet}>How TMS works</Button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </FeedGroup>
-    </div>
-    </PageFrame>
-  );
-}
-
-export function BasketsScreen() {
-  const { openSheet } = useApp();
-  const [audience, setAudience] = useState<"traders" | "investors">("traders");
-  const [query, setQuery] = useState("");
-  const rows = basketCatalog.filter((item) => {
-    if (item.audience !== audience) return false;
-    return item.title.toLowerCase().includes(query.trim().toLowerCase());
-  });
-  const openBasket = (title: string) => openSheet({
-    kind: "quick",
-    title,
-    body: "This group reuses today’s prints with the same dates and definitions. Opening it does not buy kitta, and it is not a recommendation.",
-    note: "Compare on Market if you want the underlying names.",
-  });
-
-  return (
-    <PageFrame title="Baskets">
-    <div className="home-you tab-feed">
-      <FeedGroup label="Browse" tone="list">
-        <div className="cluster">
-          <div className="feed-kicker">
-            <div>
-              <p className="overline">Baskets</p>
-              <p className="t-h-s">A few names, same session</p>
-            </div>
-          </div>
-          <SearchField placeholder="Search for baskets" value={query} onChange={setQuery} />
-          <div className="home-feed-tabs even" role="tablist" aria-label="Basket audience">
-            <button type="button" role="tab" aria-selected={audience === "traders"} className={audience === "traders" ? "on" : ""} onClick={() => setAudience("traders")}>
-              For traders
-            </button>
-            <button type="button" role="tab" aria-selected={audience === "investors"} className={audience === "investors" ? "on" : ""} onClick={() => setAudience("investors")}>
-              For investors
-            </button>
-          </div>
-          <p className="t-body-s muted">
-            A basket is a way to look at several companies together. It is not a product you buy here.
-          </p>
-        </div>
-      </FeedGroup>
-      <FeedGroup label="Themes" tone="move">
-        <div className="basket-grid">
-          {rows.map((item) => (
-            <button key={item.id} type="button" className="basket-tile" onClick={() => openBasket(item.title)}>
-              {item.fresh && <span className="tile-badge">New</span>}
-              <BasketMark id={item.id} />
-              <strong>{item.title}</strong>
-              <em>{item.count} names · <span className={item.changePct < 0 ? "c-down" : "c-up"}>{pct(item.changePct)}</span></em>
-              <span className="tile-access">Open</span>
-            </button>
-          ))}
-        </div>
-        {rows.length === 0 && (
-          <p className="t-body-s muted">No basket by that name in this set.</p>
-        )}
-        <button
-          type="button"
-          className="text-link"
-          style={{ alignSelf: "flex-start" }}
-          onClick={() => openSheet({
-            kind: "quick",
-            title: "Baskets are a view",
-            body: "These groups reuse today’s prints. Joining a theme does not buy kitta. Compare on Market if you want the same dates and definitions.",
-          })}
-        >
-          Why these groups?
-        </button>
-      </FeedGroup>
-    </div>
-    </PageFrame>
-  );
-}
+export { BasketsScreen } from "./Baskets";
 
 export function HomeScreen() {
   return (

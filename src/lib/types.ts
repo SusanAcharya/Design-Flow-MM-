@@ -3,6 +3,8 @@ export type UiFont = "plex" | "inter" | "satoshi" | "jakarta" | "geist" | "subje
 export type Viewport = "mobile" | "web";
 export type Stage = "base" | "explorer" | "primary" | "secondary" | "value" | "active";
 export type Circuit = "off" | "index5" | "index8" | "stock15";
+/** How the screen behaves while data is on its way — or does not arrive. */
+export type DataState = "ready" | "loading" | "refreshing" | "error";
 export type HoldingMode = "add" | "detail";
 export type PersonaId = "maya" | "prakash" | "sita" | "anil";
 export type Route =
@@ -23,11 +25,30 @@ export type Route =
   | "objectives"
   | "holding"
   | "alerts"
+  | "notifications"
+  | "subscription"
+  | "happening"
   | "watchlist"
   | "brokers"
-  | "baskets";
+  | "baskets"
+  | "market-desk"
+  | "profile";
 
-export type Plan = "free" | "pro" | "guru";
+export type MarketDesk =
+  | "summary"
+  | "sectors"
+  | "week-change"
+  | "live"
+  | "price"
+  | "movers"
+  | "gain-loss"
+  | "nepse-data"
+  | "indices"
+  | "depth";
+
+export type BrokerDesk = "hub" | "analysis" | "detail";
+
+export type Plan = "free" | "plus" | "pro";
 export type PlanCycle = "monthly" | "annual";
 export type MarketSession = "open" | "closed";
 export type MarketTab = "Overview" | "Movers" | "Sectors" | "Floor sheet" | "Events";
@@ -51,7 +72,34 @@ export type Sheet =
   | { kind: "portfolio-import" }
   | { kind: "portfolio-import-steps"; source: "file" | "tms"; fileName?: string }
   | { kind: "compare" }
-  | { kind: "plans" };
+  | { kind: "plans" }
+  | { kind: "password" }
+  | { kind: "help" }
+  | { kind: "referral" }
+  | { kind: "avatar" }
+  | { kind: "watch-add"; listId: string }
+  | { kind: "watch-name"; listId?: string }
+  | {
+      kind: "actions";
+      title: string;
+      note?: string;
+      actions: {
+        label: string;
+        sub?: string;
+        icon?: string;
+        danger?: boolean;
+        onSelect: () => void;
+      }[];
+    }
+  | {
+      kind: "confirm";
+      title: string;
+      body: string;
+      confirmLabel: string;
+      cancelLabel?: string;
+      danger?: boolean;
+      onConfirm: () => void;
+    };
 
 export type Toast = {
   message: string;
