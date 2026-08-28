@@ -1,5 +1,16 @@
-<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon/bell">
-<path id="Vector" d="M8.36364 15.4545C8.36364 16.3636 9.09091 17.0909 10 17.0909C10.9091 17.0909 11.6364 16.3636 11.6364 15.4545M5.45455 8.18182C5.45455 5.67273 7.49091 3.63636 10 3.63636C12.5091 3.63636 14.5455 5.67273 14.5455 8.18182C14.5455 11.8182 15.9091 12.7273 15.9091 12.7273H4.09091C4.09091 12.7273 5.45455 11.8182 5.45455 8.18182Z" stroke="#5C574D" stroke-width="1.54545" stroke-linecap="round" stroke-linejoin="round"/>
-</g>
+<!-- @license lucide-static v1.34.0 - ISC -->
+<svg
+  class="lucide lucide-bell"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+  <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
 </svg>

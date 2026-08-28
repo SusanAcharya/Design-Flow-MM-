@@ -34,12 +34,24 @@ export const exploreTools: ExploreTool[] = [
     go: { route: "portfolio" },
   },
   {
+    id: "language",
+    title: "Language",
+    short: "Language",
+    purpose: "Read the app in Nepali or English",
+    keywords: "language nepali english bhasa translate",
+    icon: "globe",
+    tone: "accent",
+    category: "account",
+    group: "Account",
+    sheet: { kind: "language" },
+  },
+  {
     id: "watchlist",
     title: "My Watchlist",
     short: "Watchlist",
     purpose: "Saved scrips and custom alerts",
     keywords: "watchlist saved scrips follow",
-    icon: "star",
+    icon: "bookmark",
     tone: "accent",
     category: "account",
     group: "Account",
@@ -51,7 +63,7 @@ export const exploreTools: ExploreTool[] = [
     short: "Brokers",
     purpose: "Floor leaders, houses, and executed flow",
     keywords: "brokers tms licensed capital chirfaar analysis floorsheet",
-    icon: "building",
+    icon: "handshake",
     tone: "teal",
     category: "account",
     group: "Account",
@@ -63,7 +75,7 @@ export const exploreTools: ExploreTool[] = [
     short: "Baskets",
     purpose: "Themes of names, same session",
     keywords: "baskets themes groups hydropower banks",
-    icon: "pie",
+    icon: "basket",
     tone: "violet",
     category: "account",
     group: "Account",
@@ -87,7 +99,7 @@ export const exploreTools: ExploreTool[] = [
     short: "Allotment",
     purpose: "Application results via CDSC",
     keywords: "ipo allotment tracker cdsc application result",
-    icon: "clipboard",
+    icon: "ticket",
     tone: "accent",
     category: "account",
     group: "Account",
@@ -160,7 +172,7 @@ export const exploreTools: ExploreTool[] = [
     short: "Compare",
     purpose: "Same dates, same definitions",
     keywords: "compare stocks companies side by side",
-    icon: "split",
+    icon: "compare",
     tone: "teal",
     category: "market",
     group: "Screener & analytics",
@@ -270,7 +282,7 @@ export const exploreTools: ExploreTool[] = [
     short: "Prices",
     purpose: "Last traded prices across names",
     keywords: "stock price ltp last traded",
-    icon: "coin",
+    icon: "tag",
     tone: "teal",
     category: "market",
     group: "Market statistics",
@@ -282,7 +294,7 @@ export const exploreTools: ExploreTool[] = [
     short: "NEPSE data",
     purpose: "Published session figures",
     keywords: "nepse data kitta transactions listed",
-    icon: "doc",
+    icon: "database",
     tone: "teal",
     category: "market",
     group: "Market statistics",
@@ -295,7 +307,7 @@ export const exploreTools: ExploreTool[] = [
     short: "Open IPOs",
     purpose: "Issues open now, then apply on MeroShare",
     keywords: "open ipo primary issue apply",
-    icon: "building",
+    icon: "rocket",
     tone: "saffron",
     category: "intel",
     group: "Primary market",
@@ -321,7 +333,7 @@ export const exploreTools: ExploreTool[] = [
     short: "C-ASBA",
     purpose: "Application amount and bank charges",
     keywords: "c-asba casba fee calculator charges kitta",
-    icon: "percent",
+    icon: "receipt",
     tone: "saffron",
     category: "intel",
     group: "Primary market",
@@ -469,7 +481,7 @@ export const exploreTools: ExploreTool[] = [
     short: "Lessons",
     purpose: "Mitra sittings — words and platforms",
     keywords: "lessons gyan mitra learn 2 minute",
-    icon: "tulkey",
+    icon: "learn",
     tone: "learn",
     category: "media",
     group: "Learning",
@@ -555,6 +567,10 @@ export const exploreTools: ExploreTool[] = [
 
 export const defaultExploreFavorites = ["portfolio", "watchlist", "alerts", "allotment"];
 
+/** What sits on Home before anyone customises anything. Home shows the first
+    four of the pinned list, so these are the four a new member starts with. */
+export const defaultHomeTools = ["alerts", "baskets", "brokers", "stock-news"];
+
 export const exploreGroupOrder = [...new Set(exploreTools.map((tool) => tool.group))];
 
 export function getExploreTool(id: string) {
@@ -568,6 +584,9 @@ export function filterExploreTools(query: string) {
     `${tool.title} ${tool.short} ${tool.purpose} ${tool.keywords} ${tool.group}`.toLowerCase().includes(q),
   );
 }
+
+/** Home's jump rail shows at most eight, so pinning stops there too. */
+export const homePinMax = 8;
 
 export const planIds: Plan[] = ["free", "plus", "pro"];
 

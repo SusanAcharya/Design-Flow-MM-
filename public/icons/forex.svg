@@ -1,8 +1,18 @@
-<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon/forex">
-<path d="M4 8.2 H16.4" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<path d="M13.6 5.4 L16.4 8.2 L13.6 11" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-<path d="M18 13.8 H5.6" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<path d="M8.4 11 L5.6 13.8 L8.4 16.6" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-</g>
+<!-- @license lucide-static v1.34.0 - ISC -->
+<svg
+  class="lucide lucide-arrow-right-left"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m16 3 4 4-4 4" />
+  <path d="M20 7H4" />
+  <path d="m8 21-4-4 4-4" />
+  <path d="M4 17h16" />
 </svg>

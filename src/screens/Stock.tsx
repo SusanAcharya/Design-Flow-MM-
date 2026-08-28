@@ -26,11 +26,14 @@ import { useApp } from "../lib/state";
 import type { IconName } from "../ds/Icon";
 import type { MarketDesk, Route, StockTab } from "../lib/types";
 
+/* Drawn inline rather than through <Icon>, because this one fills when it is on
+   and a CSS mask cannot switch fill. Same Lucide bookmark path and weight. */
 function StarMark({ on }: { on: boolean }) {
   return (
     <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden
-      fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round">
-      <path d="M12 3.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.2-4.1 5.8-.8z" />
+      fill={on ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3a2 2 0 0 1 2 2v15a1 1 0 0 1-1.496.868l-4.512-2.578a2 2 0 0 0-1.984 0l-4.512 2.578A1 1 0 0 1 5 20V5a2 2 0 0 1 2-2z" />
     </svg>
   );
 }
@@ -752,7 +755,7 @@ export function StockScreen() {
           aria-label="Set an alert"
           onClick={() => go("alerts", { alertSymbol: nabil.symbol })}
         >
-          <Icon name="alert" />
+          <Icon name="bell" />
         </button>
         <button
           type="button"

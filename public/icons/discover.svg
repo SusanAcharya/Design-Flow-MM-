@@ -1,10 +1,16 @@
-<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon/discover">
-<circle cx="11" cy="11" r="7.6" stroke="#5C574D" stroke-width="1.7" fill="none"/>
-<path d="M8 14 L12.2 12.2 L14 8 L9.8 9.8 Z" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-<path d="M11 3.4 V5" stroke="#5C574D" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-<path d="M11 17 V18.6" stroke="#5C574D" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-<path d="M3.4 11 H5" stroke="#5C574D" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-<path d="M17 11 H18.6" stroke="#5C574D" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-</g>
+<!-- @license lucide-static v1.34.0 - ISC -->
+<svg
+  class="lucide lucide-compass"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <circle cx="12" cy="12" r="10" />
+  <path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z" />
 </svg>

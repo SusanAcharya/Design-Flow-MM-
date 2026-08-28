@@ -106,10 +106,7 @@ function AuthShell({
 
         {children}
 
-        <p className="auth-safe">
-          <span aria-hidden>🔒</span>
-          MoneyMitra never asks for your broker or MeroShare password.
-        </p>
+     
       </div>
     </div>
   );
@@ -210,23 +207,23 @@ export function SignInScreen() {
             kind: "quick",
             title: "Forgot your password?",
             body: "We would send a reset code to your phone or email. In this demo nothing is sent.",
-            note: "MoneyMitra never asks for your broker or MeroShare password.",
           })
         }
       >
         Forgot password?
       </button>
 
-      <button
-        type="button"
-        className="btn btn-primary btn-lg btn-block auth-go"
-        disabled={!ready}
-        onClick={() => enter("Signed in")}
-      >
-        Sign in
-      </button>
-
-      <div className="auth-bio">
+      {/* The sensor sits beside the button — it is the same action, one tap shorter,
+          and it stays live while the form is still empty. */}
+      <div className="auth-go-row">
+        <button
+          type="button"
+          className="btn btn-primary btn-lg auth-go"
+          disabled={!ready}
+          onClick={() => enter("Signed in")}
+        >
+          Sign in
+        </button>
         <button
           type="button"
           className="auth-fp"
@@ -235,10 +232,7 @@ export function SignInScreen() {
         >
           <FingerMark />
         </button>
-        <span>Or hold the sensor — fingerprint signs you in on this device.</span>
       </div>
-
-    
     </AuthShell>
   );
 }

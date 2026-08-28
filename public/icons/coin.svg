@@ -1,8 +1,17 @@
-<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon/coin">
-<circle cx="11" cy="11" r="7.4" stroke="#5C574D" stroke-width="1.7" fill="none"/>
-<path d="M7.8 8 H14.2" stroke="#5C574D" stroke-width="1.55" stroke-linecap="round" fill="none"/>
-<path d="M12.8 8 V14.6" stroke="#5C574D" stroke-width="1.55" stroke-linecap="round" fill="none"/>
-<path d="M8.2 8 C8.7 10.4 10.3 12.3 12.8 13.2" stroke="#5C574D" stroke-width="1.55" stroke-linecap="round" fill="none"/>
-</g>
+<!-- @license lucide-static v1.34.0 - ISC -->
+<svg
+  class="lucide lucide-banknote"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <rect width="20" height="12" x="2" y="6" rx="2" />
+  <circle cx="12" cy="12" r="2" />
+  <path d="M6 12h.01M18 12h.01" />
 </svg>

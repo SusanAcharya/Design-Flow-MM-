@@ -23,7 +23,6 @@ import { npr, pct } from "../lib/format";
 import { curriculum, homeObjectiveId, pathProgress, type Objective } from "../lib/objectives";
 import { getExploreTool } from "../lib/explore";
 import type { IconName } from "../ds/Icon";
-import type { Route } from "../lib/types";
 import { useApp } from "../lib/state";
 import { mitra } from "../lib/mitra";
 
@@ -187,10 +186,10 @@ function BookCard({ empty = false }: { empty?: boolean }) {
 
 function stepIcon(item: Objective): IconName {
   if (item.doAction === "book") return "wallet";
-  if (item.doAction === "watch") return "star";
+  if (item.doAction === "watch") return "bookmark";
   if (item.doAction === "market") return "market";
-  if (item.doAction === "basket") return "pie";
-  if (item.doAction === "broker") return "building";
+  if (item.doAction === "basket") return "basket";
+  if (item.doAction === "broker") return "handshake";
   if (item.id === "terms") return "book";
   return "learn";
 }
@@ -355,60 +354,72 @@ function AddPortfolioCta() {
   );
 }
 
-/** Six places people ask for by name, straight off Home. */
-const jumpTiles: { id: string; label: string; icon: IconName; tool?: string; route?: Route; brokerDesk?: "hub" | "analysis" }[] = [
-  { id: "alerts", label: "Alerts", icon: "bell", route: "alerts" },
-  { id: "baskets", label: "Baskets", icon: "pie", route: "baskets" },
-  { id: "brokers", label: "Brokers", icon: "building", route: "brokers", brokerDesk: "analysis" },
-  { id: "ai-zone", label: "AI Zone", icon: "tulkey", route: "ai" },
-  { id: "mf-holdings", label: "MF Holdings", icon: "coins", tool: "mutual-funds" },
-];
+/** Home mirrors what is pinned on Explore — the first four of that list. The
+    web has room, so it runs to eight before it stops. Nothing is hardcoded
+    here: unpin a tool on Explore and it leaves this row. */
+const jumpLimit = { mobile: 4, web: 8 } as const;
 
 function JumpGrid() {
-  const { go, openSheet, homeTools } = useApp();
+  const { go, openSheet, homeTools, viewport } = useApp();
 
-  /* The five that ship, plus anything added from Explore. */
-  const tiles = [
-    ...jumpTiles,
-    ...homeTools
-      .map((id) => getExploreTool(id))
-      .filter((tool) => Boolean(tool))
-      .map((tool) => ({
-        id: tool!.id,
-        label: tool!.short,
-        icon: tool!.icon,
-        tool: tool!.id,
-        route: undefined,
-        brokerDesk: undefined,
-      })),
-  ];
+  const tiles = homeTools
+    .map((id) => getExploreTool(id))
+    .filter((tool): tool is NonNullable<ReturnType<typeof getExploreTool>> => Boolean(tool))
+    .slice(0, jumpLimit[viewport]);
 
-  const open = (tile: (typeof jumpTiles)[number]) => {
-    if (tile.route) {
-      go(tile.route, tile.brokerDesk ? { brokerDesk: tile.brokerDesk } : undefined);
-      return;
-    }
-    const tool = tile.tool ? getExploreTool(tile.tool) : null;
-    if (!tool) return;
+  const open = (tool: (typeof tiles)[number]) => {
     if (tool.sheet) openSheet(tool.sheet);
     else if (tool.soon) openSheet({ kind: "quick", title: tool.title, body: tool.soon.body });
-    else if (tool.go) go(tool.go.route, { marketTab: tool.go.marketTab, lesson: tool.go.lesson, marketDesk: tool.go.marketDesk, brokerDesk: tool.go.brokerDesk });
+    else if (tool.handoff) {
+      openSheet({
+        kind: "quick",
+        title: tool.handoff.platform,
+        body: tool.handoff.body,
+        note: "This opens the named site. MoneyMitra does not log you in.",
+      });
+    } else if (tool.go) {
+      go(tool.go.route, {
+        stock: tool.go.stock,
+        stockTab: tool.go.stockTab,
+        marketTab: tool.go.marketTab,
+        marketDesk: tool.go.marketDesk,
+        brokerDesk: tool.go.brokerDesk,
+        brokerCode: tool.go.brokerCode,
+        lesson: tool.go.lesson,
+      });
+    }
   };
+
+  /* Everything unpinned — the row would be empty, so it points at Explore. */
+  if (tiles.length === 0) {
+    return (
+      <button type="button" className="jump-empty" onClick={() => go("discover")}>
+        <span className="jump-glyph" aria-hidden>
+          <Icon name="sliders" size={20} />
+        </span>
+        <span className="jump-empty-copy">
+          <strong>Nothing pinned</strong>
+          <small>Pick your shortcuts on Explore and they land here.</small>
+        </span>
+        <Icon name="chev" size={15} />
+      </button>
+    );
+  }
 
   return (
     <div className="jump-rail" role="list">
-      {tiles.map((tile) => (
+      {tiles.map((tool) => (
         <button
-          key={tile.id}
+          key={tool.id}
           type="button"
           className="jump-tile"
           role="listitem"
-          onClick={() => open(tile)}
+          onClick={() => open(tool)}
         >
           <span className="jump-glyph" aria-hidden>
-            <Icon name={tile.icon} size={20} />
+            <Icon name={tool.icon} size={20} />
           </span>
-          <small>{tile.label}</small>
+          <small>{tool.short}</small>
         </button>
       ))}
     </div>
@@ -444,7 +455,7 @@ function WatchlistStarter() {
     <div className="watch-start">
       <p className="watch-start-lead">Nothing followed yet</p>
       <p className="watch-start-sub">
-        Tap a star to follow a name. It never buys kitta — the company just lands here after every close.
+        Tap the bookmark to follow a name. It never buys kitta — the company just lands here after every close.
       </p>
       <div className="watch-start-rows">
         {rows.map((row) => (
@@ -470,7 +481,7 @@ function WatchlistStarter() {
               onClick={() => follow(row.symbol, row.name)}
               aria-label={`Follow ${row.symbol}`}
             >
-              <Icon name="star" size={16} />
+              <Icon name="bookmark" size={16} />
             </button>
           </div>
         ))}

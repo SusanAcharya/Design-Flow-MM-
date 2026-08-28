@@ -269,7 +269,7 @@ function HeroCard({ hidden, setHidden }: { hidden: boolean; setHidden: (v: boole
               document.getElementById("pf-reminders")?.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
           >
-            <Icon name="alert" size={15} />
+            <Icon name="bell" size={15} />
             {reminders.length > 0 && <em>{reminders.length}</em>}
           </button>
           <EyeBtn hidden={hidden} onClick={() => setHidden(!hidden)} />

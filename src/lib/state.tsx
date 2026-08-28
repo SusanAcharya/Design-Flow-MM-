@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { defaultExploreFavorites, memberCharacter } from "./explore";
+import { defaultExploreFavorites, defaultHomeTools, memberCharacter } from "./explore";
 import { watchLists } from "./data";
 
 export type WatchList = { id: string; label: string; blurb?: string; symbols: string[] };
@@ -22,6 +22,7 @@ import { stageToast, titleObjective } from "./stage";
 import type {
   Circuit,
   DataState,
+  Lang,
   HoldingMode,
   MarketDesk,
   MarketSession,
@@ -66,6 +67,7 @@ type GoExtras = {
 type AppState = {
   theme: Theme;
   uiFont: UiFont;
+  lang: Lang;
   viewport: Viewport;
   stage: Stage;
   route: Route;
@@ -118,6 +120,7 @@ type AppState = {
   planSeed: Plan | null;
   subIntent: SubIntent | null;
   setTheme: (theme: Theme) => void;
+  setLang: (lang: Lang) => void;
   setUiFont: (font: UiFont) => void;
   setViewport: (viewport: Viewport) => void;
   setStage: (stage: Stage, opts?: { silent?: boolean }) => void;
@@ -193,6 +196,7 @@ const defaultPortfolioKinds = Object.fromEntries(
 export function AppProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(param("theme", ["dark", "light"] as const, "dark"));
   const [uiFont, setUiFont] = useState<UiFont>("plex");
+  const [lang, setLang] = useState<Lang>("en");
   const [viewport, setViewport] = useState<Viewport>(param("viewport", ["mobile", "web"] as const, "mobile"));
   const [stage, setStageState] = useState<Stage>(param("stage", ["base", "explorer", "primary", "secondary", "value", "active"] as const, "base"));
   const [route, setRoute] = useState<Route>(linkedRoute ?? "onboarding");
@@ -251,7 +255,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [tulkeyThinking, setTulkeyThinking] = useState(false);
   const [tulkeyVoiceOpen, setTulkeyVoiceOpen] = useState(false);
   const [exploreFavorites, setExploreFavorites] = useState<string[]>(defaultExploreFavorites);
-  const [homeTools, setHomeTools] = useState<string[]>([]);
+  const [homeTools, setHomeTools] = useState<string[]>(defaultHomeTools);
   const [avatar, setAvatar] = useState<string>(`${import.meta.env.BASE_URL}characters/${memberCharacter}.png`);
   const seededLists = () => watchLists.map((list) => ({ ...list, symbols: [...list.symbols] }));
   const emptyLists = (): WatchList[] => [
@@ -434,6 +438,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setMarketIndex("nepse");
     setBrokerDesk("hub");
     setBrokerCode("33");
+    setLang("en");
     setPlanState("free");
     setPlanCycle("annual");
     setPlanSeed(null);
@@ -447,7 +452,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setPrimaryPortfolioId("main");
     setOpenPortfolioIds(defaultOpenPortfolios);
     setExploreFavorites(defaultExploreFavorites);
-    setHomeTools([]);
+    setHomeTools(defaultHomeTools);
     setAvatar(`${import.meta.env.BASE_URL}characters/${memberCharacter}.png`);
     setWatchlists(seededLists());
     setHasWatchlistState(true);
@@ -670,6 +675,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     () => ({
       theme,
       uiFont,
+      lang,
       viewport,
       stage,
       route,
@@ -720,6 +726,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       planSeed,
       subIntent,
       setTheme,
+      setLang,
       setUiFont,
       setViewport,
       setStage,
@@ -782,6 +789,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [
       theme,
       uiFont,
+      lang,
       viewport,
       stage,
       route,

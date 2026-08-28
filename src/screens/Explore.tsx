@@ -6,6 +6,7 @@ import {
   exploreGroupOrder,
   filterExploreTools,
   getExploreTool,
+  homePinMax,
   planMeta,
   type ExploreCategoryId,
   type ExploreTool,
@@ -63,37 +64,53 @@ function ToolGlyph({ tool }: { tool: ExploreTool }) {
   );
 }
 
-function ToolRow({
+/* One tool, one icon. While customising, the tile pins to Home instead of
+   opening — the badge says which way the tap will go. */
+function ToolTile({
   tool,
-  pinned,
+  onHome,
+  editing,
   onOpen,
+  onPin,
   onMenu,
 }: {
   tool: ExploreTool;
-  pinned: boolean;
+  onHome: boolean;
+  editing: boolean;
   onOpen: (tool: ExploreTool) => void;
+  onPin: (tool: ExploreTool) => void;
   onMenu: (tool: ExploreTool) => void;
 }) {
   return (
-    <div className={`explore-row${pinned ? " pinned" : ""}`}>
-      <button type="button" className="explore-row-main" onClick={() => onOpen(tool)}>
+    <button
+      type="button"
+      className={`explore-tile${onHome ? " on" : ""}${tool.soon ? " soon" : ""}`}
+      title={tool.purpose}
+      aria-pressed={editing ? onHome : undefined}
+      aria-label={editing ? `${onHome ? "Unpin" : "Pin"} ${tool.title}` : tool.title}
+      onClick={() => (editing ? onPin(tool) : onOpen(tool))}
+      onContextMenu={(event) => {
+        event.preventDefault();
+        onMenu(tool);
+      }}
+    >
+      <span className="explore-tile-art">
         <ToolGlyph tool={tool} />
-        <span className="explore-row-copy">
-          <strong>{tool.title}</strong>
-          <small>{tool.purpose}</small>
-        </span>
-        {tool.kind === "portal" && <span className="explore-row-tag">Opens site</span>}
-        {tool.soon && <span className="explore-row-tag">Soon</span>}
-      </button>
-      <button
-        type="button"
-        className="explore-more"
-        aria-label={`Options for ${tool.title}`}
-        onClick={() => onMenu(tool)}
-      >
-        <Icon name="dots" size={18} />
-      </button>
-    </div>
+        {tool.kind === "portal" && !editing && (
+          <span className="explore-tile-mark" aria-hidden><Icon name="ext" size={10} /></span>
+        )}
+        {/* Pinned always shows the pin. While customising, everything else
+            shows the plus that would add it. */}
+        {onHome ? (
+          <span className={`explore-pin-mark${editing ? " lit" : ""}`} aria-hidden>
+            <Icon name="pin" size={11} />
+          </span>
+        ) : (
+          editing && <span className="explore-tile-pin" aria-hidden>+</span>
+        )}
+      </span>
+      <strong>{tool.short}</strong>
+    </button>
   );
 }
 
@@ -101,8 +118,6 @@ export function DiscoverScreen() {
   const {
     go,
     plan,
-    exploreFavorites,
-    toggleExploreFavorite,
     homeTools,
     toggleHomeTool,
     flash,
@@ -110,6 +125,7 @@ export function DiscoverScreen() {
   } = useApp();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<"all" | ExploreCategoryId>("all");
+  const [editing, setEditing] = useState(false);
   const openTool = useOpenTool();
   const searching = Boolean(query.trim());
   const meta = planMeta[plan];
@@ -118,42 +134,31 @@ export function DiscoverScreen() {
   const matches = filterExploreTools(query).filter(
     (tool) => searching || category === "all" || tool.category === category,
   );
-  const pinned = exploreFavorites
+  const homePinned = homeTools
     .map((id) => getExploreTool(id))
     .filter((tool): tool is ExploreTool => Boolean(tool));
 
-  const pin = (tool: ExploreTool) => {
-    const isOn = exploreFavorites.includes(tool.id);
-    if (!isOn && exploreFavorites.length >= 4) {
-      flash({ message: "Remove one first. Four shortcuts maximum." });
-      return;
-    }
-    toggleExploreFavorite(tool.id);
-    flash({ message: isOn ? `Removed ${tool.title} from shortcuts` : `${tool.title} added to your shortcuts` });
-  };
-
   const toHome = (tool: ExploreTool) => {
     const isOn = homeTools.includes(tool.id);
+    if (!isOn && homeTools.length >= homePinMax) {
+      flash({ message: `Unpin one first. ${homePinMax} on Home maximum.` });
+      return;
+    }
     toggleHomeTool(tool.id);
-    flash({ message: isOn ? `Removed ${tool.title} from Home` : `${tool.title} added to Home` });
+    flash({ message: isOn ? `${tool.title} unpinned from Home` : `${tool.title} pinned to Home` });
   };
 
-  /* One menu per tool: where it lives, not what it does. */
+  /* Press and hold: open it, or change where it lives. */
   const toolMenu = (tool: ExploreTool) => {
-    const fav = exploreFavorites.includes(tool.id);
     const onHome = homeTools.includes(tool.id);
     openSheet({
       kind: "actions",
       title: tool.title,
       note: tool.purpose,
       actions: [
+        { label: "Open", icon: "chev", onSelect: () => openTool(tool) },
         {
-          label: fav ? "Remove from favourites" : "Add to favourites",
-          icon: "star",
-          onSelect: () => pin(tool),
-        },
-        {
-          label: onHome ? "Remove from home screen" : "Add to home screen",
+          label: onHome ? "Unpin from Home" : "Pin to Home",
           icon: "home",
           onSelect: () => toHome(tool),
         },
@@ -188,29 +193,44 @@ export function DiscoverScreen() {
 
       {!searching && (
         <>
-          {pinned.length > 0 && (
-            <section className="explore-cat">
-              <p className="explore-group">Your shortcuts</p>
-              <div className="explore-favs" aria-label="Pinned tools">
-                {pinned.map((tool) => (
-                  <button
+          {/* Customise: what rides along on Home, and the way to change it. */}
+          <section className="explore-cat explore-custom">
+            <div className="explore-custom-head">
+              <p className="explore-group">Pinned to Home</p>
+              <button
+                type="button"
+                className={`explore-custom-btn${editing ? " on" : ""}`}
+                aria-pressed={editing}
+                onClick={() => setEditing((was) => !was)}
+              >
+                {editing ? "Done" : <><Icon name="sliders" size={14} /> Customise</>}
+              </button>
+            </div>
+            {editing ? (
+              <p className="explore-custom-hint">
+                Tap any tool below to pin or unpin it. {homeTools.length} of {homePinMax}
+              </p>
+            ) : homePinned.length === 0 ? (
+              <p className="explore-custom-hint">
+                Nothing pinned. Tap Customise and pick the tools you want on Home.
+              </p>
+            ) : null}
+            {homePinned.length > 0 && (
+              <div className="explore-favs" aria-label="Pinned to Home">
+                {homePinned.map((tool) => (
+                  <ToolTile
                     key={tool.id}
-                    type="button"
-                    className="explore-fav"
-                    aria-label={tool.title}
-                    onClick={() => openTool(tool)}
-                    onContextMenu={(event) => {
-                      event.preventDefault();
-                      toolMenu(tool);
-                    }}
-                  >
-                    <ToolGlyph tool={tool} />
-                    <strong>{tool.short}</strong>
-                  </button>
+                    tool={tool}
+                    onHome
+                    editing={editing}
+                    onOpen={openTool}
+                    onPin={toHome}
+                    onMenu={toolMenu}
+                  />
                 ))}
               </div>
-            </section>
-          )}
+            )}
+          </section>
 
           <div className="explore-cats" role="tablist" aria-label="Tool categories">
             {categoryTabs.map((tab) => (
@@ -242,13 +262,15 @@ export function DiscoverScreen() {
           return (
             <section key={group} className="explore-cat">
               <p className="explore-group">{group}</p>
-              <div className="explore-list">
+              <div className="explore-grid">
                 {rows.map((tool) => (
-                  <ToolRow
+                  <ToolTile
                     key={tool.id}
                     tool={tool}
-                    pinned={exploreFavorites.includes(tool.id)}
+                    onHome={homeTools.includes(tool.id)}
+                    editing={editing}
                     onOpen={openTool}
+                    onPin={toHome}
                     onMenu={toolMenu}
                   />
                 ))}
@@ -257,7 +279,6 @@ export function DiscoverScreen() {
           );
         })
       )}
-      <p className="disclaimer">Star a tool to keep it up top. Plans never include a stock pick.</p>
     </div>
   );
 }

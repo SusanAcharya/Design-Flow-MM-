@@ -319,17 +319,22 @@ body {
   min-height: 0;
 }
 
-/* Phone frame: no desktop scrollbar. Web + sheets: thin, low-contrast. */
-.device.mobile .app-scroll {
+/* Phone frame: no desktop scrollbar. Web + sheets: thin, low-contrast.
+   Any element that scrolls on its own has to be listed here, or it falls back
+   to the raw OS scrollbar — which is what .auth-shell was doing. */
+.device.mobile .app-scroll,
+.device.mobile .auth-shell {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.device.mobile .app-scroll::-webkit-scrollbar {
+.device.mobile .app-scroll::-webkit-scrollbar,
+.device.mobile .auth-shell::-webkit-scrollbar {
   display: none;
   width: 0;
   height: 0;
 }
 .device.web .app-scroll,
+.device .auth-shell,
 .device .ob-preview,
 .device .ob-guide,
 .device .sheet {
@@ -337,6 +342,7 @@ body {
   scrollbar-color: color-mix(in srgb, var(--text-tertiary) 32%, transparent) transparent;
 }
 .device.web .app-scroll::-webkit-scrollbar,
+.device .auth-shell::-webkit-scrollbar,
 .device .ob-preview::-webkit-scrollbar,
 .device .ob-guide::-webkit-scrollbar,
 .device .sheet::-webkit-scrollbar {
@@ -344,12 +350,14 @@ body {
   height: 5px;
 }
 .device.web .app-scroll::-webkit-scrollbar-track,
+.device .auth-shell::-webkit-scrollbar-track,
 .device .ob-preview::-webkit-scrollbar-track,
 .device .ob-guide::-webkit-scrollbar-track,
 .device .sheet::-webkit-scrollbar-track {
   background: transparent;
 }
 .device.web .app-scroll::-webkit-scrollbar-thumb,
+.device .auth-shell::-webkit-scrollbar-thumb,
 .device .ob-preview::-webkit-scrollbar-thumb,
 .device .ob-guide::-webkit-scrollbar-thumb,
 .device .sheet::-webkit-scrollbar-thumb {
@@ -357,6 +365,7 @@ body {
   border-radius: 999px;
 }
 .device.web .app-scroll::-webkit-scrollbar-thumb:hover,
+.device .auth-shell::-webkit-scrollbar-thumb:hover,
 .device .ob-preview::-webkit-scrollbar-thumb:hover,
 .device .ob-guide::-webkit-scrollbar-thumb:hover,
 .device .sheet::-webkit-scrollbar-thumb:hover {
@@ -3325,6 +3334,20 @@ button.home-card:hover,
   background: transparent;
   color: inherit;
 }
+.jump-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 1px dashed var(--border-default);
+  text-align: left;
+}
+.jump-empty:hover { background: var(--bg-inset); }
+.jump-empty-copy { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.jump-empty-copy strong { font-size: 14px; font-weight: 650; }
+.jump-empty-copy small { font-size: 12px; color: var(--text-tertiary); }
 .jump-glyph {
   width: 46px;
   height: 46px;
@@ -7520,8 +7543,36 @@ button.happen-row {
   margin-inline: auto;
 }
 .device.web .tab-feed .cta-well { max-width: 560px; }
-.device.web .jump-rail { flex-wrap: wrap; overflow: visible; }
-.device.web .jump-tile { flex: 0 0 calc((100% - 32px) / 5); }
+/* Web: eight even columns filling the row, each a real card. Five floating
+   glyphs left most of the width empty and gave the tiles no hit area. */
+.device.web .jump-rail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 10px;
+  overflow: visible;
+  padding-bottom: 0;
+}
+.device.web .jump-tile {
+  flex: none;
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  background: var(--bg-surface);
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+.device.web .jump-tile small { text-align: left; }
+[data-theme="dark"] .device.web .jump-tile { background: #131313; }
+.device.web .jump-tile:hover { border-color: var(--border-default); }
+.device.web .jump-tile small {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
 .feed-post {
   width: 100%;
   padding: 14px 20px;
@@ -7788,16 +7839,19 @@ button.happen-row {
   color: #111;
 }
 .explore-glyph {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  border-radius: 15px;
   background: var(--bg-inset);
   color: var(--text-primary);
   display: grid;
   place-items: center;
   flex: none;
-  box-shadow: inset 0 0 0 1px var(--border-subtle);
+  transition: background 0.16s ease;
 }
+[data-theme="dark"] .explore-glyph { background: #1b1b1b; }
+.explore-tile:hover .explore-glyph { background: var(--bg-sunken); }
+
 .explore-favs,
 .explore-grid {
   display: grid;
@@ -7840,6 +7894,126 @@ button.happen-row {
 .explore-tile:active .explore-glyph,
 .explore-fav:active .explore-glyph {
   background: var(--bg-sunken);
+}
+.explore-tile-art { position: relative; display: grid; place-items: center; }
+/* A portal leaves the app — one small mark, no second line of type. */
+.explore-tile-mark {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg-canvas);
+  color: var(--text-tertiary);
+  box-shadow: inset 0 0 0 1px var(--border-subtle);
+}
+/* While customising, the badge says which way the next tap goes. */
+.explore-tile-pin {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 19px;
+  height: 19px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg-raised);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: inset 0 0 0 1px var(--border-default);
+}
+.explore-tile.on .explore-tile-pin {
+  background: var(--accent-base);
+  color: var(--text-on-accent);
+  box-shadow: none;
+}
+/* Pinned reads as a pin on the corner of the glyph — the tile itself stays
+   neutral so the grid does not turn into a wall of green. It sits where the
+   edit badge sits, and the two are never shown at once. */
+.explore-pin-mark {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg-canvas);
+  color: var(--accent-base);
+}
+/* While customising, the pin fills in — it is what a tap would remove. */
+.explore-pin-mark.lit {
+  background: var(--accent-base);
+  color: var(--text-on-accent);
+}
+/* Everything in the pinned row is pinned, so the mark says nothing there —
+   except while customising, where it is the control. */
+.explore-favs .explore-pin-mark:not(.lit) { display: none; }
+.explore-tile.soon { opacity: 0.55; }
+
+.explore-custom-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 20px;
+}
+.explore-custom-head .explore-group { flex: 1; }
+.explore-custom-btn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.explore-custom-btn .icon { color: var(--text-tertiary); }
+.explore-custom-btn:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
+.explore-custom-btn.on {
+  background: var(--accent-base);
+  border-color: transparent;
+  color: var(--text-on-accent);
+}
+/* Language lives on Explore as a tool; the sheet is shared. */
+/* Language lives on Explore as a tool; the sheet is shared. */
+.lang-list { display: grid; gap: 8px; margin-top: 16px; }
+.lang-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: inherit;
+  text-align: left;
+}
+[data-theme="dark"] .lang-row { background: #131313; }
+.lang-row.on { border-color: var(--accent-base); box-shadow: inset 0 0 0 1px var(--accent-base); }
+.lang-row-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.lang-row-id strong { font-size: 15px; font-weight: 600; }
+.lang-row-id small { font-size: 12px; color: var(--text-tertiary); }
+.lang-row .sub-pay-dot { margin-left: auto; }
+.lang-row.on .sub-pay-dot {
+  border-color: var(--accent-base);
+  background: radial-gradient(circle, var(--accent-base) 0 42%, transparent 43%);
+}
+
+.explore-custom-hint {
+  padding: 0 20px 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
 }
 .explore-cat { padding-bottom: 2px; }
 .explore-group {
@@ -10567,6 +10741,15 @@ button.happen-row {
 }
 [data-theme="dark"] .drawer-link-ico { background: #202020; }
 .drawer-link-label { flex: 1; min-width: 0; }
+/* The way out sits with the legal rows, but reads as the one that ends things. */
+.drawer-out { color: var(--down-text); }
+.drawer-out .drawer-link-ico {
+  background: var(--down-soft);
+  color: var(--down-text);
+}
+[data-theme="dark"] .drawer-out .drawer-link-ico { background: color-mix(in srgb, var(--down-base) 22%, transparent); }
+/* .drawer already gaps 18px; a touch more marks the section change. */
+.drawer-links + .drawer-label { margin-top: 8px; }
 
 .toast {
   position: absolute;
@@ -11935,12 +12118,6 @@ button.happen-row {
 .device.web .desk-screen .pad > .search-field {
   max-width: 480px;
 }
-/* Tools read as a dense board on web, not four icons adrift in a wide column. */
-.device.web .explore-favs,
-.device.web .explore-grid {
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
-  gap: 8px;
-}
 .device.web .data-error,
 .device.web .pf-zero {
   margin-left: auto;
@@ -12168,33 +12345,34 @@ button.happen-row {
 .device.web .market-web-update { grid-column: 2; grid-row: 2; }
 .device.web .mkt-tools-grid { grid-template-columns: repeat(8, minmax(0, 1fr)); }
 .device.web .market-web-tools .market-block { margin-left: 0; margin-right: 0; }
-/* Tools read as named rows on web, not icons adrift in a wide column. */
+/* Web keeps the icon grid — just more columns and a card behind each tile,
+   the same treatment Home's jump rail uses. */
 .device.web .explore-favs,
 .device.web .explore-grid {
-  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 10px;
   padding-left: 0;
   padding-right: 0;
 }
 .device.web .explore-fav,
 .device.web .explore-tile {
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px;
-  padding: 9px 12px;
-  border-radius: 14px;
-  background: var(--bg-inset);
-  text-align: left;
+  gap: 10px;
+  padding: 14px 8px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  transition: border-color 0.16s ease;
 }
 [data-theme="dark"] .device.web .explore-fav,
-[data-theme="dark"] .device.web .explore-tile { background: #151515; }
+[data-theme="dark"] .device.web .explore-tile { background: #131313; }
 .device.web .explore-fav:hover,
-.device.web .explore-tile:hover { background: var(--bg-sunken); }
+.device.web .explore-tile:hover { border-color: var(--border-default); }
+
 .device.web .explore-fav strong,
 .device.web .explore-tile strong {
-  text-align: left;
+  font-size: 12px;
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -12557,93 +12735,7 @@ button.happen-row {
 .explore-cats::-webkit-scrollbar { display: none; }
 .explore-cats .chip { flex: none; }
 
-.explore-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 0 16px;
-}
-.explore-row {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  border-radius: 16px;
-  background: var(--bg-inset);
-  border: 1px solid transparent;
-  transition: border-color 0.16s ease;
-}
-[data-theme="dark"] .explore-row { background: #151515; }
-.explore-row:hover { border-color: var(--border-default); }
-.explore-row-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 4px 11px 12px;
-  text-align: left;
-  color: inherit;
-  background: none;
-}
-.explore-row-copy { flex: 1; min-width: 0; }
-.explore-row-copy strong {
-  display: block;
-  font-size: 13.5px;
-  font-weight: 620;
-  letter-spacing: -0.15px;
-}
-.explore-row-copy small {
-  display: block;
-  margin-top: 2px;
-  font-size: 11.5px;
-  line-height: 15px;
-  color: var(--text-tertiary);
-}
-.explore-row-tag {
-  flex: none;
-  padding: 3px 8px;
-  border-radius: var(--radius-full);
-  background: var(--bg-sunken);
-  color: var(--text-tertiary);
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-}
-.explore-more {
-  flex: none;
-  width: 40px;
-  align-self: stretch;
-  display: grid;
-  place-items: center;
-  border-radius: 0 16px 16px 0;
-  color: var(--text-tertiary);
-  background: none;
-}
-.explore-more:hover { color: var(--text-primary); background: var(--bg-inset); }
-.explore-row.pinned .explore-row-copy strong::after {
-  content: "";
-  display: inline-block;
-  width: 5px;
-  height: 5px;
-  margin-left: 7px;
-  vertical-align: middle;
-  border-radius: 50%;
-  background: var(--warn-base);
-}
-
-.device.web .tier-strip {
-  width: 100%;
-  margin: 8px 0 4px;
-  max-width: 560px;
-}
 .device.web .explore-cats { padding-left: 0; padding-right: 0; }
-.device.web .explore-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 10px;
-  padding: 0;
-}
 
 /* Movers filters — each chip owns a short menu. */
 .mkt-filter { position: relative; }
@@ -12679,10 +12771,6 @@ button.happen-row {
   background: var(--accent-soft);
   color: var(--accent-soft-text);
   font-weight: 600;
-}
-.device.web .explore-favs {
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  max-width: 900px;
 }
 
 /* ── Notifications ─────────────────────────────────────────────────────────
@@ -13951,10 +14039,6 @@ button.happen-row {
 }
 .device.web .explore-top .explore-sticky { flex: 1; min-width: 0; padding: 0; position: static; background: none; backdrop-filter: none; }
 .device.web .explore-top .tier-strip { flex: none; width: 340px; margin: 0; }
-.device.web .explore-favs {
-  grid-template-columns: repeat(auto-fill, minmax(0, 190px));
-  justify-content: start;
-}
 
 /* Notifications read as one card, not rows adrift. */
 .device.web .note-feed {
@@ -14704,16 +14788,14 @@ button.stock-key:active { background: var(--bg-inset); }
   margin: 10px 0 0;
   font-size: 13px;
 }
-.auth-go { margin-top: 18px; width: 100%; }
+.auth-go { flex: 1; min-width: 0; }
 
-/* Fingerprint reads as its own way in, not a button stuck beside another. */
-.auth-bio {
+/* Fingerprint sits beside the button: same height, same row, its own target. */
+.auth-go-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin-top: 18px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border-subtle);
 }
 .auth-fp {
   flex: none;
@@ -14728,7 +14810,8 @@ button.stock-key:active { background: var(--bg-inset); }
 }
 .auth-fp:hover { background: var(--accent-base); color: var(--text-on-accent); }
 [data-theme="dark"] .auth-fp { border-color: transparent; }
-.auth-bio span {
+.auth-bio-note {
+  margin-top: 10px;
   font-size: 12.5px;
   line-height: 17px;
   color: var(--text-tertiary);

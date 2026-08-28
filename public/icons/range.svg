@@ -1,8 +1,17 @@
-<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon/range">
-<path d="M4.4 11 H17.6" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<path d="M4.4 7.2 V14.8" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<path d="M17.6 7.2 V14.8" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<circle cx="13.6" cy="11" r="2.5" fill="#5C574D"/>
-</g>
+<!-- @license lucide-static v1.34.0 - ISC -->
+<svg
+  class="lucide lucide-move-horizontal"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m18 8 4 4-4 4" />
+  <path d="M2 12h20" />
+  <path d="m6 8-4 4 4 4" />
 </svg>

@@ -299,7 +299,7 @@ export function AlertsScreen() {
       {shown.length === 0 ? (
         <div className="alerts-empty">
           <span className="alerts-empty-ico" aria-hidden>
-            <Icon name="alert" size={24} />
+            <Icon name="bell" size={24} />
           </span>
           <p className="t-h-s">{tab === "active" ? "No alerts yet" : "Nothing has expired"}</p>
           <p className="t-body-s muted">

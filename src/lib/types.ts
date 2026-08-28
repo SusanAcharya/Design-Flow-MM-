@@ -1,4 +1,6 @@
 export type Theme = "light" | "dark";
+/** The app reads in Nepali or English. Numbers and tickers stay as they are. */
+export type Lang = "en" | "ne";
 export type UiFont = "plex" | "inter" | "satoshi" | "jakarta" | "geist" | "subjectivity" | "chillax" | "america";
 export type Viewport = "mobile" | "web";
 export type Stage = "base" | "explorer" | "primary" | "secondary" | "value" | "active";
@@ -81,6 +83,7 @@ export type Sheet =
   | { kind: "help" }
   | { kind: "referral" }
   | { kind: "avatar" }
+  | { kind: "language" }
   | { kind: "watch-add"; listId: string }
   | { kind: "watch-name"; listId?: string }
   | {

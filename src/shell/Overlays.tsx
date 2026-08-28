@@ -22,10 +22,10 @@ import {
   type PortfolioKind,
 } from "../lib/portfolio";
 import { characterCast, memberSince, planFeatures, planIds, planMeta, referralCode } from "../lib/explore";
-import { activeTab, jumpDestinations } from "../lib/nav";
+import { activeTab, drawerSupport, jumpDestinations } from "../lib/nav";
 import { stageMeta, stageOrder } from "../lib/stage";
 import { useApp } from "../lib/state";
-import type { Plan, PlanCycle, Route, Stage } from "../lib/types";
+import type { Lang, MarketTab, Plan, PlanCycle, Route, Stage } from "../lib/types";
 
 export function MetricLink({
   id,
@@ -219,13 +219,27 @@ const drawerTabs: { id: Route; label: string; icon: "home" | "market" | "tulkey"
 ];
 
 function NavigationSheet() {
-  const { go, closeSheet, plan, route, objectiveOrigin } = useApp();
+  const { go, closeSheet, openSheet, flash, resetDemo, plan, route, objectiveOrigin } = useApp();
   const current = activeTab(route, objectiveOrigin);
   const meta = planMeta[plan];
-  const routeTo = (next: Route, extras?: { brokerDesk?: "hub" | "analysis" }) => {
+  const routeTo = (next: Route, extras?: { brokerDesk?: "hub" | "analysis"; marketTab?: MarketTab }) => {
     closeSheet();
     go(next, extras);
   };
+
+  const askLogOut = () =>
+    openSheet({
+      kind: "confirm",
+      title: "Log out?",
+      body: "Are you sure to logout?",
+      confirmLabel: "Log out",
+      cancelLabel: "Stay signed in",
+      danger: true,
+      onConfirm: () => {
+        resetDemo();
+        flash({ message: "Logged out. Sign in whenever you like." });
+      },
+    });
 
   return (
     <div className="drawer">
@@ -261,7 +275,14 @@ function NavigationSheet() {
           <button
             key={item.id}
             type="button"
-            onClick={() => routeTo(item.route, item.brokerDesk ? { brokerDesk: item.brokerDesk } : undefined)}
+            onClick={() =>
+              routeTo(
+                item.route,
+                item.brokerDesk || item.marketTab
+                  ? { brokerDesk: item.brokerDesk, marketTab: item.marketTab }
+                  : undefined,
+              )
+            }
           >
             <span className="drawer-link-ico" aria-hidden>
               <Icon name={item.icon} size={16} />
@@ -270,6 +291,29 @@ function NavigationSheet() {
             <Icon name="chev" size={15} />
           </button>
         ))}
+      </div>
+
+      <p className="overline drawer-label">About</p>
+      <div className="drawer-links">
+        {drawerSupport.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => openSheet({ kind: "quick", title: item.label, body: item.body, note: item.note })}
+          >
+            <span className="drawer-link-ico" aria-hidden>
+              <Icon name={item.icon} size={16} />
+            </span>
+            <span className="drawer-link-label">{item.label}</span>
+            <Icon name="chev" size={15} />
+          </button>
+        ))}
+        <button type="button" className="drawer-out" onClick={askLogOut}>
+          <span className="drawer-link-ico" aria-hidden>
+            <Icon name="back" size={16} />
+          </span>
+          <span className="drawer-link-label">Log out</span>
+        </button>
       </div>
     </div>
   );
@@ -388,11 +432,11 @@ function StockToolsSheet({ symbol }: { symbol: string }) {
         go("alerts", { alertSymbol: symbol });
       },
     },
-    { label: "Highlights", icon: "star" as const, onClick: () => openTab("Overview") },
+    { label: "Highlights", icon: "info" as const, onClick: () => openTab("Overview") },
     { label: "Technicals", icon: "market" as const, onClick: () => openTab("Analysis") },
     { label: "Fundamentals", icon: "learn" as const, onClick: () => openTab("Financials") },
-    { label: "Floor sheet", icon: "compare" as const, onClick: () => openTab("Floor sheet") },
-    { label: "Share holding", icon: "wallet" as const, onClick: () => openTab("Financials") },
+    { label: "Floor sheet", icon: "table" as const, onClick: () => openTab("Floor sheet") },
+    { label: "Share holding", icon: "users" as const, onClick: () => openTab("Financials") },
     { label: "Dividends & AGM", icon: "cal" as const, onClick: () => openTab("Events") },
     {
       label: "Compare",
@@ -401,7 +445,7 @@ function StockToolsSheet({ symbol }: { symbol: string }) {
     },
     {
       label: "Reports",
-      icon: "more" as const,
+      icon: "doc" as const,
       onClick: () => {
         closeSheet();
         flash({ message: `${symbol} reports will open from the company filing source.` });
@@ -1287,6 +1331,55 @@ function WatchNameSheet() {
   );
 }
 
+/* Language: the app reads in one or the other. Numbers and tickers do not move. */
+const languages: { id: Lang; label: string; native: string; note: string }[] = [
+  { id: "en", label: "English", native: "English", note: "Every screen, in English" },
+  { id: "ne", label: "Nepali", native: "नेपाली", note: "हरेक स्क्रिन, नेपालीमा" },
+];
+
+function LanguageSheet() {
+  const { closeSheet, lang, setLang, flash } = useApp();
+
+  const pick = (next: Lang) => {
+    setLang(next);
+    closeSheet();
+    flash({
+      message:
+        next === "ne" ? "भाषा नेपालीमा सारियो।" : "Language set to English.",
+    });
+  };
+
+  return (
+    <>
+      <div className="metric-sheet-head">
+        <div>
+          <p className="t-h-l" id="sheet-title">Language</p>
+          <p className="t-body-xs muted">Kitta, ticker symbols and figures stay the same either way.</p>
+        </div>
+        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
+      </div>
+      <div className="lang-list" role="radiogroup" aria-label="Language">
+        {languages.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="radio"
+            aria-checked={lang === item.id}
+            className={`lang-row${lang === item.id ? " on" : ""}`}
+            onClick={() => pick(item.id)}
+          >
+            <span className="lang-row-id">
+              <strong>{item.native}</strong>
+              <small>{item.note}</small>
+            </span>
+            <span className="sub-pay-dot" aria-hidden />
+          </button>
+        ))}
+      </div>
+    </>
+  );
+}
+
 /* One sheet for "what do you want to do with this?" — short, no preamble. */
 function ActionsSheet() {
   const { closeSheet, sheet } = useApp();
@@ -1556,6 +1649,9 @@ export function Overlays() {
       )}
       {sheet?.kind === "referral" && (
         <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><ReferralSheet /></SheetFrame>
+      )}
+      {sheet?.kind === "language" && (
+        <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><LanguageSheet /></SheetFrame>
       )}
       {sheet?.kind === "avatar" && (
         <SheetFrame onClose={closeSheet} labelledBy="sheet-title"><AvatarSheet /></SheetFrame>

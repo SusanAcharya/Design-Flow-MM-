@@ -1,6 +1,18 @@
-<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon/tulkey">
-<path d="M11 2.8L12.45 8.7L18.4 10.15L12.45 11.6L11 17.5L9.55 11.6L3.6 10.15L9.55 8.7L11 2.8Z" stroke="#5C574D" stroke-width="1.7" stroke-linejoin="round"/>
-<path d="M16.7 3.2L17.15 4.7L18.65 5.15L17.15 5.6L16.7 7.1L16.25 5.6L14.75 5.15L16.25 4.7L16.7 3.2Z" stroke="#5C574D" stroke-width="1.45" stroke-linejoin="round"/>
-</g>
+<!-- @license lucide-static v1.34.0 - ISC -->
+<svg
+  class="lucide lucide-sparkles"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z" />
+  <path d="M20 2v4" />
+  <path d="M22 4h-4" />
+  <circle cx="4" cy="20" r="2" />
 </svg>

@@ -1,10 +1,17 @@
-<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g id="icon/alert">
-<circle cx="11" cy="12.6" r="6.2" stroke="#5C574D" stroke-width="1.7" fill="none"/>
-<path d="M11 9.8 V12.6 L13.2 14.2" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-<path d="M4.6 5.4 L7 3.4" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<path d="M17.4 5.4 L15 3.4" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<path d="M6 17.6 L4.6 19" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-<path d="M16 17.6 L17.4 19" stroke="#5C574D" stroke-width="1.7" stroke-linecap="round" fill="none"/>
-</g>
+<!-- @license lucide-static v1.34.0 - ISC -->
+<svg
+  class="lucide lucide-triangle-alert"
+  xmlns="http://www.w3.org/2000/svg"
+  width="24"
+  height="24"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="1.8"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
+  <path d="M12 9v4" />
+  <path d="M12 17h.01" />
 </svg>
