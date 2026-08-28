@@ -25,7 +25,7 @@ import { characterCast, memberSince, planFeatures, planIds, planMeta, referralCo
 import { activeTab, drawerSupport, jumpDestinations } from "../lib/nav";
 import { stageMeta, stageOrder } from "../lib/stage";
 import { useApp } from "../lib/state";
-import type { Lang, MarketTab, Plan, PlanCycle, Route, Stage } from "../lib/types";
+import type { Lang, MarketTab, Plan, PlanCycle, Route, Stage, ToastTone } from "../lib/types";
 
 export function MetricLink({
   id,
@@ -43,6 +43,38 @@ export function MetricLink({
 }
 
 const DISMISS_AT = 96;
+
+/* One mark per tone, on the app's raised surface. The old bar inverted to white,
+   which shouted over a dark screen for something as small as "language set". */
+const toastMark: Record<ToastTone, IconName> = {
+  info: "info",
+  good: "check",
+  warn: "alert",
+  bad: "alert",
+};
+
+function ToastBar() {
+  const { toast, dismissToast, undoStage } = useApp();
+  if (!toast) return null;
+  const tone = toast.tone ?? "info";
+
+  return (
+    <div className={`toast tone-${tone}`} role="status" aria-live="polite">
+      <span className="toast-mark" aria-hidden>
+        <Icon name={toastMark[tone]} size={15} />
+      </span>
+      <p className="toast-msg">{toast.message}</p>
+      {toast.undo && (
+        <button type="button" className="toast-undo" onClick={undoStage}>Undo</button>
+      )}
+      <button type="button" className="toast-x" onClick={dismissToast} aria-label="Dismiss">
+        <Icon name="close" size={14} />
+      </button>
+      {/* Shows the auto-dismiss running down, so it never just vanishes. */}
+      <span className="toast-timer" aria-hidden />
+    </div>
+  );
+}
 
 function SheetFrame({
   children,
@@ -201,8 +233,10 @@ function QuickSheet({ title, body, note }: { title: string; body: string; note?:
           <span>{note}</span>
         </p>
       )}
+      {/* Reading a definition is not a decision — the dismiss stays quiet. The
+          × above, the scrim and a downward drag all close this too. */}
       <div className="quick-sheet-foot">
-        <Button variant="primary" size="md" block onClick={closeSheet}>Got it</Button>
+        {/* <button type="button" className="quick-sheet-done" onClick={closeSheet}>Got it</button> */}
       </div>
     </div>
   );
@@ -237,7 +271,7 @@ function NavigationSheet() {
       danger: true,
       onConfirm: () => {
         resetDemo();
-        flash({ message: "Logged out. Sign in whenever you like." });
+        flash({ message: "Logged out. Sign in whenever you like.", tone: "warn" });
       },
     });
 
@@ -394,7 +428,7 @@ function CircuitRulesSheet() {
         >
           Open the lesson
         </Button>
-        <Button variant="secondary" size="md" onClick={closeSheet}>Got it</Button>
+        {/* <Button variant="secondary" size="md" onClick={closeSheet}>Got it</Button> */}
       </div>
     </>
   );
@@ -411,7 +445,7 @@ function OrderSheet({ symbol }: { symbol: string }) {
       </p>
       <div className="btn-row" style={{ marginTop: 16 }}>
         <Button variant="primary" size="md" onClick={closeSheet}>Continue to TMS</Button>
-        <Button variant="secondary" size="md" onClick={closeSheet}>Got it</Button>
+        {/* <Button variant="secondary" size="md" onClick={closeSheet}>Got it</Button> */}
       </div>
     </>
   );
@@ -714,7 +748,7 @@ function PortfolioEditSheet() {
     if (!next) return;
     savePortfolio(portfolioId, { name: next, kind, primary: primary || onlyBook });
     closeSheet();
-    flash({ message: "Portfolio updated." });
+    flash({ message: "Portfolio updated.", tone: "good" });
   };
 
   return (
@@ -783,11 +817,11 @@ function PortfolioCreateSheet() {
 
   const save = () => {
     if (!createPortfolio({ name, kind, primary })) {
-      flash({ message: room ? "Give this book a name." : "Delete a book first to make space." });
+      flash({ message: room ? "Give this book a name." : "Delete a book first to make space.", tone: "bad" });
       return;
     }
     closeSheet();
-    flash({ message: "Portfolio created. Add a holding when you are ready." });
+    flash({ message: "Portfolio created. Add a holding when you are ready.", tone: "good" });
   };
 
   return (
@@ -1048,15 +1082,15 @@ function PasswordSheet() {
 
   const save = () => {
     if (!current || !next || !again) {
-      flash({ message: "Fill every field to change the password." });
+      flash({ message: "Fill every field to change the password.", tone: "bad" });
       return;
     }
     if (next !== again) {
-      flash({ message: "The new passwords do not match." });
+      flash({ message: "The new passwords do not match.", tone: "bad" });
       return;
     }
     closeSheet();
-    flash({ message: "Password updated. This is a prototype — nothing was stored." });
+    flash({ message: "Password updated. This is a prototype — nothing was stored.", tone: "good" });
   };
 
   return (
@@ -1172,7 +1206,7 @@ function AvatarSheet() {
     reader.onload = () => {
       setAvatar(String(reader.result));
       closeSheet();
-      flash({ message: "Picture updated." });
+      flash({ message: "Picture updated.", tone: "good" });
     };
     reader.readAsDataURL(file);
   };
@@ -1199,7 +1233,7 @@ function AvatarSheet() {
               onClick={() => {
                 setAvatar(src);
                 closeSheet();
-                flash({ message: "Picture updated." });
+                flash({ message: "Picture updated.", tone: "good" });
               }}
             >
               <img src={src} alt="" />
@@ -1236,7 +1270,7 @@ function WatchAddSheet() {
       onConfirm: () => {
         addToList(listId, symbol);
         fulfillObjective("watch");
-        flash({ message: `${symbol} added to ${label}.` });
+        flash({ message: `${symbol} added to ${label}.`, tone: "good" });
       },
     });
   };
@@ -1295,7 +1329,7 @@ function WatchNameSheet() {
     if (!name) return;
     if (existing) {
       renameWatchlist(existing.id, name);
-      flash({ message: `Renamed to ${name}.` });
+      flash({ message: `Renamed to ${name}.`, tone: "good" });
     } else {
       createWatchlist(name);
       flash({ message: `${name} created.` });
@@ -1413,6 +1447,8 @@ function ActionsSheet() {
   );
 }
 
+/* A question, centred, with the two answers stacked full width — side-by-side
+   buttons crowd on a phone and read as equal weight when they are not. */
 function ConfirmSheet() {
   const { closeSheet, sheet } = useApp();
   if (sheet?.kind !== "confirm") return null;
@@ -1423,23 +1459,21 @@ function ConfirmSheet() {
   };
 
   return (
-    <>
-      <div className="metric-sheet-head">
-        <div>
-          <p className="t-h-l" id="sheet-title">{sheet.title}</p>
-          <p className="t-body-xs muted">{sheet.body}</p>
-        </div>
-        <button className="sheet-close" onClick={closeSheet} aria-label="Close">×</button>
-      </div>
-      <div className="btn-row" style={{ marginTop: 16 }}>
-        <Button variant={sheet.danger ? "danger" : "primary"} size="md" onClick={confirm}>
+    <div className="confirm">
+      <span className={`confirm-mark${sheet.danger ? " bad" : ""}`} aria-hidden>
+        <Icon name={sheet.danger ? "alert" : "info"} size={20} />
+      </span>
+      <p className="confirm-title" id="sheet-title">{sheet.title}</p>
+      <p className="confirm-body">{sheet.body}</p>
+      <div className="confirm-acts">
+        <Button variant={sheet.danger ? "danger" : "primary"} size="lg" block onClick={confirm}>
           {sheet.confirmLabel}
         </Button>
-        <Button variant="secondary" size="md" onClick={closeSheet}>
+        <Button variant="secondary" size="lg" block onClick={closeSheet}>
           {sheet.cancelLabel ?? "Cancel"}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -1488,7 +1522,7 @@ function PlansSheet() {
     setPlan(pick, { cycle });
     closeSheet();
     if (pick === "free") {
-      flash({ message: "You’re on Free. Screeners and alerts stay off this plan." });
+      flash({ message: "You’re on Free. Screeners and alerts stay off this plan.", tone: "warn" });
       return;
     }
     flash({ message: `Demo ${planMeta[pick].label} via ${pay === "connectips" ? "ConnectIPS" : pay === "esewa" ? "eSewa" : "Khalti"}. No payment is taken.` });
@@ -1584,7 +1618,7 @@ function PlansSheet() {
 }
 
 export function Overlays() {
-  const { sheet, closeSheet, toast, dismissToast, undoStage, circuit, openSheet, route } = useApp();
+  const { sheet, closeSheet, toast, circuit, openSheet, route } = useApp();
   const alert = circuit !== "off" ? circuitCopy[circuit] : null;
   const onboarding = route === "onboarding" || route === "start";
 
@@ -1600,17 +1634,7 @@ export function Overlays() {
         </div>
       )}
 
-      {toast && (
-        <div className="toast" role="status">
-          <p style={{ flex: 1 }}>{toast.message}</p>
-          {toast.undo && (
-            <button type="button" className="toast-undo" onClick={undoStage}>Undo</button>
-          )}
-          <button type="button" className="toast-x" onClick={dismissToast} aria-label="Dismiss">
-            ×
-          </button>
-        </div>
-      )}
+      {toast && <ToastBar />}
 
       {sheet?.kind === "profile" && (
         <SheetFrame onClose={closeSheet}><ProfileSheet /></SheetFrame>

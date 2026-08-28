@@ -211,13 +211,13 @@ export function AlertsScreen() {
     setEditing(null);
     clearAlertSeed();
     setTab(rule.expired ? "expired" : "active");
-    flash({ message: "Alert saved. It reminds you — it never places an order." });
+    flash({ message: "Alert saved. It reminds you — it never places an order.", tone: "good" });
   };
 
   const remove = (id: string) => {
     setRules((list) => list.filter((r) => r.id !== id));
     setEditing(null);
-    flash({ message: "Alert deleted." });
+    flash({ message: "Alert deleted.", tone: "warn" });
   };
 
   const openMenu = (rule: AlertRule) => {

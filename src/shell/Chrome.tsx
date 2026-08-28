@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import { UserAvatar } from "../ds/UserAvatar";
 import { SearchField, StatusBar } from "../ds/primitives";
@@ -114,6 +114,24 @@ function GlobalHeader() {
   );
 }
 
+/* The scroll box is reused across screens, so it keeps its offset when the
+   route changes — you would arrive at a new screen already scrolled down.
+   Reset it whenever the thing being shown changes, sub-screens included. */
+function ScrollPane({ children }: { children: ReactNode }) {
+  const { route, stock, marketDesk, brokerDesk, lesson, viewingObjectiveId, portfolioId } = useApp();
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    ref.current?.scrollTo({ top: 0 });
+  }, [route, stock, marketDesk, brokerDesk, lesson, viewingObjectiveId, portfolioId]);
+
+  return (
+    <div className="app-scroll" ref={ref}>
+      {children}
+    </div>
+  );
+}
+
 export function MobileChrome({ children, showTabs }: { children: ReactNode; showTabs: boolean }) {
   const { go, route, objectiveOrigin } = useApp();
   const current = activeTab(route, objectiveOrigin);
@@ -123,7 +141,7 @@ export function MobileChrome({ children, showTabs }: { children: ReactNode; show
       <StatusBar />
       {showGlobal && <GlobalHeader />}
       <LoadBar />
-      <div className="app-scroll">{children}</div>
+      <ScrollPane>{children}</ScrollPane>
       {showTabs && (
         <nav className="tab-bar">
           {tabs.map((t) => (
@@ -177,7 +195,7 @@ export function DesktopChrome({
   }, [go, showNav]);
 
   if (!showNav) {
-    return <div className="app-scroll">{children}</div>;
+    return <ScrollPane>{children}</ScrollPane>;
   }
   return (
     <>
@@ -252,7 +270,7 @@ export function DesktopChrome({
         </header>
         <LoadBar />
         <div className="web-body">
-          <div className="app-scroll">{children}</div>
+          <ScrollPane>{children}</ScrollPane>
         </div>
       </div>
     </>

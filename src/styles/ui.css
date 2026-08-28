@@ -9707,12 +9707,20 @@ button.happen-row {
 .device.web .stock-screen .stock-broker-table .sheet-table td:last-child {
   padding-right: 0;
 }
+/* The shared header for every sheet, not just the metric one. Title, an
+   optional line under it, and the close — nothing else sits on this row. */
 .metric-sheet-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 14px;
 }
+.metric-sheet-head > div { min-width: 0; }
+.metric-sheet-head .t-h-l { line-height: 24px; }
+.metric-sheet-head .t-body-xs { margin-top: 3px; line-height: 17px; }
 .sheet-close {
   flex: none;
   width: 34px;
@@ -10494,11 +10502,12 @@ button.happen-row {
 }
 .sheet {
   width: 100%;
-  max-height: 74%;
+  max-height: 86%;
   background: var(--bg-surface);
-  border-radius: 28px 28px 0 0;
-  padding: 0 20px calc(28px + env(safe-area-inset-bottom, 0px));
+  border-radius: 26px 26px 0 0;
+  padding: 0 20px calc(24px + env(safe-area-inset-bottom, 0px));
   overflow: auto;
+  overscroll-behavior: contain;
   box-shadow: var(--shadow-raised);
   animation: sheet-in 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   transition: transform 0.2s ease;
@@ -10506,8 +10515,8 @@ button.happen-row {
 .sheet:focus-visible { outline: none; }
 .sheet.is-dragging { transition: none; }
 [data-theme="dark"] .sheet {
-  background: #1a1a1a;
-  box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.06), var(--shadow-raised);
+  background: #181818;
+  box-shadow: 0 -1px 0 rgba(255, 255, 255, 0.07), 0 -18px 48px rgba(0, 0, 0, 0.6);
 }
 @keyframes sheet-in {
   from { transform: translateY(14%); }
@@ -10522,10 +10531,14 @@ button.happen-row {
 .sheet-tall { max-height: 88%; }
 .device.web .sheet-tall { max-height: 90%; }
 .device.web .sheet {
-  width: 420px;
+  width: 440px;
   max-height: 82%;
   border-radius: 24px;
+  padding-top: 22px;
+  padding-bottom: 24px;
 }
+/* Centred on the desk, so there is no edge to drag it back down to. */
+.device.web .sheet .sheet-grab { display: none; }
 .sheet.sheet-drawer,
 .sheet-backdrop.from-left .sheet {
   width: min(82%, 300px);
@@ -10563,11 +10576,13 @@ button.happen-row {
 .sheet-grab:active { cursor: grabbing; }
 .sheet-handle {
   display: block;
-  width: 40px;
+  width: 36px;
   height: 4px;
   border-radius: 4px;
   background: var(--border-strong);
+  transition: background 0.15s ease, width 0.15s ease;
 }
+.sheet-grab:hover .sheet-handle { background: var(--text-tertiary); width: 44px; }
 .sheet-grab:hover .sheet-handle,
 .sheet-grab:focus-visible .sheet-handle {
   background: var(--text-tertiary);
@@ -10579,10 +10594,12 @@ button.happen-row {
   gap: 12px;
 }
 .quick-sheet-head h2 {
-  margin: 6px 0 0;
+  margin: 5px 0 0;
+  max-width: 22ch;
 }
 .quick-sheet-body {
   margin-top: 10px;
+  max-width: 46ch;
   color: var(--text-secondary);
 }
 .quick-sheet-note {
@@ -10604,7 +10621,26 @@ button.happen-row {
   margin-top: 2px;
 }
 .quick-sheet-foot {
-  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+.quick-sheet-done {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+[data-theme="dark"] .quick-sheet-done { border-color: var(--border-strong); }
+.quick-sheet-done:hover {
+  color: var(--text-primary);
+  border-color: var(--text-tertiary);
+  background: var(--bg-inset);
 }
 
 /* ── Side drawer ────────────────────────────────────────────────────────────
@@ -10755,22 +10791,98 @@ button.happen-row {
 /* .drawer already gaps 18px; a touch more marks the section change. */
 .drawer-links + .drawer-label { margin-top: 8px; }
 
+/* ── Toast ─────────────────────────────────────────────────────────────────
+   A raised card in the app's own palette. It used to invert to white, which
+   shouted over a dark screen for something as small as a settings change. */
 .toast {
   position: absolute;
   left: 14px;
   right: 14px;
   bottom: 88px;
   z-index: 28;
-  background: var(--bg-inverse);
-  color: var(--text-inverse);
-  border-radius: 16px;
-  padding: 12px 12px 12px 14px;
   display: flex;
-  gap: 8px;
   align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  padding: 11px 10px 11px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+  color: var(--text-primary);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22);
+  animation: toast-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+[data-theme="dark"] .toast {
+  background: #202020;
+  border-color: #2e2e2e;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+.toast-mark {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+}
+.toast.tone-good .toast-mark { background: var(--up-soft); color: var(--up-text); }
+.toast.tone-warn .toast-mark { background: var(--warn-soft); color: var(--warn-text); }
+.toast.tone-bad .toast-mark { background: var(--down-soft); color: var(--down-text); }
+.toast.tone-info .toast-mark { background: var(--accent-soft); color: var(--accent-soft-text); }
+.toast-msg {
+  flex: 1;
+  min-width: 0;
   font-size: 13px;
   line-height: 18px;
-  box-shadow: var(--shadow-raised);
+}
+.toast-undo {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--accent-soft-text);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+.toast-undo:hover { background: var(--accent-soft); }
+.toast-x {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 9px;
+  color: var(--text-tertiary);
+}
+.toast-x:hover { background: var(--bg-inset); color: var(--text-primary); }
+/* Runs down with the 5.2s auto-dismiss, so the bar never just disappears. */
+.toast-timer {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  transform-origin: left;
+  background: var(--accent-base);
+  opacity: 0.5;
+  animation: toast-timer 5.2s linear forwards;
+}
+.toast.tone-warn .toast-timer { background: var(--warn-text); }
+.toast.tone-bad .toast-timer { background: var(--down-base); }
+.toast.tone-good .toast-timer { background: var(--up-base); }
+@keyframes toast-timer {
+  from { transform: scaleX(1); }
+  to { transform: scaleX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+  .toast-timer { animation-duration: 0.01ms; opacity: 0; }
 }
 .device.web .toast {
   bottom: 24px;
@@ -10778,18 +10890,45 @@ button.happen-row {
   right: 28px;
   width: 380px;
 }
-.toast-undo {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--accent-base);
-  padding: 6px 8px;
+
+/* ── Confirm ───────────────────────────────────────────────────────────── */
+.confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 4px 4px 0;
 }
-.toast-x {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  color: var(--text-inverse);
-  opacity: 0.7;
+.confirm-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+}
+.confirm-mark.bad { background: var(--down-soft); color: var(--down-text); }
+.confirm-title {
+  margin-top: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.35px;
+  line-height: 24px;
+}
+.confirm-body {
+  margin-top: 6px;
+  max-width: 38ch;
+  font-size: 13.5px;
+  line-height: 20px;
+  color: var(--text-secondary);
+}
+.confirm-acts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 20px;
 }
 
 .circuit-banner {
@@ -13261,8 +13400,14 @@ button.happen-row {
 }
 .sub-now-copy strong { font-size: 14px; font-weight: 600; }
 .sub-now-copy small { font-size: 12px; color: var(--text-tertiary); }
+.sub-cycle-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 20px 0;
+}
 .sub-cycle {
-  margin-left: auto;
   display: flex;
   gap: 3px;
   padding: 3px;
@@ -13284,6 +13429,92 @@ button.happen-row {
 }
 [data-theme="light"] .sub-cycle button.on { box-shadow: 0 1px 2px rgba(26, 25, 22, 0.08); }
 .sub-save { padding-top: 8px; padding-bottom: 0; }
+
+/* ── Phone: one row a plan ────────────────────────────────────────────────
+   Three tall cards meant scrolling past ~1,200px to see the third option.
+   A row is ~66px, so all three and the pick land in one view. */
+.sub-rows {
+  display: grid;
+  margin: 12px 20px 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--bg-surface);
+}
+[data-theme="dark"] .sub-rows { background: #131313; }
+.sub-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 14px 10px 10px;
+  border-top: 1px solid var(--border-subtle);
+  color: inherit;
+  text-align: left;
+}
+.sub-row:first-child { border-top: 0; }
+.sub-row.picked { background: var(--accent-soft); }
+.sub-row-face {
+  flex: none;
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+[data-theme="dark"] .sub-row-face { background: #1b1b1b; }
+.sub-row.plan-plus .sub-row-face { background: var(--accent-soft); }
+.sub-row.plan-pro .sub-row-face { background: var(--deco-violet-soft); }
+.sub-row-face img { width: 44px; height: 50px; object-fit: contain; object-position: top; }
+.sub-row-id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.sub-row-name { display: flex; align-items: center; gap: 6px; }
+.sub-row-name strong { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+.sub-row-flag,
+.sub-row-now {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+.sub-row-flag { background: var(--accent-base); color: var(--text-on-accent); }
+.sub-row-now { background: var(--bg-inset); color: var(--text-tertiary); }
+.sub-row-id small {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sub-row-price { flex: none; display: flex; align-items: baseline; gap: 2px; }
+.sub-row-price b { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.sub-row-price em { font-style: normal; font-size: 11px; color: var(--text-tertiary); }
+.sub-row-dot {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border-strong);
+}
+.sub-row.picked .sub-row-dot {
+  border-color: var(--accent-base);
+  background: radial-gradient(circle, var(--accent-base) 0 42%, transparent 43%);
+}
+
+/* The picked plan's perks, once, instead of three times over. */
+.sub-detail { margin: 14px 20px 0; }
+.sub-detail-head {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+.sub-detail .sub-perks { gap: 7px; }
 
 .sub-cards {
   display: grid;
@@ -13516,15 +13747,29 @@ button.happen-row {
 .sub-intent-copy small { font-size: 12.5px; line-height: 1.45; color: var(--text-secondary); }
 
 .sub-save-line {
-  margin: 10px 20px 0;
+  margin: 0;
+  max-width: 40ch;
+  text-align: center;
   font-size: 12.5px;
+  line-height: 1.45;
   color: var(--text-tertiary);
 }
 
 /* A picked card, before any money moves. */
-.sub-card.picked {
+.sub-card { cursor: pointer; }
+.sub-card[aria-disabled="true"] { cursor: default; }
+.sub-card:not([aria-disabled="true"]):hover { border-color: var(--border-strong); }
+.sub-card.picked,
+.sub-card.picked:hover {
   border-color: var(--accent-base);
   box-shadow: inset 0 0 0 2px var(--accent-base);
+}
+/* The pill inside is a label now, not a second target. */
+.sub-card > .pf-quick-btn {
+  pointer-events: none;
+  justify-content: center;
+  display: inline-flex;
+  align-items: center;
 }
 .sub-tick {
   position: absolute;
@@ -13781,8 +14026,8 @@ button.happen-row {
 .device.web .sub-table td { padding: 11px 16px; }
 .device.web .sub-steps,
 .device.web .sub-intent,
-.device.web .sub-save-line,
 .device.web .sub-sum,
+.device.web .sub-cycle-wrap,
 .device.web .sub-block { margin-left: 28px; margin-right: 28px; }
 .device.web .sub-steps { max-width: 460px; }
 .device.web .sub-bar { padding-left: 28px; padding-right: 28px; }

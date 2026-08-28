@@ -141,11 +141,11 @@ export function DiscoverScreen() {
   const toHome = (tool: ExploreTool) => {
     const isOn = homeTools.includes(tool.id);
     if (!isOn && homeTools.length >= homePinMax) {
-      flash({ message: `Unpin one first. ${homePinMax} on Home maximum.` });
+      flash({ message: `Unpin one first. ${homePinMax} on Home maximum.`, tone: "bad" });
       return;
     }
     toggleHomeTool(tool.id);
-    flash({ message: isOn ? `${tool.title} unpinned from Home` : `${tool.title} pinned to Home` });
+    flash({ message: isOn ? `${tool.title} unpinned from Home` : `${tool.title} pinned to Home`, tone: "warn" });
   };
 
   /* Press and hold: open it, or change where it lives. */

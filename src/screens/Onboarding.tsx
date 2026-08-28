@@ -45,7 +45,6 @@ function PersonaPick({ showBack = false }: { showBack?: boolean }) {
 
   const enter = (persona: Persona) => {
     finishOnboarding({
-      stage: persona.stage,
       objectiveId: persona.objectiveId,
       personaId: persona.id,
     });

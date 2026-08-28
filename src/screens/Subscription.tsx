@@ -50,6 +50,8 @@ function Perk({ value }: { value: PerkValue }) {
   return <span className="perk-word">{value}</span>;
 }
 
+/* Web has the room for the tall card. The whole thing is the control — the
+   button inside it is a shortcut, not the only way to pick. */
 function PlanCard({
   id,
   cycle,
@@ -70,8 +72,22 @@ function PlanCard({
   const down = order[id] < order[current];
 
   return (
-    <article className={`sub-card plan-${id}${isNow ? " now" : ""}${isPicked ? " picked" : ""}`}>
-      {id === "plus" && <span className="sub-flag">Most picked</span>}
+    <article
+      className={`sub-card plan-${id}${isNow ? " now" : ""}${isPicked ? " picked" : ""}`}
+      role="button"
+      tabIndex={isNow ? -1 : 0}
+      aria-pressed={id === "free" ? undefined : isPicked}
+      aria-disabled={isNow || undefined}
+      onClick={() => !isNow && onPick(id)}
+      onKeyDown={(event) => {
+        if (isNow) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onPick(id);
+        }
+      }}
+    >
+      {/* {id === "plus" && <span className="sub-flag">Most picked</span>} */}
       {isPicked && <span className="sub-tick" aria-hidden>✓</span>}
       <PlanCharacter plan={id} />
       <h2>{meta.label}</h2>
@@ -88,22 +104,57 @@ function PlanCard({
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        className={`pf-quick-btn block${isNow || down || isPicked ? "" : " primary"}`}
-        disabled={isNow}
-        aria-pressed={id === "free" ? undefined : isPicked}
-        onClick={() => onPick(id)}
-      >
-        {isNow
-          ? "Your plan"
-          : down
-            ? `Move to ${meta.label}`
-            : isPicked
-              ? "Picked"
-              : `Choose ${meta.label}`}
-      </button>
+      <span className={`pf-quick-btn block${isNow || down || isPicked ? "" : " primary"}`} aria-hidden>
+        {isNow ? "Your plan" : down ? `Move to ${meta.label}` : isPicked ? "Picked" : `Choose ${meta.label}`}
+      </span>
     </article>
+  );
+}
+
+/* Phone: one line a plan, so all three land in a single view. The perks of
+   whichever is picked show once, below the list, instead of three times over. */
+function PlanRow({
+  id,
+  cycle,
+  current,
+  picked,
+  onPick,
+}: {
+  id: Plan;
+  cycle: PlanCycle;
+  current: Plan;
+  picked: Plan | null;
+  onPick: (plan: Plan) => void;
+}) {
+  const meta = planMeta[id];
+  const amount = price(id, cycle);
+  const isNow = id === current;
+  const isPicked = id === picked;
+
+  return (
+    <button
+      type="button"
+      className={`sub-row plan-${id}${isPicked ? " picked" : ""}${isNow ? " now" : ""}`}
+      aria-pressed={id === "free" ? undefined : isPicked}
+      onClick={() => onPick(id)}
+    >
+      <span className="sub-row-face" aria-hidden>
+        <img src={`${import.meta.env.BASE_URL}characters/${planCharacters[id]}.png`} alt="" />
+      </span>
+      <span className="sub-row-id">
+        <span className="sub-row-name">
+          <strong>{meta.label}</strong>
+          {/* {id === "plus" && <em className="sub-row-flag">Most picked</em>} */}
+          {isNow && <em className="sub-row-now">Your plan</em>}
+        </span>
+        <small>{meta.blurb}</small>
+      </span>
+      <span className="sub-row-price">
+        <b>{amount === 0 ? "Free" : `Rs ${npr(amount, 0)}`}</b>
+        {amount > 0 && <em>/{cycle === "annual" ? "yr" : "mo"}</em>}
+      </span>
+      <span className="sub-row-dot" aria-hidden />
+    </button>
   );
 }
 
@@ -121,7 +172,7 @@ function PlansStep({
   setPicked: (plan: Plan | null) => void;
   onContinue: () => void;
 }) {
-  const { plan, planCycle, openSheet, setPlan, flash, subIntent } = useApp();
+  const { plan, planCycle, openSheet, setPlan, flash, subIntent, viewport } = useApp();
   const term = planTerm(plan, planCycle);
   const meta = planMeta[plan];
 
@@ -137,7 +188,7 @@ function PlansStep({
         onConfirm: () => {
           setPicked(null);
           setPlan("free");
-          flash({ message: "You are on Free. Nothing was charged." });
+          flash({ message: "You are on Free. Nothing was charged.", tone: "warn" });
         },
       });
       return;
@@ -176,6 +227,10 @@ function PlansStep({
           </strong>
           <small>{plan === "free" ? `Member since ${term.started}` : `Renews ${term.ending}`}</small>
         </span>
+      </div>
+
+      {/* The cycle sets the price on every card below, so it sits above them. */}
+      <div className="sub-cycle-wrap">
         <div className="sub-cycle" role="tablist" aria-label="Billing cycle">
           {(["monthly", "annual"] as PlanCycle[]).map((item) => (
             <button
@@ -190,20 +245,42 @@ function PlansStep({
             </button>
           ))}
         </div>
+        {cycle === "annual" && (
+          <p className="sub-save-line">
+            Annual keeps Rs {npr(annualSaving("plus"), 0)} on Plus and Rs {npr(annualSaving("pro"), 0)} on Pro
+            against paying by the month.
+          </p>
+        )}
       </div>
 
-      {cycle === "annual" && (
-        <p className="sub-save-line">
-          Annual keeps Rs {npr(annualSaving("plus"), 0)} on Plus and Rs {npr(annualSaving("pro"), 0)} on Pro
-          against paying by the month.
-        </p>
+      {viewport === "mobile" ? (
+        <>
+          <div className="sub-rows">
+            {planIds.map((id) => (
+              <PlanRow key={id} id={id} cycle={cycle} current={plan} picked={picked} onPick={pick} />
+            ))}
+          </div>
+          <div className="sub-detail">
+            <p className="sub-detail-head">
+              What {planMeta[lit].label} gives you
+            </p>
+            <ul className="sub-perks">
+              {planHighlights[lit].map((line) => (
+                <li key={line}>
+                  <span aria-hidden>✓</span>
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </>
+      ) : (
+        <div className="sub-cards">
+          {planIds.map((id) => (
+            <PlanCard key={id} id={id} cycle={cycle} current={plan} picked={picked} onPick={pick} />
+          ))}
+        </div>
       )}
-
-      <div className="sub-cards">
-        {planIds.map((id) => (
-          <PlanCard key={id} id={id} cycle={cycle} current={plan} picked={picked} onPick={pick} />
-        ))}
-      </div>
 
       {/* The lit column follows the pick, and falls back to the plan they are on. */}
       <section className="sub-table-wrap">
@@ -243,8 +320,6 @@ function PlansStep({
           ))}
         </table>
       </section>
-
-      <p className="foot-note pad">A demo. No payment is taken and nothing is charged to you.</p>
 
       {/* The buy button only shows once a tier is picked. */}
       {picked && (

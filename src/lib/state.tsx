@@ -189,6 +189,8 @@ const defaultPortfolioNames = Object.fromEntries(
   portfolioList.map((item) => [item.id, item.name]),
 ) as Record<PortfolioId, string>;
 const defaultOpenPortfolios: PortfolioId[] = ["main", "long"];
+/** The one Home everybody lands on after onboarding. */
+const onboardedStage: Stage = "base";
 const defaultPortfolioKinds = Object.fromEntries(
   portfolioList.map((item) => [item.id, "individual"]),
 ) as Record<PortfolioId, PortfolioKind>;
@@ -378,7 +380,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const finishOnboarding = useCallback((result: OnboardingResult) => {
     setOnboarded(true);
-    setStageState(result.stage);
+    /* Home reads the same whichever character was picked — the persona still
+       chooses the avatar and the learning path, but not the shape of Home.
+       The Studio's Home stage control is how you review the other shapes. */
+    setStageState(onboardedStage);
     setObjectiveIdState(result.objectiveId);
     setViewingObjectiveId(result.objectiveId);
     setPathFinished(false);
@@ -593,7 +598,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const saveCorrection = useCallback((kitta: number) => {
     setCorrectedKitta(kitta);
     setSheet(null);
-    flash({ message: "Correction saved. Original buy is kept as superseded." });
+    flash({ message: "Correction saved. Original buy is kept as superseded.", tone: "good" });
   }, [flash]);
   const dismissBookNudge = useCallback(() => setBookNudgeDismissed(true), []);
 

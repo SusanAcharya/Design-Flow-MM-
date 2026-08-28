@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useRef, useEffect, useState, type ReactNode } from "react";
 import { useApp } from "../lib/state";
 import { mitra } from "../lib/mitra";
 
@@ -61,8 +61,15 @@ function AuthShell({
   children: ReactNode;
 }) {
   const { go } = useApp();
+  /* Sign in and sign up swap inside this box, which scrolls on its own — so it
+     needs the same reset .app-scroll gets when the route changes. */
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.scrollTo({ top: 0 });
+  }, [mode]);
+
   return (
-    <div className="ob-shell auth-shell">
+    <div className="ob-shell auth-shell" ref={ref}>
       <aside className="auth-hero">
         <div className="auth-hero-brand">
           <span className="auth-mark" aria-hidden>M</span>

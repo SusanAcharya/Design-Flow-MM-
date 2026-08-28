@@ -195,7 +195,7 @@ export function StockScreen() {
         danger: true,
         onConfirm: () => {
           removeFromList(holding.id, nabil.symbol);
-          flash({ message: `${nabil.symbol} removed from ${holding.label}.` });
+          flash({ message: `${nabil.symbol} removed from ${holding.label}.`, tone: "warn" });
         },
       });
       return;
@@ -209,7 +209,7 @@ export function StockScreen() {
       onConfirm: () => {
         addToList(watchlists[0].id, nabil.symbol);
         fulfillObjective("watch");
-        flash({ message: `${nabil.symbol} added to ${watchlists[0].label}.` });
+        flash({ message: `${nabil.symbol} added to ${watchlists[0].label}.`, tone: "good" });
       },
     });
   };

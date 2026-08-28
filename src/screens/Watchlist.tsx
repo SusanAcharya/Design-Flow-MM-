@@ -93,7 +93,7 @@ export function WatchlistScreen() {
                 const next = watchlists.find((list) => list.id !== active.id);
                 deleteWatchlist(active.id);
                 if (next) setListId(next.id);
-                flash({ message: `${active.label} deleted.` });
+                flash({ message: `${active.label} deleted.`, tone: "warn" });
               },
             }),
         },
@@ -127,7 +127,7 @@ export function WatchlistScreen() {
               danger: true,
               onConfirm: () => {
                 removeFromList(active.id, symbol);
-                flash({ message: `${symbol} removed from ${active.label}.` });
+                flash({ message: `${symbol} removed from ${active.label}.`, tone: "warn" });
               },
             }),
         },

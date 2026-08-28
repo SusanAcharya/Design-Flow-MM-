@@ -55,6 +55,7 @@ const files = {
   vault: `${import.meta.env.BASE_URL}icons/vault.svg`,
   clipboard: `${import.meta.env.BASE_URL}icons/clipboard.svg`,
   plus: `${import.meta.env.BASE_URL}icons/plus.svg`,
+  check: `${import.meta.env.BASE_URL}icons/check.svg`,
   globe: `${import.meta.env.BASE_URL}icons/globe.svg`,
   bookmark: `${import.meta.env.BASE_URL}icons/bookmark.svg`,
   pin: `${import.meta.env.BASE_URL}icons/pin.svg`,

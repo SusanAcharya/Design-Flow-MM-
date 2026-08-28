@@ -108,13 +108,16 @@ export type Sheet =
       onConfirm: () => void;
     };
 
+/** What a toast is telling you. Tone colours the mark, never the whole bar. */
+export type ToastTone = "info" | "good" | "warn" | "bad";
+
 export type Toast = {
   message: string;
   undo?: boolean;
+  tone?: ToastTone;
 };
 
 export type OnboardingResult = {
-  stage: Stage;
   objectiveId: string | null;
   personaId: PersonaId;
 };

@@ -1800,7 +1800,7 @@ export function HoldingScreen() {
     <TransactionForm
       onSaved={() => {
         if (!fulfillObjective("book")) {
-          flash({ message: "Holding saved. We don’t place orders." });
+          flash({ message: "Holding saved. We don’t place orders.", tone: "good" });
         }
         go("portfolio");
       }}

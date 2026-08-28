@@ -44,7 +44,7 @@ export function ProfileScreen() {
       danger: true,
       onConfirm: () => {
         resetDemo();
-        flash({ message: "Account removed. Start again when you want." });
+        flash({ message: "Account removed. Start again when you want.", tone: "warn" });
       },
     });
 
