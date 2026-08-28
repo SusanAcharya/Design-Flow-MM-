@@ -9,7 +9,6 @@ import {
   bookHappen,
   ipoPipeline,
   listedQuotes,
-  watchStarters,
   watchlist,
   nepse,
   nepseSessionTicks,
@@ -425,31 +424,11 @@ function JumpGrid() {
   );
 }
 
-/* Empty has to read as empty. An earlier pass listed three names with prices
-   here, which looked exactly like a watchlist that already had three names in
-   it. The suggestions stay, but as add-chips — nothing that resembles a row. */
+/* Empty has to read as empty — a mark, the state in words, and one way out.
+   No rows and no prices: under a heading that says "Watchlist", anything that
+   looks like a listing reads as names you already follow. */
 function WatchlistStarter() {
-  const { go, watchlists, addToList, openSheet, flash, fulfillObjective } = useApp();
-  const list = watchlists[0];
-  const picks = watchStarters
-    .map((symbol) => listedQuotes.find((quote) => quote.symbol === symbol))
-    .filter((quote): quote is (typeof listedQuotes)[number] => Boolean(quote));
-
-  const follow = (symbol: string, name: string) => {
-    if (!list) return;
-    openSheet({
-      kind: "confirm",
-      title: `Follow ${symbol}?`,
-      body: `${name} lands on ${list.label} after every close. Following never buys kitta.`,
-      confirmLabel: "Follow",
-      cancelLabel: "Not now",
-      onConfirm: () => {
-        addToList(list.id, symbol);
-        fulfillObjective("watch");
-        flash({ message: `${symbol} added to ${list.label}.` });
-      },
-    });
-  };
+  const { go } = useApp();
 
   return (
     <div className="watch-zero">
@@ -457,22 +436,8 @@ function WatchlistStarter() {
         <Icon name="bookmark" size={20} />
       </span>
       <p className="watch-zero-lead">Nothing followed yet</p>
-  
-      <div className="watch-zero-picks">
-        {/* {picks.map((quote) => (
-          <button
-            key={quote.symbol}
-            type="button"
-            className="watch-zero-chip"
-            onClick={() => follow(quote.symbol, quote.name)}
-          >
-            <Icon name="plus" size={12} />
-            {quote.symbol}
-          </button>
-        ))} */}
-      </div>
       <button type="button" className="text-link watch-zero-more" onClick={() => go("market")}>
-        Add to your watchlist›
+        Add to your watchlist ›
       </button>
     </div>
   );

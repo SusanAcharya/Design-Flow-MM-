@@ -14966,41 +14966,6 @@ button.stock-key:active { background: var(--bg-inset); }
 }
 [data-theme="dark"] .watch-zero-mark { background: #1b1b1b; }
 .watch-zero-lead { margin-top: 12px; font-size: 14px; font-weight: 650; }
-.watch-zero-sub {
-  margin-top: 3px;
-  max-width: 34ch;
-  font-size: 12.5px;
-  line-height: 1.45;
-  color: var(--text-tertiary);
-}
-.watch-zero-picks {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 7px;
-  margin-top: 14px;
-}
-.watch-zero-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 32px;
-  padding: 0 12px 0 10px;
-  border-radius: 999px;
-  border: 1px solid var(--border-default);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 12.5px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
-}
-.watch-zero-chip .icon { color: var(--text-tertiary); }
-.watch-zero-chip:hover {
-  border-color: var(--accent-base);
-  color: var(--accent-soft-text);
-  background: var(--accent-soft);
-}
-.watch-zero-chip:hover .icon { color: var(--accent-base); }
 .watch-zero-more { margin-top: 14px; font-size: 12.5px; }
 
 .device.web .watch-empty img { height: 180px; }
