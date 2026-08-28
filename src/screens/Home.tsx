@@ -4,7 +4,6 @@ import { HappenIco } from "../ds/HappenList";
 import { BookNudge } from "../ds/BookNudge";
 import { AllocStrip, TapeSpark } from "../ds/charts";
 import { QuoteList } from "../ds/QuoteList";
-import { TickerMark } from "../ds/TickerMark";
 import {
   allotments,
   bookHappen,
@@ -426,12 +425,13 @@ function JumpGrid() {
   );
 }
 
-/* An empty list is the moment to hand over three names, not a line of copy
-   about what a list is. Following one flips this card into the real preview. */
+/* Empty has to read as empty. An earlier pass listed three names with prices
+   here, which looked exactly like a watchlist that already had three names in
+   it. The suggestions stay, but as add-chips — nothing that resembles a row. */
 function WatchlistStarter() {
   const { go, watchlists, addToList, openSheet, flash, fulfillObjective } = useApp();
   const list = watchlists[0];
-  const rows = watchStarters
+  const picks = watchStarters
     .map((symbol) => listedQuotes.find((quote) => quote.symbol === symbol))
     .filter((quote): quote is (typeof listedQuotes)[number] => Boolean(quote));
 
@@ -452,42 +452,27 @@ function WatchlistStarter() {
   };
 
   return (
-    <div className="watch-start">
-      <p className="watch-start-lead">Nothing followed yet</p>
-      <p className="watch-start-sub">
-        Tap the bookmark to follow a name. It never buys kitta — the company just lands here after every close.
-      </p>
-      <div className="watch-start-rows">
-        {rows.map((row) => (
-          <div className="watch-start-row" key={row.symbol}>
-            <button
-              type="button"
-              className="watch-start-main"
-              onClick={() => go("stock", { stock: row.symbol })}
-            >
-              <TickerMark symbol={row.symbol} />
-              <span className="watch-start-id">
-                <strong>{row.symbol}</strong>
-                <small>{row.name}</small>
-              </span>
-              <span className="watch-start-px">
-                <b>{npr(row.ltp, 2)}</b>
-                <em className={row.changePct < 0 ? "c-down" : "c-up"}>{pct(row.changePct)}</em>
-              </span>
-            </button>
-            <button
-              type="button"
-              className="watch-start-star"
-              onClick={() => follow(row.symbol, row.name)}
-              aria-label={`Follow ${row.symbol}`}
-            >
-              <Icon name="bookmark" size={16} />
-            </button>
-          </div>
-        ))}
+    <div className="watch-zero">
+      <span className="watch-zero-mark" aria-hidden>
+        <Icon name="bookmark" size={20} />
+      </span>
+      <p className="watch-zero-lead">Nothing followed yet</p>
+  
+      <div className="watch-zero-picks">
+        {/* {picks.map((quote) => (
+          <button
+            key={quote.symbol}
+            type="button"
+            className="watch-zero-chip"
+            onClick={() => follow(quote.symbol, quote.name)}
+          >
+            <Icon name="plus" size={12} />
+            {quote.symbol}
+          </button>
+        ))} */}
       </div>
-      <button type="button" className="text-link watch-start-more" onClick={() => go("market")}>
-        Browse the whole market ›
+      <button type="button" className="text-link watch-zero-more" onClick={() => go("market")}>
+        Add to your watchlist›
       </button>
     </div>
   );

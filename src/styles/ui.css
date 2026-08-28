@@ -79,6 +79,10 @@ body {
   mask-size: contain;
 }
 
+/* The studio button and scrim only exist on small screens. */
+.studio-menu-btn { display: none; }
+.studio-scrim { display: none; }
+
 /* ——— Studio ——— */
 .studio {
   height: 100%;
@@ -14942,95 +14946,139 @@ button.stock-key:active { background: var(--bg-inset); }
 .watch-empty-acts .pf-quick-btn { flex: none; padding: 0 16px; }
 .watch-empty .foot-note { padding: 0; margin-top: 6px; }
 
-/* Empty watchlist on Home — three real names to follow, not a description. */
-.watch-start {
+/* Empty watchlist on Home. Reads as empty first, then offers a way out of it:
+   three names as add-chips, deliberately unlike the rows a real list draws. */
+.watch-zero {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  text-align: center;
+  padding: 6px 8px 4px;
 }
-.watch-start-lead { font-size: 14px; font-weight: 650; }
-.watch-start-sub {
+.watch-zero-mark {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--bg-inset);
+  color: var(--text-tertiary);
+}
+[data-theme="dark"] .watch-zero-mark { background: #1b1b1b; }
+.watch-zero-lead { margin-top: 12px; font-size: 14px; font-weight: 650; }
+.watch-zero-sub {
+  margin-top: 3px;
+  max-width: 34ch;
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--text-tertiary);
-  max-width: 46ch;
 }
-.watch-start-rows {
-  margin-top: 12px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--bg-surface);
-}
-[data-theme="dark"] .watch-start-rows { background: #131313; }
-.watch-start-row {
+.watch-zero-picks {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 14px;
+}
+.watch-zero-chip {
+  display: inline-flex;
   align-items: center;
-  border-top: 1px solid var(--border-subtle);
-}
-.watch-start-row:first-child { border-top: 0; }
-.watch-start-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 11px 4px 11px 12px;
-  background: transparent;
-  color: inherit;
-  text-align: left;
-}
-.watch-start-main:hover { background: var(--bg-inset); }
-.watch-start-id {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.watch-start-id strong {
+  gap: 5px;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.2px;
 }
-.watch-start-id small {
-  font-size: 11.5px;
-  color: var(--text-tertiary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.watch-zero-chip .icon { color: var(--text-tertiary); }
+.watch-zero-chip:hover {
+  border-color: var(--accent-base);
+  color: var(--accent-soft-text);
+  background: var(--accent-soft);
 }
-.watch-start-px {
-  margin-left: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-  flex: none;
-}
-.watch-start-px b {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 550;
-  font-variant-numeric: tabular-nums;
-}
-.watch-start-px em { font-size: 11.5px; font-style: normal; font-weight: 600; }
-/* The star is the whole point of the row, so it gets its own target. */
-.watch-start-star {
-  flex: none;
-  align-self: stretch;
-  width: 48px;
-  display: grid;
-  place-items: center;
-  background: transparent;
-  border-left: 1px solid var(--border-subtle);
-}
-.watch-start-star .icon { color: var(--text-tertiary); }
-.watch-start-star:hover { background: var(--warn-soft); }
-.watch-start-star:hover .icon { color: var(--warn-text); }
-.watch-start-more {
-  align-self: flex-start;
-  margin-top: 11px;
-  font-size: 12.5px;
-}
+.watch-zero-chip:hover .icon { color: var(--accent-base); }
+.watch-zero-more { margin-top: 14px; font-size: 12.5px; }
+
 .device.web .watch-empty img { height: 180px; }
+
+
+/* ── Real phones ───────────────────────────────────────────────────────────
+   Visiting the site on a handset should be the product, not a preview of it:
+   the studio bar folds behind a button, the frame drops away, and the app
+   fills the screen at 1:1. Media queries read the true viewport — the root
+   `zoom` does not move these breakpoints — so this fires on device width. */
+@media (max-width: 760px) {
+  :root {
+    /* 80% is for looking at a phone on a desktop. On a phone it is just small. */
+    --app-zoom: 1;
+  }
+
+  .studio { grid-template-rows: 1fr; }
+
+  .studio-bar {
+    position: fixed;
+    z-index: 60;
+    top: 0;
+    left: 0;
+    right: 0;
+    max-height: 82dvh;
+    overflow-y: auto;
+    display: none;
+    padding: 56px 16px 16px;
+    border-bottom: 1px solid #2a2824;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  }
+  .studio.bar-open .studio-bar { display: flex; }
+  .studio-bar label { flex: 1 1 140px; }
+  .studio-bar .spacer { display: none; }
+
+  .studio-menu-btn {
+    position: fixed;
+    z-index: 62;
+    top: 8px;
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid #3a3833;
+    background: rgba(26, 25, 22, 0.82);
+    backdrop-filter: blur(10px);
+    color: #cfcabb;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+
+  .studio.bar-open .studio-scrim {
+    position: fixed;
+    z-index: 59;
+    inset: 0;
+    display: block;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  /* No desk, no frame — the device is the page. */
+  .canvas { padding: 0; background: var(--bg-canvas); }
+  .device.mobile,
+  .device.web {
+    width: 100%;
+    height: 100dvh;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  /* The web layout needs a desk it does not have here. */
+  .device.web { display: flex; flex-direction: column; }
+  .device.web .rail { display: none; }
+
+  /* The phone already draws a real one above this. */
+  .status-bar { display: none; }
+  /* Clear of the home indicator on iOS. */
+  .tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); height: auto; min-height: 74px; }
+}

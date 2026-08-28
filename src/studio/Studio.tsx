@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useApp } from "../lib/state";
 import { Prototype } from "../prototype/Prototype";
 import type { DataState, Plan, Route, Stage } from "../lib/types";
@@ -68,9 +69,22 @@ export function Studio() {
     resetDemo,
   } = useApp();
 
+  /* On a real phone the bar has nowhere to go, so it folds behind a button and
+     the prototype takes the whole screen. Untouched on desktop. */
+  const [barOpen, setBarOpen] = useState(false);
+
   return (
-    <div className="studio">
-      <header className="studio-bar">
+    <div className={`studio${barOpen ? " bar-open" : ""}`}>
+      <button
+        type="button"
+        className="studio-menu-btn"
+        aria-expanded={barOpen}
+        aria-controls="studio-bar"
+        onClick={() => setBarOpen((was) => !was)}
+      >
+        {barOpen ? "Close" : "Studio"}
+      </button>
+      <header className="studio-bar" id="studio-bar">
         <div className="studio-brand">
           <div className="studio-mark">DF</div>
           <div>
@@ -180,6 +194,7 @@ export function Studio() {
         <span className="spacer" />
         <button className="ghost-studio" onClick={resetDemo}>Restart demo</button>
       </header>
+      {barOpen && <button type="button" className="studio-scrim" aria-label="Close the studio bar" onClick={() => setBarOpen(false)} />}
       <div className="canvas">
         <Prototype />
       </div>
