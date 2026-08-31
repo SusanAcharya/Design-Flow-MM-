@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
+import { MitraMark } from "./MitraMark";
 import { voiceSamples } from "../lib/tulkey";
 import { useApp } from "../lib/state";
 import { mitra } from "../lib/mitra";
@@ -242,7 +243,7 @@ export function HomeFab() {
   if (route !== "home" || tulkeyVoiceOpen) return null;
   return (
     <button type="button" className="home-fab" onClick={openTulkeyVoice} aria-label="Ask Mitra">
-      <Icon name="tulkey" size={26} />
+      <MitraMark size={50} />
     </button>
   );
 }

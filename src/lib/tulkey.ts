@@ -33,13 +33,13 @@ export function replyTo(question: string): { text: string; sittingId: string | n
   const lower = q.toLowerCase();
   if (lower.includes("edis")) {
     return {
-      sittingId: "terms",
+      sittingId: "share",
       text: "After you buy, the kitta still has to move via MeroShare (EDIS) before T+2. Miss that and the exchange can close the trade at a penalty. MoneyMitra does not submit EDIS for you.",
     };
   }
   if (lower.includes("tms")) {
     return {
-      sittingId: "terms",
+      sittingId: "share",
       text: "TMS is your broker’s trading terminal. Live orders are placed there. MoneyMitra can send you to TMS. It never places the order itself.",
     };
   }

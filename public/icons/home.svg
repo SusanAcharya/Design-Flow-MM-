@@ -1,16 +1,7 @@
-<!-- @license lucide-static v1.34.0 - ISC -->
-<svg
-  class="lucide lucide-house"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="#000"
-  stroke-width="1.8"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
-  <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3.6 11.3C4.1 10.2 5 10 5.8 9.4L11.2 5.5C11.7 5.15 12.3 5.15 12.8 5.5L18.2 9.4C19 10 19.9 10.2 20.4 11.3" />
+  <path d="M6.6 12.1 12 8.3 17.4 12.1" />
+  <path d="M6.4 12.3V19.4M17.6 12.3V19.4M6.2 19.4H17.8" />
+  <rect x="10.1" y="14.6" width="3.8" height="4.8" rx="1.3" />
+  <circle cx="13.1" cy="17" r=".55" fill="#000" stroke="none" />
 </svg>

@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, type ReactNode } from "react";
 import { useApp } from "../lib/state";
 import { mitra } from "../lib/mitra";
+import { logo } from "../lib/brand";
 
 /* Sign in and sign up. A demo: nothing is sent anywhere and no account is made. */
 
@@ -72,11 +73,10 @@ function AuthShell({
     <div className="ob-shell auth-shell" ref={ref}>
       <aside className="auth-hero">
         <div className="auth-hero-brand">
-          <span className="auth-mark" aria-hidden>M</span>
+          <img className="auth-mark" src={logo} alt="" />
           <strong>Money Mitra</strong>
         </div>
         <img className="auth-hero-art" src={mitra.namaste} alt="" />
-        <p className="auth-hero-line">Nepal’s market, in plain words.</p>
         <ul className="auth-hero-points">
           <li>Live NEPSE tape, movers and the floor sheet</li>
           <li>Your book, your lists, your alerts</li>

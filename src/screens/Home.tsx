@@ -1,4 +1,4 @@
-import { Children, type ReactNode } from "react";
+import { Children, useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import { HappenIco } from "../ds/HappenList";
 import { BookNudge } from "../ds/BookNudge";
@@ -10,8 +10,8 @@ import {
   ipoPipeline,
   listedQuotes,
   watchlist,
-  nepse,
-  nepseSessionTicks,
+  nepseFor,
+  nepseTicksFor,
   portfolio,
   secondaryBook,
   stripAlloc,
@@ -61,45 +61,107 @@ function FeedGroup({
   );
 }
 
-function NepseHero() {
-  const { go, session, viewport } = useApp();
-  const web = viewport === "web";
-  const down = nepse.changePct < 0;
-  const spark = nepseSessionTicks.prints.map((print) => print.v);
+function Breadth({ rose, fell, unchanged }: { rose: number; fell: number; unchanged: number }) {
+  const total = rose + fell + unchanged || 1;
+  const pctOf = (n: number) => `${(n / total) * 100}%`;
+  return (
+    <span className="nepse-breadth">
+      <span className="nepse-breadth-bar" aria-hidden>
+        <i style={{ width: pctOf(rose) }} />
+        <b style={{ width: pctOf(fell) }} />
+        <em style={{ width: pctOf(unchanged) }} />
+      </span>
+      <span className="nepse-breadth-legend">
+        <span><strong className="c-up">{rose}</strong> rose</span>
+        <span><strong className="c-down">{fell}</strong> fell</span>
+        <span><strong className="c-muted">{unchanged}</strong> unchanged</span>
+      </span>
+    </span>
+  );
+}
+
+/* A sibling of the card, not a child — the card is itself a <button> and a
+   nested one would be invalid and would swallow the card's own tap. */
+function NepseRefresh() {
+  const { dataState, setDataState } = useApp();
+  const timer = useRef<number | null>(null);
+  const busy = dataState === "refreshing";
+
+  useEffect(() => () => {
+    if (timer.current) window.clearTimeout(timer.current);
+  }, []);
+
+  const refresh = () => {
+    if (busy) return;
+    setDataState("refreshing");
+    timer.current = window.setTimeout(() => setDataState("ready"), 1300);
+  };
 
   return (
-    <button type="button" className={`nepse-hero ${down ? "down" : "up"}`} onClick={() => go("market")}>
+    <button
+      type="button"
+      className={`nepse-refresh${busy ? " busy" : ""}`}
+      onClick={refresh}
+      aria-label={busy ? "Refreshing the index" : "Refresh the index"}
+    >
+      <Icon name="refresh" size={15} />
+    </button>
+  );
+}
+
+function NepseHero() {
+  const { go, session, viewport, trend } = useApp();
+  const web = viewport === "web";
+  const index = nepseFor(trend);
+  const down = index.changePct < 0;
+  const spark = nepseTicksFor(trend).prints.map((print) => print.v);
+
+  return (
+    <div className="nepse-hero-wrap">
+      <button type="button" className={`nepse-hero ${down ? "down" : "up"}`} onClick={() => go("market")}>
+      {/* Mitra flies the day's flag — decorative, the figures already say the direction. */}
+      <img className="nepse-hero-mitra" src={down ? mitra.flagDown : mitra.flagUp} alt="" />
       <span className="nepse-hero-head">
         <span className="nepse-hero-name">
           NEPSE
           <Icon name="chev" size={14} />
         </span>
         <span className="nepse-hero-when">
-          {nepse.date} · {session === "closed" ? nepse.closedAt : nepse.liveAt}
+          <span className="nepse-hero-stamp">
+            <span className="nepse-hero-date">{index.date}</span>
+            {session === "closed" ? index.closedAt : index.liveAt}
+          </span>
           <span className={`nepse-hero-state ${session}`}>{session === "closed" ? "CLOSED" : "OPEN"}</span>
         </span>
       </span>
 
       <span className="nepse-hero-line">
-        <b className="nepse-hero-value">{npr(nepse.value, 2)}</b>
+        <b className="nepse-hero-value">{npr(index.value, 2)}</b>
         <span className={`nepse-hero-pill ${down ? "down" : "up"}`}>
-          {down ? "↓" : "↑"} {pct(nepse.changePct)}
+          {down ? "↓" : "↑"} {pct(index.changePct)}
         </span>
       </span>
 
       <TapeSpark
         values={spark}
-        width={web ? 460 : 320}
-        height={web ? 72 : 40}
+        width={web ? 360 : 320}
+        height={web ? 170 : 40}
         positive={!down}
         smooth={false}
       />
 
+      {/* Web has a full column of height to fill. Breadth is the figure the card
+          was missing — how many names moved, not just where the index landed.
+          Spans, not BreadthBar's divs: this card is a <button>. */}
+      {web && <Breadth rose={index.rose} fell={index.fell} unchanged={index.unchanged} />}
+
       <span className="nepse-meta">
-        <span>Turnover <b>{npr(nepse.turnoverCr, 2)} Cr</b></span>
-        <span>Volume <b>{nepse.volume}</b></span>
+        <span>Turnover <b>{npr(index.turnoverCr, 2)} Cr</b></span>
+        <span>Volume <b>{index.volume}</b></span>
       </span>
-    </button>
+      </button>
+      <NepseRefresh />
+    </div>
   );
 }
 
@@ -186,9 +248,9 @@ function stepIcon(item: Objective): IconName {
   if (item.doAction === "book") return "wallet";
   if (item.doAction === "watch") return "bookmark";
   if (item.doAction === "market") return "market";
-  if (item.doAction === "basket") return "basket";
-  if (item.doAction === "broker") return "handshake";
-  if (item.id === "terms") return "book";
+  if (item.doAction === "courses") return "book";
+  if (item.doAction === "alerts") return "bell";
+  if (item.kind === "overview") return "clipboard";
   return "learn";
 }
 
@@ -273,7 +335,7 @@ function NextStepsCard() {
                   className={`setup-step${current ? " now" : ""}`}
                   onClick={() => go("objective", { objective: item.id })}
                 >
-                  <span className={`setup-glyph ${item.kind}`} aria-hidden>
+                  <span className={`setup-glyph ${item.kind === "feature" ? "do" : "learn"}`} aria-hidden>
                     <Icon name={stepIcon(item)} size={16} />
                   </span>
                   <span className="setup-step-copy">
@@ -472,12 +534,12 @@ function LearnBoard() {
   const { go } = useApp();
 
   return (
-    <button type="button" className="learn-byte" onClick={() => go("objective", { objective: "terms" })}>
+    <button type="button" className="learn-byte" onClick={() => go("objective", { objective: "share" })}>
       <span className="learn-byte-copy">
         <small>Learn</small>
-        <strong>The words you’ll keep seeing</strong>
-        <span>90 seconds — kitta, LTP, book close</span>
-        <em>Read it ›</em>
+        <strong>How the share market works</strong>
+        <span>60 seconds — kitta, NEPSE, the index</span>
+        <em>Watch it ›</em>
       </span>
       <span className="learn-byte-art" aria-hidden>
         <img src={mitra.search} alt="" />

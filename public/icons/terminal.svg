@@ -1,16 +1,6 @@
-<!-- @license lucide-static v1.34.0 - ISC -->
-<svg
-  class="lucide lucide-terminal"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="#000"
-  stroke-width="1.8"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M12 19h8" />
-  <path d="m4 17 6-6-6-6" />
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <rect x="3.6" y="4.6" width="16.8" height="14.8" rx="2.4" />
+  <path d="M3.6 8.8H20.4" />
+  <path d="M6.8 11.8 9.6 14.4 6.8 17" />
+  <path d="M11.6 17H16.4" />
 </svg>

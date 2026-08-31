@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Icon } from "../ds/Icon";
-import { ObjectiveHero } from "../ds/ObjectiveHero";
 import { Button, Explain, Overline, SearchField } from "../ds/primitives";
-import { discover, ipo, lessons, liveIpo, tools, user } from "../lib/data";
+import { discover, ipo, liveIpo, tools, user } from "../lib/data";
 import { stageMeta } from "../lib/stage";
 import { useApp } from "../lib/state";
 
@@ -87,38 +86,13 @@ export function SearchScreen() {
   );
 }
 
-const searchKind: Record<string, { icon: "market" | "cal" | "discover" | "wallet" | "learn"; tone: string }> = {
+const searchKind: Record<string, { icon: "market" | "cal" | "handshake" | "wallet" | "learn"; tone: string }> = {
   Stock: { icon: "market", tone: "teal" },
   IPO: { icon: "cal", tone: "saffron" },
-  Broker: { icon: "discover", tone: "violet" },
+  Broker: { icon: "handshake", tone: "violet" },
   Tool: { icon: "wallet", tone: "" },
   Gyan: { icon: "learn", tone: "learn" },
 };
-
-export function LearnScreen() {
-  const { go, viewport } = useApp();
-  return (
-    <div>
-      {viewport === "mobile" && <div className="page-title"><h1>Learn</h1></div>}
-      <div className="pad">
-        <p className="t-body-m muted">Mitra’s current objective first. The library is here when you want more than one sitting.</p>
-      </div>
-      <div className="pad" style={{ paddingBottom: 12 }}>
-        <ObjectiveHero compact />
-      </div>
-      {lessons.map((l) => (
-        <button key={l.title} className="row" onClick={() => go("lesson", { lesson: l.title })}>
-          <span className="learn-ico"><Icon name="learn" size={17} /></span>
-          <div className="row-main">
-            <p className="t-h-s">{l.title}</p>
-            <p className="row-sub">{l.sub}</p>
-          </div>
-          <Icon name="chev" size={15} />
-        </button>
-      ))}
-    </div>
-  );
-}
 
 export function LessonScreen() {
   const { back, lesson } = useApp();

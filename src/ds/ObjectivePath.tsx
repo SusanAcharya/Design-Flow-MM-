@@ -98,7 +98,7 @@ export function ObjectivePath() {
           </span>
           <strong>{current.title}</strong>
           <small>{current.cardSub}</small>
-          <em>{current.feature?.ctaLabel ?? "Watch"} ›</em>
+          <em>{current.feature?.ctaLabel ?? (current.kind === "overview" ? "Read" : "Watch")} ›</em>
         </button>
       ) : null}
 

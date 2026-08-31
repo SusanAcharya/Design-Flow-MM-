@@ -66,6 +66,9 @@ const files = {
   tag: `${import.meta.env.BASE_URL}icons/tag.svg`,
   database: `${import.meta.env.BASE_URL}icons/database.svg`,
   receipt: `${import.meta.env.BASE_URL}icons/receipt.svg`,
+  certificate: `${import.meta.env.BASE_URL}icons/certificate.svg`,
+  dictionary: `${import.meta.env.BASE_URL}icons/dictionary.svg`,
+  lesson: `${import.meta.env.BASE_URL}icons/lesson.svg`,
 };
 
 export type IconName = keyof typeof files;

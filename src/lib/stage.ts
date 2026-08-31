@@ -53,7 +53,7 @@ export const stageOrder: Stage[] = ["explorer", "primary", "secondary", "value",
 export const titleObjective: Record<Stage, string> = {
   base: "share",
   explorer: "share",
-  primary: "terms",
+  primary: "courses",
   secondary: "book",
   value: "book",
   active: "book",

@@ -187,7 +187,7 @@ function RuleCard({
 }
 
 export function AlertsScreen() {
-  const { flash, openSheet, alertSeed, clearAlertSeed } = useApp();
+  const { flash, openSheet, alertSeed, clearAlertSeed, fulfillObjective } = useApp();
   const [rules, setRules] = useState<AlertRule[]>(alertRules);
   const [tab, setTab] = useState<"active" | "expired">(() =>
     rawParam("alert") === "expired" ? "expired" : "active",
@@ -211,7 +211,9 @@ export function AlertsScreen() {
     setEditing(null);
     clearAlertSeed();
     setTab(rule.expired ? "expired" : "active");
-    flash({ message: "Alert saved. It reminds you — it never places an order.", tone: "good" });
+    if (!fulfillObjective("alerts")) {
+      flash({ message: "Alert saved. It reminds you — it never places an order.", tone: "good" });
+    }
   };
 
   const remove = (id: string) => {

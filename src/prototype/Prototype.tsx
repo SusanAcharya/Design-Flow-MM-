@@ -1,6 +1,13 @@
 import { useApp } from "../lib/state";
 import { AlertsScreen, NotificationsScreen } from "../screens/Alerts";
-import { DiscoverScreen, IpoScreen, LearnScreen, LessonScreen, MoreScreen, SearchScreen } from "../screens/Discover";
+import { DiscoverScreen, IpoScreen, LessonScreen, MoreScreen, SearchScreen } from "../screens/Discover";
+import {
+  CertificatesScreen,
+  CourseFaqScreen,
+  CourseScreen,
+  CoursesScreen,
+  MyLearningScreen,
+} from "../screens/Courses";
 import { TulkeyScreen } from "../screens/Tulkey";
 import { BasketsScreen, HomeScreen, WatchlistScreen } from "../screens/Home";
 import { MarketScreen } from "../screens/Market";
@@ -51,7 +58,15 @@ export function Prototype() {
       case "portfolio":
         return <PortfolioScreen />;
       case "learn":
-        return <LearnScreen />;
+        return <CoursesScreen />;
+      case "course":
+        return <CourseScreen />;
+      case "my-learning":
+        return <MyLearningScreen />;
+      case "certificates":
+        return <CertificatesScreen />;
+      case "course-faq":
+        return <CourseFaqScreen />;
       case "more":
         return <MoreScreen />;
       case "search":

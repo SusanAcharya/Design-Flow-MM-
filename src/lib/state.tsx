@@ -27,6 +27,9 @@ import type {
   MarketDesk,
   MarketSession,
   MarketTab,
+  MarketTrend,
+  CourseTab,
+  GreedPick,
   BrokerDesk,
   OnboardingResult,
   Plan,
@@ -58,6 +61,8 @@ type GoExtras = {
   persona?: PersonaId;
   objective?: string;
   alertSymbol?: string;
+  course?: string;
+  courseTab?: CourseTab;
   /** Land on Subscription with a tier already picked, ready to buy. */
   planPick?: Plan;
   /** Why they came — a consultation asks for a different opening line. */
@@ -72,6 +77,13 @@ type AppState = {
   stage: Stage;
   route: Route;
   session: MarketSession;
+  /** Studio switch for reviewing the index's green day against its red one. */
+  trend: MarketTrend;
+  /** Studio switch for previewing each greed-meter zone. */
+  greedPick: GreedPick;
+  /** Which course the detail screen is showing, and which of its tabs. */
+  courseId: string;
+  courseTab: CourseTab;
   stock: string;
   stockTab: StockTab;
   marketTab: MarketTab;
@@ -125,6 +137,9 @@ type AppState = {
   setViewport: (viewport: Viewport) => void;
   setStage: (stage: Stage, opts?: { silent?: boolean }) => void;
   setSession: (session: MarketSession) => void;
+  setTrend: (trend: MarketTrend) => void;
+  setCourseTab: (tab: CourseTab) => void;
+  setGreedPick: (pick: GreedPick) => void;
   setCircuit: (circuit: Circuit) => void;
   setDensityLocked: (locked: boolean) => void;
   setObjectiveId: (id: string | null) => void;
@@ -203,6 +218,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [stage, setStageState] = useState<Stage>(param("stage", ["base", "explorer", "primary", "secondary", "value", "active"] as const, "base"));
   const [route, setRoute] = useState<Route>(linkedRoute ?? "onboarding");
   const [session, setSession] = useState<MarketSession>("closed");
+  const [trend, setTrend] = useState<MarketTrend>("down");
+  const [courseId, setCourseId] = useState("combo");
+  const [greedPick, setGreedPick] = useState<GreedPick>("auto");
+  const [courseTab, setCourseTab] = useState<CourseTab>("Lectures");
   const [stock, setStock] = useState("NABIL");
   const [stockTab, setStockTab] = useState<StockTab>(
     param("stab", ["Overview", "Financials", "Analysis", "Floor sheet", "Events"] as const, "Overview"),
@@ -342,6 +361,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (extras?.portfolioTab) setPortfolioTab(extras.portfolioTab);
     else if (next === "portfolio" && route !== "portfolio") setPortfolioTab("Overview");
     if (extras?.holding) setHoldingSymbol(extras.holding);
+    if (extras?.course) setCourseId(extras.course);
+    if (extras?.courseTab) setCourseTab(extras.courseTab);
+    else if (next === "course" && route !== "course") setCourseTab("Lectures");
     if (extras?.lesson) {
       const mapped = getObjectiveByTitle(extras.lesson);
       if (mapped) {
@@ -531,9 +553,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return true;
   }, [flash, objectiveId, objectivesDone]);
 
-  // The Market sitting finishes when a company is actually opened, not on the visit.
+  // The two tour sittings tick off on arrival — there is nothing to save there.
   useEffect(() => {
-    if (route === "stock") fulfillObjective("market");
+    if (route === "market" || route === "stock") fulfillObjective("market");
+    if (route === "learn" || route === "course" || route === "my-learning") fulfillObjective("courses");
   }, [route, fulfillObjective]);
 
   /** Returns true when this add also finished the watchlist objective. */
@@ -685,6 +708,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       stage,
       route,
       session,
+      trend,
+      courseId,
+      courseTab,
+      greedPick,
       stock,
       stockTab,
       marketTab,
@@ -736,6 +763,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setViewport,
       setStage,
       setSession,
+      setTrend,
+      setCourseTab,
+      setGreedPick,
       setCircuit,
       setDensityLocked,
       setObjectiveId,
@@ -799,6 +829,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       stage,
       route,
       session,
+      trend,
+      courseId,
+      courseTab,
+      greedPick,
       stock,
       stockTab,
       marketTab,

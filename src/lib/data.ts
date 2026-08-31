@@ -1,3 +1,5 @@
+import type { GreedZoneId, MarketTrend } from "./types";
+
 export const user = {
   name: "Sandip",
   fullName: "Sandip Sharma",
@@ -23,6 +25,23 @@ export const nepse = {
   date: "2 Bhadra 2083",
   liveAt: "12:42 PM",
 };
+
+/* The demo ships a red day. Mirroring the figures around the previous close
+   gives an equally plausible green one, so the studio can review both. */
+const nepsePrevClose = 2641.82;
+
+export const nepseUp = {
+  ...nepse,
+  value: +(2 * nepsePrevClose - nepse.value).toFixed(2),
+  change: -nepse.change,
+  changePct: -nepse.changePct,
+  rose: nepse.fell,
+  fell: nepse.rose,
+};
+
+export function nepseFor(trend: MarketTrend) {
+  return trend === "up" ? nepseUp : nepse;
+}
 
 export const marketIndices = [
   {
@@ -830,6 +849,25 @@ export const nabilSessionTicks: Tape = tickTape(nabilSession);
 
 export const nepseSessionTicks: Tape = tickTape(nepseSession, 7);
 
+/* The green day's intraday line, mirrored the same way its figures were. */
+function mirrorTape(tape: Tape): Tape {
+  const flip = (v: number) => +(2 * nepsePrevClose - v).toFixed(2);
+  return {
+    ...tape,
+    open: flip(tape.open),
+    high: flip(tape.low),
+    low: flip(tape.high),
+    last: flip(tape.last),
+    prints: tape.prints.map((print) => ({ ...print, v: flip(print.v) })),
+  };
+}
+
+export const nepseSessionTicksUp: Tape = mirrorTape(nepseSessionTicks);
+
+export function nepseTicksFor(trend: MarketTrend) {
+  return trend === "up" ? nepseSessionTicksUp : nepseSessionTicks;
+}
+
 export const nabilWeek: Tape = {
   prevClose: 522.4,
   open: 518.4,
@@ -1459,15 +1497,30 @@ export function depthBook(ltp: number): { bids: DepthLevel[]; asks: DepthLevel[]
   return { bids, asks };
 }
 
+/* Sector tones. Dark collapses --deco-teal, --up-base and --accent-base onto
+   one green, so three sectors that looked distinct in light drew the identical
+   swatch in dark — "The fallers" legend showed the same colour three times.
+   Nearly every pair of sectors shares a legend somewhere, so all eleven have to
+   separate at once. The token set only carries six hues, so the last two also
+   move in depth: mixing toward --text-primary darkens them in light and lightens
+   them in dark, which keeps them off the page in both. A legend with matching
+   swatches is no legend at all. */
 export const sectorPalette: Record<string, string> = {
   Hydropower: "var(--deco-violet)",
   "Commercial banks": "var(--deco-teal)",
-  Manufacturing: "var(--text-primary)",
   "Development banks": "var(--deco-saffron)",
-  Microfinance: "var(--up-base)",
   "Life insurance": "var(--down-base)",
-  "Hotels & tourism": "var(--warn-base)",
+  Manufacturing: "var(--text-primary)",
+  Others: "var(--text-tertiary)",
+  Finance: "color-mix(in srgb, var(--deco-teal) 45%, var(--deco-violet))",
+  Investment: "color-mix(in srgb, var(--deco-violet) 60%, var(--down-base))",
+  Microfinance: "color-mix(in srgb, var(--up-base) 55%, var(--deco-saffron))",
+  Trading: "color-mix(in srgb, var(--down-base) 60%, var(--text-primary))",
+  "Hotels & tourism": "color-mix(in srgb, var(--warn-base) 55%, var(--text-primary))",
 };
+
+
+
 
 export const liveSectorOrder = [
   "All",
@@ -1675,9 +1728,22 @@ export const moreHappen = [
 
 /* ── Mood, and what Mitra makes of it ──────────────────────────────────────
    A reading of where a price sits and how it got there. Never a call. */
+/* The five zones, with the score each one runs up to. The meter's track is
+   drawn from these widths, so where the marker lands is the real reading and
+   not a decorative bar. Mitra has a face for each id. */
+export const greedZones: { id: GreedZoneId; label: string; upTo: number; reads: string }[] = [
+  { id: "fear", label: "Fear", upTo: 25, reads: "Sellers have been setting the price." },
+  { id: "cautious", label: "Cautious", upTo: 45, reads: "Buyers are here, but not paying up." },
+  { id: "neutral", label: "Neutral", upTo: 56, reads: "Neither side is pressing." },
+  { id: "warm", label: "Warm", upTo: 76, reads: "Buyers have been paying a little more." },
+  { id: "greed", label: "Greed", upTo: 100, reads: "Buyers have been paying up hard." },
+];
+
 export type GreedRead = {
   score: number;
+  zone: GreedZoneId;
   label: string;
+  reads: string;
   note: string;
 };
 
@@ -1688,13 +1754,24 @@ export function greedRead(symbol: string): GreedRead {
   const move = quote ? quote.changePct : 0;
   const raw = 0.6 * place + 0.4 * (50 + move * 6);
   const score = Math.max(3, Math.min(97, Math.round(raw)));
-  const label =
-    score < 25 ? "Fear" : score < 45 ? "Cautious" : score < 56 ? "Neutral" : score < 76 ? "Warm" : "Greed";
+  const band = greedZones.find((zone) => score < zone.upTo) ?? greedZones[greedZones.length - 1];
   const note = quote
     ? `${Math.round(place)}% up its 52-week range, ${move < 0 ? "down" : "up"} ${Math.abs(move).toFixed(2)}% today.`
     : "Not enough prints to read.";
-  return { score, label, note };
+  return { score, zone: band.id, label: band.label, reads: band.reads, note };
 }
+
+/* Studio: one real listed name per zone, found by reading them all. Forcing a
+   zone swaps which name the meter reads, so a previewed state still shows true
+   figures instead of numbers invented to fit the label. */
+export const greedSample: Partial<Record<GreedZoneId, string>> = (() => {
+  const found: Partial<Record<GreedZoneId, string>> = {};
+  for (const quote of listedQuotes) {
+    const { zone } = greedRead(quote.symbol);
+    if (!found[zone]) found[zone] = quote.symbol;
+  }
+  return found;
+})();
 
 /** Mitra's read on the open stock page — plain words, no call to act. */
 export const stockTake = {

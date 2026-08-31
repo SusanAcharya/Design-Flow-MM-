@@ -1,23 +1,6 @@
-<!-- @license lucide-static v1.34.0 - ISC -->
-<svg
-  class="lucide lucide-sliders-horizontal"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="#000"
-  stroke-width="1.8"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M10 5H3" />
-  <path d="M12 19H3" />
-  <path d="M14 3v4" />
-  <path d="M16 17v4" />
-  <path d="M21 12h-9" />
-  <path d="M21 19h-5" />
-  <path d="M21 5h-7" />
-  <path d="M8 10v4" />
-  <path d="M8 12H3" />
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 7H20M4 12.2H20M4 17.4H20" />
+  <circle cx="8.2" cy="7" r="1.7" fill="#000" stroke="none" />
+  <circle cx="15.4" cy="12.2" r="1.7" fill="#000" stroke="none" />
+  <circle cx="10.6" cy="17.4" r="1.7" fill="#000" stroke="none" />
 </svg>

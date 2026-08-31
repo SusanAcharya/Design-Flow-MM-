@@ -1,9 +1,10 @@
+import type { IconName } from "../ds/Icon";
 import type { PersonaId, Route, Stage } from "./types";
 import { getPersona } from "./personas";
 import { titleObjective } from "./stage";
 
-export type ObjectiveKind = "learn" | "feature";
-export type DoAction = "book" | "watch" | "basket" | "broker" | "market";
+export type ObjectiveKind = "learn" | "feature" | "overview";
+export type DoAction = "courses" | "market" | "book" | "watch" | "alerts";
 
 export type Objective = {
   id: string;
@@ -25,10 +26,16 @@ export type Objective = {
     ctaLabel: string;
     doneWhen: string;
   };
+  /** The closing sitting: the rest of the app, named once. Nothing to set up. */
+  overview?: { id: string; icon: IconName; title: string; blurb: string; route: Route }[];
   doAction?: DoAction;
 };
 
-/** Watch first, then use the product. Feature sittings tick off on the action, not the visit. */
+/**
+ * Seven sittings: watch the video, find the courses, walk the market, then set
+ * up the three things that are yours — book, list, alerts. The last one just
+ * names what is left, so the path ends on knowing rather than on a chore.
+ */
 export const curriculum: Objective[] = [
   {
     id: "share",
@@ -44,23 +51,26 @@ export const curriculum: Objective[] = [
       "The index is many companies together — not a thing you buy.",
     ],
     videoLabel: "What the share market is",
-    lessonCta: { line: "Check out the Market page", ctaLabel: "Open Market", route: "market" },
   },
   {
-    id: "terms",
+    id: "courses",
     n: 2,
-    kind: "learn",
-    level: "The words",
-    duration: "90s",
-    title: "The words you’ll keep seeing",
-    cardSub: "Kitta, LTP, book close, circuit.",
-    tulkeyLine: "Four words that show up on every screen.",
+    kind: "feature",
+    level: "Learn",
+    duration: "Your move",
+    title: "Courses",
+    cardSub: "The long version, when a minute isn’t enough.",
+    tulkeyLine: "The video was sixty seconds. A course is the whole thing.",
     points: [
-      "LTP is the last print. Book close is the record date.",
-      "A circuit caps how far a share moves in a day.",
+      "Short lectures — IPOs, book close, reading a company.",
+      "Yours to watch at your pace. Never a stock tip.",
     ],
-    videoLabel: "Kitta, LTP, book close, circuit",
-    lessonCta: { line: "Check out a company page", ctaLabel: "Open NABIL", route: "stock" },
+    doAction: "courses",
+    feature: {
+      route: "learn",
+      ctaLabel: "Open Courses",
+      doneWhen: "Done when you open Courses.",
+    },
   },
   {
     id: "market",
@@ -70,41 +80,22 @@ export const curriculum: Objective[] = [
     duration: "Your move",
     title: "Market",
     cardSub: "The day’s board — index, movers, floor sheet.",
-    tulkeyLine: "Open one company and see how a name reads.",
+    tulkeyLine: "The whole session, on one page.",
     points: [
       "Index, movers, sectors and the floor sheet.",
+      "Tap any name to see how a company reads.",
       "A record of the session. Never an order.",
     ],
     doAction: "market",
     feature: {
       route: "market",
       ctaLabel: "Open Market",
-      doneWhen: "Done when you open a company.",
-    },
-  },
-  {
-    id: "watch",
-    n: 4,
-    kind: "feature",
-    level: "MoneyMitra",
-    duration: "Your move",
-    title: "Watchlist",
-    cardSub: "Names you follow, without buying them.",
-    tulkeyLine: "Watching is not buying.",
-    points: [
-      "Names you want to see again, in one place.",
-      "Keep more than one list — banks, hydro, weekend reads.",
-    ],
-    doAction: "watch",
-    feature: {
-      route: "watchlist",
-      ctaLabel: "Open watchlist",
-      doneWhen: "Done when a name is on your list.",
+      doneWhen: "Done when you open the Market page.",
     },
   },
   {
     id: "book",
-    n: 5,
+    n: 4,
     kind: "feature",
     level: "MoneyMitra",
     duration: "Your move",
@@ -123,44 +114,85 @@ export const curriculum: Objective[] = [
     },
   },
   {
-    id: "baskets",
+    id: "watch",
+    n: 5,
+    kind: "feature",
+    level: "MoneyMitra",
+    duration: "Your move",
+    title: "Watchlist",
+    cardSub: "Names you follow, without buying them.",
+    tulkeyLine: "Watching is not buying.",
+    points: [
+      "Names you want to see again, in one place.",
+      "Keep more than one list — banks, hydro, weekend reads.",
+    ],
+    doAction: "watch",
+    feature: {
+      route: "watchlist",
+      ctaLabel: "Open watchlist",
+      doneWhen: "Done when a name is on your list.",
+    },
+  },
+  {
+    id: "alerts",
     n: 6,
     kind: "feature",
     level: "MoneyMitra",
     duration: "Your move",
-    title: "Baskets",
-    cardSub: "Several names in one view.",
-    tulkeyLine: "A way of looking at a group. Not a product.",
+    title: "Alerts",
+    cardSub: "A nudge when a price crosses.",
+    tulkeyLine: "An alert reminds you. It never places the order.",
     points: [
-      "Companies grouped by theme — banks, hydro, the fallers.",
-      "Same prints, same dates. Opening one buys nothing.",
+      "Pick a name and a price. We tell you when it crosses.",
+      "Comes to the app or your inbox, and expires on the date you set.",
     ],
-    doAction: "basket",
+    doAction: "alerts",
     feature: {
-      route: "baskets",
-      ctaLabel: "Open baskets",
-      doneWhen: "Done when you open a basket.",
+      route: "alerts",
+      ctaLabel: "Open alerts",
+      doneWhen: "Done when an alert is saved.",
     },
   },
   {
-    id: "brokers",
+    id: "rest",
     n: 7,
-    kind: "feature",
+    kind: "overview",
     level: "MoneyMitra",
-    duration: "Your move",
-    title: "Brokers",
-    cardSub: "Who traded today, and how TMS fits in.",
-    tulkeyLine: "Buying still happens at a licensed broker.",
-    points: [
-      "Executed turnover and the buy/sell split.",
-      "Orders are placed in TMS, never here.",
+    duration: "1 min",
+    title: "The rest of MoneyMitra",
+    cardSub: "Mitra AI, brokers, baskets, personalised analysis.",
+    tulkeyLine: "Four more places. Nothing to set up — just so you know they’re there.",
+    points: [],
+    overview: [
+      {
+        id: "ai",
+        icon: "tulkey",
+        title: "Mitra AI",
+        blurb: "Ask about a word, a date, or which site does the work. Never a pick.",
+        route: "ai",
+      },
+      {
+        id: "brokers",
+        icon: "handshake",
+        title: "Brokers",
+        blurb: "Who traded today, and how TMS fits in. Orders are placed there, not here.",
+        route: "brokers",
+      },
+      {
+        id: "baskets",
+        icon: "basket",
+        title: "Baskets",
+        blurb: "Several names in one view — banks, hydro, the fallers.",
+        route: "baskets",
+      },
+      {
+        id: "analysis",
+        icon: "pie",
+        title: "Personalised analysis",
+        blurb: "Your own book read back to you — mix, income, what is concentrated.",
+        route: "portfolio",
+      },
     ],
-    doAction: "broker",
-    feature: {
-      route: "brokers",
-      ctaLabel: "Open brokers",
-      doneWhen: "Done when you open a broker.",
-    },
   },
 ];
 
@@ -197,28 +229,28 @@ export function pathOptions(q1: Knowledge): PathPick[] {
   switch (q1) {
     case "nothing":
       return [
-        { id: "start", title: "From the very first thing", sub: "The share market, then the words.", objectiveId: "share", stage: "explorer" },
-        { id: "skip-kitta", title: "I know what a share is", sub: "Start at the terms you’ll keep seeing.", objectiveId: "terms", stage: "explorer" },
+        { id: "start", title: "From the very first thing", sub: "What the share market is, in sixty seconds.", objectiveId: "share", stage: "explorer" },
+        { id: "courses", title: "I know what a share is", sub: "Start at the courses instead.", objectiveId: "courses", stage: "explorer" },
       ];
     case "terms":
       return [
-        { id: "words", title: "Start at the terms", sub: "Kitta, book close, circuit — then the app.", objectiveId: "terms", stage: "explorer" },
+        { id: "courses", title: "Take me to the courses", sub: "The long version, then the app.", objectiveId: "courses", stage: "explorer" },
         { id: "review", title: "From the very beginning anyway", sub: "How the share market works, first.", objectiveId: "share", stage: "explorer" },
       ];
     case "demat":
       return [
-        { id: "market", title: "Show me around the app", sub: "Market, watchlist, portfolio, baskets.", objectiveId: "market", stage: "primary" },
+        { id: "market", title: "Show me around the app", sub: "Market, portfolio, watchlist, alerts.", objectiveId: "market", stage: "primary" },
         { id: "review", title: "From the very beginning anyway", sub: "Start at the share market.", objectiveId: "share", stage: "explorer" },
       ];
     case "tms":
       return [
-        { id: "book", title: "Add what you already hold", sub: "Then baskets and brokers.", objectiveId: "book", stage: "secondary" },
+        { id: "book", title: "Add what you already hold", sub: "Then a watchlist and alerts.", objectiveId: "book", stage: "secondary" },
         { id: "watch", title: "Start with a watchlist", sub: "Names first, book after.", objectiveId: "watch", stage: "secondary" },
       ];
     case "regular":
       return [
-        { id: "book", title: "Set the book up first", sub: "Skip the lessons. Portfolio, then the rest.", objectiveId: "book", stage: "active" },
-        { id: "baskets", title: "Just the extras", sub: "Baskets and broker flow.", objectiveId: "baskets", stage: "active" },
+        { id: "book", title: "Set the book up first", sub: "Skip the video. Portfolio, then the rest.", objectiveId: "book", stage: "active" },
+        { id: "alerts", title: "Just the extras", sub: "Alerts, then what else is here.", objectiveId: "alerts", stage: "active" },
       ];
   }
 }
@@ -251,13 +283,12 @@ export function getObjectiveByTitle(title: string): Objective | null {
   if (!t) return null;
   const exact = curriculum.find((o) => o.title.toLowerCase() === t);
   if (exact) return exact;
-  if (t.includes("basket")) return getObjective("baskets");
-  if (t.includes("broker") || t.includes("tms")) return getObjective("brokers");
+  if (t.includes("course") || t.includes("lesson") || t.includes("learn")) return getObjective("courses");
+  if (t.includes("alert")) return getObjective("alerts");
   if (t.includes("watch")) return getObjective("watch");
   if (t.includes("holding") || t.includes("portfolio")) return getObjective("book");
-  if (t.includes("p/e") || t.includes("dividend") || t.includes("book close")) return getObjective("terms");
-  if (t.includes("kitta") || t.includes("circuit") || t.includes("ltp")) return getObjective("terms");
-  if (t.includes("nepse") || t.includes("share")) return getObjective("share");
+  if (t.includes("basket") || t.includes("broker") || t.includes("tms")) return getObjective("rest");
+  if (t.includes("nepse") || t.includes("share") || t.includes("kitta")) return getObjective("share");
   if (t.includes("market")) return getObjective("market");
   return null;
 }

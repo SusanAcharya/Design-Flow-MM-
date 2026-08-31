@@ -1,28 +1,54 @@
 # Icons
 
-Every icon in the product comes from **[Lucide](https://lucide.dev) v1.34.0** (ISC licence).
-One family, one grid, one weight — see `src/ds/Icon.tsx` for the name → file map.
+Two families share one grid. See `src/ds/Icon.tsx` for the name → file map.
 
-Two deliberate changes from stock Lucide:
+- **Mitra set — 49 icons, drawn for this app.** Everything the bottom nav and the
+  Explore tools use. Design sources live in `/icon-concepts` as `ic-<name>.svg`.
+- **Lucide v1.34.0 (ISC) — 19 icons.** The generic chrome nothing custom was drawn
+  for: `back`, `menu`, `close`, `chev`, `ext`, `search`, `plus`, `check`, `dots`,
+  `more`, `info`, `alert`, `cal`, `chat`, `send`, `mic`, `pin`, `refresh`,
+  `building`. The per-file `@license` comment is kept as attribution, and is what
+  tells the two families apart on disk. `discover` is a third case: Lucide's
+  `telescope` silhouette, redrawn to the rules below and given a money-node at
+  the mount, so it stays in the Mitra set the rest of the bottom nav belongs to.
 
-- `stroke="currentColor"` → `stroke="#000"`. Icons render as CSS masks, which read
-  the alpha channel; `currentColor` has no reliable value in a standalone SVG.
-  Colour still comes from CSS, via `.icon { background: currentColor }`.
-- `stroke-width` 2 → **1.8**. Lucide's default (2 on a 24 grid) sits heavier than
-  this app's type. 1.8 matches the weight the screens were drawn against.
+Both families obey the same three rules, so they sit together without reading as
+a mixed set:
+
+- **24 grid**, `stroke-linecap`/`stroke-linejoin` `round`.
+- `stroke="#000"`, never `currentColor`. Icons render as CSS masks, which read the
+  alpha channel; `currentColor` has no reliable value in a standalone SVG. Colour
+  still comes from CSS, via `.icon { background: currentColor }`. Filled shapes
+  need `stroke="none"` alongside `fill="#000"` or the round cap bleeds the dot.
+- `stroke-width` **1.8** — lighter than Lucide's default 2, which sits heavier than
+  this app's type. The `/icon-concepts` sources are drawn at 2 and thinned to 1.8
+  on the way in, so edit the source and re-install rather than editing here.
+
+The Mitra set carries a "money-node": a small filled dot at one load-bearing vertex
+(coin faces, the peak of a bar, the tick on a ticket). Nepali motifs are used where
+the meaning already invites them, not sprinkled — a pagoda eave on `home`, `bank`
+and `vault`, twin Himalaya peaks on `range` (52-week high/low *is* a range).
 
 Icons are drawn in a single colour — `.explore-glyph` inks them with
 `--text-primary` on a neutral well. There is no per-category tinting: 40 tools in
 five hues read as noise, and the group headings already do that work.
 
 Names are mapped one-to-one with meanings — no icon stands for two things. If you
-add a tool, give it an icon nothing else uses.
+add a tool, give it an icon nothing else uses. `certificate`, `dictionary` and
+`lesson` exist because Certificates, the Dictionary and 2-Minute Lessons were
+borrowing `ticket`, `book` and `clipboard` from tools that already had them.
 
-To add one: copy the SVG from `lucide-static/icons`, apply both changes above,
-and register the name in `src/ds/Icon.tsx`.
+A mark also has to survive its own label at 24 px, which is the size the Explore
+grid actually renders. `handshake`, `depth`, `candles`, `compare`, `gauge`, `pie`,
+`index`, `tag`, `coins` and `forex` were all redrawn after a contact sheet showed
+them reading as something else — a scribble, a double dagger, an equalizer, a code
+bracket, a bare arch, a clock, a flag, a rhombus, a no-entry sign, and a second
+copy of `refresh`. Render the set together before shipping a new one: collisions
+only show up beside their neighbours.
 
-Not from Lucide, and not part of the `Icon` set — these are chart parts drawn to
-their own geometry: `spark-line.svg`, `spark-fill.svg`, `triangle-up.svg`,
-`triangle-down.svg`.
+**To add one:** draw it at 24/2px in `/icon-concepts` as `ic-<name>.svg`, or copy
+from `lucide-static/icons`; apply the three rules above; register the name in
+`src/ds/Icon.tsx`.
 
-Lucide is ISC licensed; the per-file `@license` comment is kept as attribution.
+Not part of the `Icon` set — these are chart parts drawn to their own geometry:
+`spark-line.svg`, `spark-fill.svg`, `triangle-up.svg`, `triangle-down.svg`.

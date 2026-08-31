@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useApp } from "../lib/state";
 import { Prototype } from "../prototype/Prototype";
-import type { DataState, Plan, Route, Stage } from "../lib/types";
+import type { DataState, GreedPick, Plan, Route, Stage } from "../lib/types";
 
 const screens: { id: Route; label: string }[] = [
   { id: "onboarding", label: "Onboarding" },
@@ -20,7 +20,11 @@ const screens: { id: Route; label: string }[] = [
   { id: "baskets", label: "Baskets" },
   { id: "discover", label: "Explore" },
   { id: "search", label: "Search" },
-  { id: "learn", label: "Learn" },
+  { id: "learn", label: "Courses" },
+  { id: "course", label: "Course detail" },
+  { id: "my-learning", label: "My learning" },
+  { id: "certificates", label: "Certificates" },
+  { id: "course-faq", label: "Course FAQ" },
   { id: "ipo", label: "IPO" },
   { id: "more", label: "More / Tools" },
   { id: "profile", label: "Profile" },
@@ -37,6 +41,17 @@ const stages: { id: Stage; label: string }[] = [
   { id: "secondary", label: "New trader" },
   { id: "value", label: "Holder" },
   { id: "active", label: "Veteran" },
+];
+
+/* Auto reads the open stock; the zones force the meter so every face and band
+   can be reviewed without hunting for a name that happens to sit there. */
+const greedPicks: { id: GreedPick; label: string }[] = [
+  { id: "auto", label: "Auto" },
+  { id: "fear", label: "Fear" },
+  { id: "cautious", label: "Cautious" },
+  { id: "neutral", label: "Neutral" },
+  { id: "warm", label: "Warm" },
+  { id: "greed", label: "Greed" },
 ];
 
 const dataStates: { id: DataState; label: string }[] = [
@@ -56,10 +71,14 @@ export function Studio() {
     setStage,
     session,
     setSession,
+    trend,
+    setTrend,
     plan,
     setPlan,
     dataState,
     setDataState,
+    greedPick,
+    setGreedPick,
     hasPortfolio,
     setHasPortfolio,
     hasWatchlist,
@@ -139,6 +158,18 @@ export function Studio() {
         </label>
 
         <label>
+          Index
+          <div className="seg">
+            <button className={trend === "up" ? "on" : ""} onClick={() => setTrend("up")}>
+              Up
+            </button>
+            <button className={trend === "down" ? "on" : ""} onClick={() => setTrend("down")}>
+              Down
+            </button>
+          </div>
+        </label>
+
+        <label>
           Plan
           <div className="seg">
             {(["free", "plus", "pro"] as Plan[]).map((id) => (
@@ -171,6 +202,15 @@ export function Studio() {
               None
             </button>
           </div>
+        </label>
+
+        <label>
+          Greed meter
+          <select value={greedPick} onChange={(e) => setGreedPick(e.target.value as GreedPick)}>
+            {greedPicks.map((g) => (
+              <option key={g.id} value={g.id}>{g.label}</option>
+            ))}
+          </select>
         </label>
 
         <label>

@@ -1,9 +1,11 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { Icon } from "../ds/Icon";
+import { MitraMark } from "../ds/MitraMark";
 import { UserAvatar } from "../ds/UserAvatar";
 import { SearchField, StatusBar } from "../ds/primitives";
 import { LoadBar } from "../ds/Loading";
 import { nepse, notifications, user } from "../lib/data";
+import { logo } from "../lib/brand";
 import { planMeta } from "../lib/explore";
 import { activeTab, jumpDestinations } from "../lib/nav";
 import { useApp } from "../lib/state";
@@ -118,12 +120,12 @@ function GlobalHeader() {
    route changes — you would arrive at a new screen already scrolled down.
    Reset it whenever the thing being shown changes, sub-screens included. */
 function ScrollPane({ children }: { children: ReactNode }) {
-  const { route, stock, marketDesk, brokerDesk, lesson, viewingObjectiveId, portfolioId } = useApp();
+  const { route, stock, marketDesk, brokerDesk, lesson, viewingObjectiveId, portfolioId, courseId } = useApp();
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     ref.current?.scrollTo({ top: 0 });
-  }, [route, stock, marketDesk, brokerDesk, lesson, viewingObjectiveId, portfolioId]);
+  }, [route, stock, marketDesk, brokerDesk, lesson, viewingObjectiveId, portfolioId, courseId]);
 
   return (
     <div className="app-scroll" ref={ref}>
@@ -152,7 +154,7 @@ export function MobileChrome({ children, showTabs }: { children: ReactNode; show
               aria-current={current === t.id ? "page" : undefined}
               onClick={() => go(t.id)}
             >
-              <Icon name={t.icon} size={22} />
+              {t.icon === "tulkey" ? <MitraMark size={22} /> : <Icon name={t.icon} size={22} />}
               {t.label}
             </button>
           ))}
@@ -201,7 +203,7 @@ export function DesktopChrome({
     <>
       <aside className="rail">
         <div className="brand-row">
-          <div className="brand-mark">M</div>
+          <img className="brand-mark" src={logo} alt="" />
           <strong className="t-h-m">MoneyMitra</strong>
         </div>
         <nav className="rail-nav">
@@ -213,7 +215,7 @@ export function DesktopChrome({
               aria-current={current === t.id ? "page" : undefined}
               onClick={() => go(t.id)}
             >
-              <Icon name={t.icon} size={20} />
+              {t.icon === "tulkey" ? <MitraMark size={20} /> : <Icon name={t.icon} size={20} />}
               {t.label}
             </button>
           ))}

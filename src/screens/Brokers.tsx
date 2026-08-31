@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Icon } from "../ds/Icon";
 import { BrokerMark } from "../ds/BrokerMark";
 import { TickerMark } from "../ds/TickerMark";
 import { Button, Chip, Explain, SearchField } from "../ds/primitives";
+import { ListHead, NetBar, PaceBars } from "../ds/desk";
 import {
   brokerChoice,
   brokerHighlights,
@@ -19,7 +20,7 @@ import { useApp } from "../lib/state";
 import type { BrokerHouse } from "../lib/data";
 import type { BrokerDesk } from "../lib/types";
 
-type SortKey = "turnover" | "name";
+type SortKey = "turnover" | "name" | "credit";
 type BrokerSort = "turnover" | "buy" | "sell" | "ratio";
 type ActivityView = "top" | "broker" | "stock" | "sheet";
 
@@ -53,15 +54,20 @@ function portalSheet(title: string, body: string) {
   };
 }
 
+function serviceSheet() {
+  return {
+    kind: "quick" as const,
+    title: "What the service terms mean",
+    body: "Collateral is how much the house lends against shares you pledge. Credit is how long a sale takes to reach your bank. Cash deposit is how long money you send takes to show in TMS.",
+    note: "Terms are quoted by the houses and change. Confirm with the broker before you open an account.",
+  };
+}
+
 export function BrokersScreen() {
-  const { back, viewport, brokerDesk, setBrokerDesk, brokerCode, setBrokerCode, fulfillObjective } = useApp();
+  const { back, viewport, brokerDesk, setBrokerDesk, brokerCode, setBrokerCode } = useApp();
   const [fromDesk, setFromDesk] = useState<Exclude<BrokerDesk, "detail">>("hub");
   const broker = getBroker(brokerCode);
   const title = brokerDesk === "detail" ? broker.short : "Broker Chirfaar";
-
-  useEffect(() => {
-    fulfillObjective("brokers");
-  }, [fulfillObjective]);
 
   const openBroker = (code: string) => {
     if (brokerDesk !== "detail") setFromDesk(brokerDesk);
@@ -135,6 +141,7 @@ function ChooseBrokerDesk({ onOpen }: { onOpen: (code: string) => void }) {
     });
     return [...filtered].sort((a, b) => {
       if (sort === "name") return a.name.localeCompare(b.name);
+      if (sort === "credit") return a.creditDays - b.creditDays || a.depositDays - b.depositDays;
       return b.turnover - a.turnover;
     });
   }, [q, sort]);
@@ -147,25 +154,29 @@ function ChooseBrokerDesk({ onOpen }: { onOpen: (code: string) => void }) {
         </div>
         <div className="broker-sort">
           <Chip selected={sort === "turnover"} onClick={() => setSort("turnover")}>Turnover</Chip>
+          <Chip selected={sort === "credit"} onClick={() => setSort("credit")}>Fastest credit</Chip>
           <Chip selected={sort === "name"} onClick={() => setSort("name")}>A–Z</Chip>
         </div>
       </div>
+
       <section className="market-block">
         <header className="market-block-head">
           <h2>Licensed brokers</h2>
-          <span className="t-body-xs muted">{rows.length}</span>
+          <span className="t-body-xs muted">{rows.length} SEBON members</span>
         </header>
         <div className="market-block-body">
-          <div className="quote-list">
+          <div className="brk-grid">
+            <ListHead cols={[null, "Broker", "Turnover today"]} />
             {rows.map((row) => (
-              <BrokerRow key={row.code} row={row} onOpen={onOpen} />
+              <BrokerCard key={row.code} row={row} onOpen={onOpen} />
             ))}
           </div>
           {rows.length === 0 && (
-            <p className="foot-note">No broker matches that name or number.</p>
+            <p className="foot-note" style={{ padding: "14px" }}>No broker matches that name or number.</p>
           )}
         </div>
       </section>
+
       <div className="market-helps">
         <Explain onClick={() => openSheet(tmsSheet())}>How TMS works</Explain>
       </div>
@@ -173,17 +184,23 @@ function ChooseBrokerDesk({ onOpen }: { onOpen: (code: string) => void }) {
   );
 }
 
-function BrokerRow({ row, onOpen }: { row: BrokerHouse; onOpen: (code: string) => void }) {
+/* Who they are, how busy they were, and which way they leaned. The split, the
+   settlement terms and the month's pace are all one tap away on the profile —
+   this row only has to be enough to choose which profile to open. */
+function BrokerCard({ row, onOpen }: { row: BrokerHouse; onOpen: (code: string) => void }) {
+  const selling = row.netCr < 0;
   return (
-    <button type="button" className="quote-list-row" onClick={() => onOpen(row.code)}>
+    <button type="button" className="brk-card" onClick={() => onOpen(row.code)}>
       <BrokerMark code={row.code} />
-      <span className="quote-id">
-        <span className="t-ticker">{row.short}</span>
+      <span className="brk-id">
+        <strong>{row.short}</strong>
         <small>Broker {row.code} · {row.city}</small>
       </span>
-      <span className="quote-list-meta">
+      <span className="brk-turn">
         <b>{npr(row.turnover, 1)} Cr</b>
-        <em className={row.netCr < 0 ? "c-down" : "c-up"}>{row.netCr < 0 ? "Net sell" : "Net buy"}</em>
+        <em className={`side-tag ${selling ? "down" : "up"}`}>
+          {selling ? "Net seller" : "Net buyer"}
+        </em>
       </span>
     </button>
   );
@@ -264,7 +281,7 @@ function Picker({
 }
 
 function TopBrokersView({ onOpen }: { onOpen: (code: string) => void }) {
-  const { go, openSheet, viewport } = useApp();
+  const { go, openSheet } = useApp();
   const [sort, setSort] = useState<BrokerSort>("turnover");
   const rows = useMemo(
     () =>
@@ -277,33 +294,40 @@ function TopBrokersView({ onOpen }: { onOpen: (code: string) => void }) {
     [sort],
   );
 
+  /* How much of the whole session went through the three busiest desks — the
+     one concentration figure worth carrying on the landing view. */
+  const topThree = useMemo(
+    () =>
+      [...brokerHouses]
+        .sort((a, b) => b.sharePct - a.sharePct)
+        .slice(0, 3)
+        .reduce((sum, row) => sum + row.sharePct, 0),
+    [],
+  );
+
   return (
     <>
       <section className="market-block">
         <header className="market-block-head">
           <h2>Most active today</h2>
         </header>
-        <div className="market-block-body">
-          <div className="quote-list brk-highlights">
-            {brokerHighlights.map((item) => (
-              <button
-                key={item.label}
-                type="button"
-                className="quote-list-row"
-                onClick={() => (item.broker ? onOpen(item.broker) : go("stock", { stock: item.stock ?? item.value }))}
-              >
-                {item.broker ? <BrokerMark code={item.broker} /> : <TickerMark symbol={item.value} />}
-                <span className="quote-id">
-                  <span className="t-ticker">{item.broker ? `Broker ${item.value}` : item.value}</span>
-                  <small>{item.label}</small>
-                </span>
-                <span className="quote-list-meta">
-                  <b>{item.name}</b>
-                  <em className={item.tone === "up" ? "c-up" : "c-down"}>{item.sub}</em>
-                </span>
-              </button>
-            ))}
-          </div>
+        <div className="brk-tiles">
+          {brokerHighlights.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className={`brk-tile t-${item.tone}`}
+              onClick={() => (item.broker ? onOpen(item.broker) : go("stock", { stock: item.stock ?? item.value }))}
+            >
+              <span className="brk-tile-top">
+                {item.broker ? <BrokerMark code={item.broker} size="sm" /> : <TickerMark symbol={item.value} size="sm" />}
+                <small>{item.label}</small>
+              </span>
+              <b>{item.broker ? `Broker ${item.value}` : item.value}</b>
+              <span className="brk-tile-sub">{item.name}</span>
+              <em className={item.tone === "up" ? "c-up" : "c-down"}>{item.sub}</em>
+            </button>
+          ))}
         </div>
       </section>
 
@@ -313,51 +337,44 @@ function TopBrokersView({ onOpen }: { onOpen: (code: string) => void }) {
         <Chip selected={sort === "sell"} onClick={() => setSort("sell")}>Sell</Chip>
         <Chip selected={sort === "ratio"} onClick={() => setSort("ratio")}>Buy/sell</Chip>
       </div>
+
       <section className="market-block">
         <header className="market-block-head">
           <h2>All {rows.length} brokers</h2>
           <span className="t-body-xs muted">
-            {viewport === "mobile" ? "Swipe for share · tap a row" : "Tap a row for the broker"}
+Top 3 carried {topThree.toFixed(0)}%
           </span>
         </header>
         <div className="market-block-body">
-          <div className="desk-live-scroll broker-grid-scroll">
-            <table className="sheet-table desk-live-grid broker-grid">
-              <thead>
-                <tr>
-                  <th>Broker</th>
-                  <th className="num">Buy Cr</th>
-                  <th className="num">Sell Cr</th>
-                  <th className="num">Buy/sell</th>
-                  <th className="num">Share %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => (
-                  <tr key={row.code} tabIndex={0} onClick={() => onOpen(row.code)}>
-                    <td>
-                      <span className="sheet-name">
-                        <BrokerMark code={row.code} size="sm" />
-                        <span className="broker-grid-id">
-                          <b>{row.code}</b>
-                          <small>{row.short}</small>
-                        </span>
-                      </span>
-                    </td>
-                    <td className="num">{npr(row.buyCr, 1)}</td>
-                    <td className="num">{npr(row.sellCr, 1)}</td>
-                    <td className="num">
-                      <b className={row.ratio >= 1 ? "c-up" : "c-down"}>{row.ratio.toFixed(2)}</b>
-                      <small>{row.ratio >= 1 ? "net buy" : "net sell"}</small>
-                    </td>
-                    <td className="num">{npr(row.sharePct, 1)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Rank, house, how much and which way. Opening one shows its split,
+              its month's pace and the names it traded. */}
+          <div className="brk-rank-list">
+            <ListHead cols={[null, null, "Broker", "Turnover today"]} />
+            {rows.map((row, index) => (
+              <button
+                key={row.code}
+                type="button"
+                className="brk-rank-row"
+                onClick={() => onOpen(row.code)}
+              >
+                <i className="brk-rank-no">{index + 1}</i>
+                <BrokerMark code={row.code} size="sm" />
+                <span className="brk-rank-id">
+                  <strong>Broker {row.code}</strong>
+                  <small>{row.short}</small>
+                </span>
+                <span className="brk-rank-num">
+                  <b>{npr(row.turnover, 1)} Cr</b>
+                  <em className={`side-tag ${row.ratio >= 1 ? "up" : "down"}`}>
+                    {row.ratio >= 1 ? "Net buyer" : "Net seller"}
+                  </em>
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </section>
+
       <p className="foot-note">{activityMethod}</p>
       <div className="market-helps">
         <Explain
@@ -365,7 +382,7 @@ function TopBrokersView({ onOpen }: { onOpen: (code: string) => void }) {
             openSheet({
               kind: "quick",
               title: "Reading the buy/sell ratio",
-              body: "Buy value divided by sell value through that broker today. Above 1.00 means more buying than selling passed through it. Share is the broker’s slice of the whole session’s turnover.",
+              body: "Buy value divided by sell value through that broker today. Above 1.00 means more buying than selling passed through it. Share is the broker’s slice of the whole session’s turnover — the three busiest desks together carried most of it.",
               note: "Observed activity, not intent, and not a broker ranking. A busy broker is not a better broker.",
             })
           }
@@ -384,6 +401,9 @@ function ByBrokerView({ onOpen }: { onOpen: (code: string) => void }) {
   const picks = brokerChoice[code] ?? [];
   const bought = picks.filter((row) => row.side === "buy");
   const sold = picks.filter((row) => row.side === "sell");
+  /* One scale across both groups, so a 24 Cr buy dwarfs a 4 Cr sell on screen
+     the way it does in the numbers. */
+  const pickMax = picks.reduce((max, row) => Math.max(max, Number.parseFloat(row.amount)), 1);
 
   return (
     <>
@@ -422,29 +442,39 @@ function ByBrokerView({ onOpen }: { onOpen: (code: string) => void }) {
         </Picker>
       </div>
 
-      <div className="market-stats four">
-        <div><small>Turnover</small><b>{npr(broker.turnover, 1)} Cr</b></div>
-        <div><small>Bought</small><b className="c-up">{npr(broker.buyCr, 1)} Cr</b></div>
-        <div><small>Sold</small><b className="c-down">{npr(broker.sellCr, 1)} Cr</b></div>
-        <div><small>Buy/sell</small><b>{broker.ratio.toFixed(2)}</b></div>
-      </div>
-      <div className="pad" style={{ paddingTop: 12 }}>
-        <div className="broker-split lg" aria-hidden>
-          <i className="up" style={{ flexGrow: broker.buyPct }} />
-          <i className="down" style={{ flexGrow: broker.sellPct }} />
+      <section className="brk-flowcard">
+        <header>
+          <span className="overline">Where its turnover went</span>
+          <b>{npr(broker.turnover, 1)} Cr</b>
+        </header>
+        <div className="brk-scale">
+          <i className="up" style={{ flexGrow: broker.buyPct }}>
+            <b>{npr(broker.buyCr, 1)} Cr</b>
+            <small>{broker.buyPct}% bought</small>
+          </i>
+          <i className="down" style={{ flexGrow: broker.sellPct }}>
+            <b>{npr(broker.sellCr, 1)} Cr</b>
+            <small>{broker.sellPct}% sold</small>
+          </i>
         </div>
-        <p className="t-body-xs muted">
-          {broker.buyPct}% buy · {broker.sellPct}% sell of its own turnover
+        <p className="brk-scale-read">
+          Ended the day a <b className={broker.netCr < 0 ? "c-down" : "c-up"}>
+            {broker.netCr < 0 ? "net seller" : "net buyer"} of {npr(Math.abs(broker.netCr), 1)} Cr
+          </b>
+          {" "}· buy/sell {broker.ratio.toFixed(2)} · {npr(broker.sharePct, 1)}% of the session.
         </p>
-      </div>
+        <PaceBars today={broker.turnover} average={broker.avg30} />
+      </section>
 
       {picks.length === 0 && (
         <p className="foot-note">Stock-level activity unavailable for Broker {broker.code} this session.</p>
       )}
-      <TradedGroup title="Bought" side="buy" rows={bought} onPick={(symbol) => go("stock", { stock: symbol })} />
-      <TradedGroup title="Sold" side="sell" rows={sold} onPick={(symbol) => go("stock", { stock: symbol })} />
+      <TradedGroup title="Bought" side="buy" rows={bought} max={pickMax} onPick={(symbol) => go("stock", { stock: symbol })} />
+      <TradedGroup title="Sold" side="sell" rows={sold} max={pickMax} onPick={(symbol) => go("stock", { stock: symbol })} />
 
-      <p className="foot-note">{activityMethod}</p>
+      <p className="foot-note">
+        Each bar is that name’s value against the biggest name this broker traded today. {activityMethod}
+      </p>
       <div className="market-helps">
         <button type="button" className="text-link" onClick={() => onOpen(broker.code)}>
           Open Broker {broker.code} profile ›
@@ -470,11 +500,13 @@ function TradedGroup({
   title,
   side,
   rows,
+  max,
   onPick,
 }: {
   title: string;
   side: "buy" | "sell";
   rows: { symbol: string; name: string; kitta: string; amount: string }[];
+  max: number;
   onPick: (symbol: string) => void;
 }) {
   if (rows.length === 0) return null;
@@ -487,21 +519,33 @@ function TradedGroup({
         </span>
       </header>
       <div className="market-block-body">
-        <div className="quote-list">
-          {rows.map((row) => (
-            <button key={row.symbol} type="button" className="quote-list-row" onClick={() => onPick(row.symbol)}>
-              <TickerMark symbol={row.symbol} />
-              <span className="quote-id">
-                <span className="t-ticker">{row.symbol}</span>
+        <div className="brk-traded">
+        <div className="list-head" aria-hidden>
+          <span />
+          <span>Stock</span>
+          <span>Share of its biggest name</span>
+          <span>Value · kitta</span>
+        </div>
+        {rows.map((row) => {
+          const amount = Number.parseFloat(row.amount);
+          return (
+            <button key={row.symbol} type="button" className="brk-traded-row" onClick={() => onPick(row.symbol)}>
+              <TickerMark symbol={row.symbol} size="sm" />
+              <span className="brk-traded-id">
+                <strong>{row.symbol}</strong>
                 <small>{row.name}</small>
               </span>
-              <span className="quote-list-meta">
+              <span className="brk-traded-viz">
+                <i className={`brk-traded-bar ${side}`} style={{ width: `${(amount / max) * 100}%` }} />
+              </span>
+              <span className="brk-traded-num">
                 <b>{row.amount}</b>
-                <em className="muted">{row.kitta} kitta</em>
+                <em>{row.kitta} kitta</em>
               </span>
             </button>
-          ))}
-        </div>
+          );
+        })}
+      </div>
       </div>
     </section>
   );
@@ -517,6 +561,8 @@ function ByStockView({ onOpen }: { onOpen: (code: string) => void }) {
     [flow],
   );
   const buyers = rows.filter((row) => row.bought > row.sold).length;
+  const netMax = rows.reduce((max, row) => Math.max(max, Math.abs(row.bought - row.sold)), 1);
+  const traded = rows.reduce((sum, row) => sum + row.bought + row.sold, 0);
 
   return (
     <>
@@ -560,49 +606,46 @@ function ByStockView({ onOpen }: { onOpen: (code: string) => void }) {
           <h2>Brokers in {symbol}</h2>
           <button type="button" className="text-link" onClick={() => go("stock", { stock: symbol })}>Stock ›</button>
         </header>
+        <p className="brk-net-read">
+          <b>{buyers}</b> of {rows.length} brokers ended the day net buyers of {symbol}, on{" "}
+          {npr(traded)} kitta traded between them.
+        </p>
         <div className="market-block-body">
-          <p className="foot-note" style={{ paddingTop: 10 }}>
-            {buyers} of {rows.length} brokers ended the day net buyers of {symbol}.
-          </p>
-          <div className="desk-live-scroll broker-grid-scroll">
-            <table className="sheet-table desk-live-grid broker-grid">
-              <thead>
-                <tr>
-                  <th>Broker</th>
-                  <th className="num">Net kitta</th>
-                  <th className="num">Bought</th>
-                  <th className="num">Sold</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const broker = getBroker(row.code);
-                  const net = row.bought - row.sold;
-                  return (
-                    <tr key={row.code} tabIndex={0} onClick={() => onOpen(row.code)}>
-                      <td>
-                        <span className="sheet-name">
-                          <BrokerMark code={row.code} size="sm" />
-                          <span className="broker-grid-id">
-                            <b>{row.code}</b>
-                            <small>{broker.short}</small>
-                          </span>
-                        </span>
-                      </td>
-                      <td className="num">
-                        <b className={net >= 0 ? "c-up" : "c-down"}>{net >= 0 ? "+" : "−"}{npr(Math.abs(net))}</b>
-                        <small>{net >= 0 ? "net buy" : "net sell"}</small>
-                      </td>
-                      <td className="num">{npr(row.bought)}</td>
-                      <td className="num">{npr(row.sold)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        <div className="brk-net">
+          <div className="brk-net-head" aria-hidden>
+            <span>Broker</span>
+            <span className="brk-net-axis-cap">
+              <em className="c-down">net sold</em>
+              <em className="c-up">net bought</em>
+            </span>
+            <span className="num">Bought / sold</span>
           </div>
+          {rows.map((row) => {
+            const broker = getBroker(row.code);
+            const net = row.bought - row.sold;
+            return (
+              <button key={row.code} type="button" className="brk-net-row" onClick={() => onOpen(row.code)}>
+                <span className="brk-net-id">
+                  <BrokerMark code={row.code} size="sm" />
+                  <span className="broker-grid-id">
+                    <b>{row.code}</b>
+                    <small>{broker.short}</small>
+                  </span>
+                </span>
+                <NetBar value={net} max={netMax}>
+                  {net >= 0 ? "+" : "−"}{npr(Math.abs(net))}
+                </NetBar>
+                <span className="brk-net-num num">
+                  <b className="c-up">{npr(row.bought)}</b>
+                  <em className="c-down">{npr(row.sold)}</em>
+                </span>
+              </button>
+            );
+          })}
+        </div>
         </div>
       </section>
+
       <p className="foot-note">{activityMethod}</p>
       <div className="market-helps">
         <Explain
@@ -641,41 +684,40 @@ function FloorSheetView() {
           </button>
         </header>
         <div className="market-block-body">
-          <div className="desk-live-scroll broker-grid-scroll wide">
-            <table className="sheet-table desk-live-grid broker-grid wide">
-              <thead>
-                <tr>
-                  <th>Stock</th>
-                  <th className="num">Buyer</th>
-                  <th className="num">Seller</th>
-                  <th className="num">Kitta</th>
-                  <th className="num">Rate</th>
-                  <th className="num">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {brokerPrints.map((row, index) => (
-                  <tr key={`${row.symbol}-${index}`} tabIndex={0} onClick={() => go("stock", { stock: row.symbol })}>
-                    <td>
-                      <span className="sheet-name">
-                        <TickerMark symbol={row.symbol} size="sm" />
-                        <span className="broker-grid-id">
-                          <b>{row.symbol}</b>
-                        </span>
-                      </span>
-                    </td>
-                    <td className="num">{row.buyer}</td>
-                    <td className="num">{row.seller}</td>
-                    <td className="num">{npr(row.qty)}</td>
-                    <td className="num">{npr(row.rate, 1)}</td>
-                    <td className="num">{npr(row.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        <div className="brk-tape">
+          <div className="brk-tape-head" aria-hidden>
+            <span>Stock</span>
+            <span>Buyer ← seller</span>
+            <span className="num">Kitta · rate</span>
+            <span className="num">Amount</span>
           </div>
+          {brokerPrints.map((row, index) => (
+            <button
+              key={`${row.symbol}-${index}`}
+              type="button"
+              className="brk-tape-row"
+              onClick={() => go("stock", { stock: row.symbol })}
+            >
+              <span className="brk-tape-id">
+                <TickerMark symbol={row.symbol} size="sm" />
+                <b>{row.symbol}</b>
+              </span>
+              <span className="brk-tape-hands">
+                <i className="buyer">{row.buyer}</i>
+                <Icon name="back" size={12} />
+                <i className="seller">{row.seller}</i>
+              </span>
+              <span className="brk-tape-qty num">
+                <b>{npr(row.qty)}</b>
+                <em>at {npr(row.rate, 1)}</em>
+              </span>
+              <span className="brk-tape-amt num">{npr(row.amount)}</span>
+            </button>
+          ))}
+        </div>
         </div>
       </section>
+
       <p className="foot-note">{activityMethod}</p>
       <div className="market-helps">
         <Explain
@@ -700,69 +742,140 @@ function BrokerProfile() {
   const broker = getBroker(brokerCode);
   const picks = brokerChoice[broker.code] ?? [];
   const trades = brokerPrints.filter((row) => row.buyer === broker.code || row.seller === broker.code);
+  const pickMax = picks.reduce((max, row) => Math.max(max, Number.parseFloat(row.amount)), 1);
+  const rank = [...brokerHouses]
+    .sort((a, b) => b.turnover - a.turnover)
+    .findIndex((row) => row.code === broker.code) + 1;
 
   return (
     <>
-      <div className="broker-file">
-        <div className="broker-file-id">
+      <section className="brk-file">
+        <div className="brk-file-id">
           <BrokerMark code={broker.code} size="lg" />
           <div>
             <p className="t-h-l">{broker.name}</p>
             <p className="t-body-s muted">Broker {broker.code} · {broker.city} · SEBON member</p>
           </div>
+          <span className="brk-rank-tag">#{rank} of {brokerHouses.length} today</span>
         </div>
-        <p className="hero-num">{npr(broker.turnover, 1)} Cr</p>
-        <p className="t-body-s muted">
-          Turnover today · {broker.netCr < 0 ? "net seller" : "net buyer"} {npr(Math.abs(broker.netCr), 1)} Cr
-        </p>
-        <div className="broker-split lg" aria-hidden>
-          <i className="up" style={{ flexGrow: broker.buyPct }} />
-          <i className="down" style={{ flexGrow: broker.sellPct }} />
-        </div>
-        <p className="t-body-xs muted">{broker.buyPct}% buy · {broker.sellPct}% sell</p>
-      </div>
 
-      <section className="market-block">
-        <header className="market-block-head">
-          <h2>Today</h2>
-        </header>
-        <div className="market-block-body">
-          <div className="kv"><span>Purchase</span><b>{npr(broker.buyCr, 1)} Cr</b></div>
-          <div className="kv"><span>Sales</span><b>{npr(broker.sellCr, 1)} Cr</b></div>
-          <div className="kv"><span>Matching</span><b>{broker.matching}</b></div>
-          <div className="kv"><span>Avg 30 days</span><b>{npr(broker.avg30, 1)} Cr</b></div>
-          <div className="kv"><span>Share of session</span><b>{npr(broker.sharePct, 1)}%</b></div>
+        <div className="brk-file-fig">
+          <p className="hero-num">{npr(broker.turnover, 1)} Cr</p>
+          <p className="t-body-s muted">
+            Turnover today ·{" "}
+            <b className={broker.netCr < 0 ? "c-down" : "c-up"}>
+              {broker.netCr < 0 ? "net seller" : "net buyer"} {npr(Math.abs(broker.netCr), 1)} Cr
+            </b>
+          </p>
         </div>
-        <p className="foot-note">{activityMethod}</p>
+
+        <div className="brk-scale">
+          <i className="up" style={{ flexGrow: broker.buyPct }}>
+            <b>{npr(broker.buyCr, 1)} Cr</b>
+            <small>{broker.buyPct}% bought</small>
+          </i>
+          <i className="down" style={{ flexGrow: broker.sellPct }}>
+            <b>{npr(broker.sellCr, 1)} Cr</b>
+            <small>{broker.sellPct}% sold</small>
+          </i>
+        </div>
       </section>
+
+      <div className="brk-panels">
+        <section className="market-block">
+          <header className="market-block-head">
+            <h2>How today compares</h2>
+          </header>
+          <div className="market-block-body">
+            <div className="brk-pace">
+              <PaceBars today={broker.turnover} average={broker.avg30} />
+              <div className="brk-pace-cells">
+                <div><small>Matching</small><b>{broker.matching}</b></div>
+                <div><small>Share of session</small><b>{npr(broker.sharePct, 1)}%</b></div>
+                <div><small>Most active in</small><b>{broker.active}</b></div>
+              </div>
+            </div>
+          </div>
+          <p className="foot-note">{activityMethod}</p>
+        </section>
+
+        <section className="market-block">
+          <header className="market-block-head">
+            <h2>Service</h2>
+            <button type="button" className="text-link" onClick={() => openSheet(serviceSheet())}>
+              What these mean ›
+            </button>
+          </header>
+          <div className="market-block-body">
+            <div className="brk-service">
+              <div>
+                <Icon name="shield" size={18} />
+                <b>{broker.collateral}</b>
+                <small>Collateral against pledged shares</small>
+              </div>
+              <div>
+                <Icon name="cal" size={18} />
+                <b>{broker.creditDays} days</b>
+                <small>Average credit after a sale</small>
+              </div>
+              <div>
+                <Icon name="wallet" size={18} />
+                <b>{broker.depositDays} days</b>
+                <small>Cash deposit to reach TMS</small>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       {picks.length > 0 && (
         <section className="market-block">
           <header className="market-block-head">
             <h2>Stocks traded today</h2>
+            <span className="t-body-xs muted">{picks.length} names</span>
           </header>
           <div className="market-block-body">
-            <div className="quote-list">
-              {picks.map((row) => (
+        <div className="brk-traded">
+            <div className="list-head" aria-hidden>
+              <span />
+              <span>Stock · kitta</span>
+              <span>Share of its biggest name</span>
+              <span>Value · side</span>
+            </div>
+            {picks.map((row) => {
+              const amount = Number.parseFloat(row.amount);
+              return (
                 <button
                   key={`${row.symbol}-${row.side}`}
                   type="button"
-                  className="quote-list-row"
+                  className="brk-traded-row"
                   onClick={() => go("stock", { stock: row.symbol })}
                 >
-                  <TickerMark symbol={row.symbol} />
-                  <span className="quote-id">
-                    <span className="t-ticker">{row.symbol}</span>
+                  <TickerMark symbol={row.symbol} size="sm" />
+                  <span className="brk-traded-id">
+                    <strong>{row.symbol}</strong>
                     <small>{row.kitta} kitta</small>
                   </span>
-                  <span className="quote-list-meta">
+                  <span className="brk-traded-viz">
+                    <i
+                      className={`brk-traded-bar ${row.side}`}
+                      style={{ width: `${(amount / pickMax) * 100}%` }}
+                    />
+                  </span>
+                  <span className="brk-traded-num">
                     <b>{row.amount}</b>
-                    <em className={row.side === "buy" ? "c-up" : "c-down"}>{row.side === "buy" ? "Bought" : "Sold"}</em>
+                    <em className={`side-tag ${row.side === "buy" ? "up" : "down"}`}>
+                      {row.side === "buy" ? "Bought" : "Sold"}
+                    </em>
                   </span>
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
+          </div>
+          <p className="foot-note">
+            Each bar is that name’s value against the biggest name this broker traded today.
+          </p>
         </section>
       )}
 
@@ -770,41 +883,47 @@ function BrokerProfile() {
         <section className="market-block">
           <header className="market-block-head">
             <h2>Floor sheet trades</h2>
+            <span className="t-body-xs muted">{trades.length} prints</span>
           </header>
           <div className="market-block-body">
-            <div className="quote-list">
-              {trades.map((row, index) => (
-                <button
-                  key={`${row.symbol}-${index}`}
-                  type="button"
-                  className="quote-list-row"
-                  onClick={() => go("stock", { stock: row.symbol })}
-                >
-                  <TickerMark symbol={row.symbol} size="sm" />
-                  <span className="quote-id">
-                    <span className="t-ticker">{row.symbol}</span>
-                    <small>{row.buyer} → {row.seller}</small>
-                  </span>
-                  <span className="quote-list-meta">
-                    <b>{npr(row.qty)} · {npr(row.rate, 1)}</b>
-                  </span>
-                </button>
-              ))}
+        <div className="brk-tape">
+            <div className="brk-tape-head" aria-hidden>
+              <span>Stock</span>
+              <span>Buyer ← seller</span>
+              <span className="num">Kitta · rate</span>
+              <span className="num">Amount</span>
             </div>
+            {trades.map((row, index) => (
+              <button
+                key={`${row.symbol}-${index}`}
+                type="button"
+                className="brk-tape-row lite"
+                onClick={() => go("stock", { stock: row.symbol })}
+              >
+                <span className="brk-tape-id">
+                  <TickerMark symbol={row.symbol} size="sm" />
+                  <b>{row.symbol}</b>
+                </span>
+                <span className="brk-tape-hands">
+                  <i className={row.buyer === broker.code ? "buyer on" : "buyer"}>{row.buyer}</i>
+                  <Icon name="back" size={12} />
+                  <i className={row.seller === broker.code ? "seller on" : "seller"}>{row.seller}</i>
+                </span>
+                <span className="brk-tape-qty num">
+                  <b>{npr(row.qty)}</b>
+                  <em>at {npr(row.rate, 1)}</em>
+                </span>
+                <span className="brk-tape-amt num">{npr(row.amount)}</span>
+              </button>
+            ))}
           </div>
+          </div>
+          <p className="foot-note">
+            Buyer and seller are broker numbers, not client names. Broker {broker.code} is ringed
+            on the side it stood.
+          </p>
         </section>
       )}
-
-      <section className="market-block">
-        <header className="market-block-head">
-          <h2>Service</h2>
-        </header>
-        <div className="market-block-body">
-          <div className="kv"><span>Collateral</span><b>{broker.collateral}</b></div>
-          <div className="kv"><span>Avg. credit</span><b>{broker.creditDays} days</b></div>
-          <div className="kv"><span>Cash deposit</span><b>{broker.depositDays} days</b></div>
-        </div>
-      </section>
 
       <section className="market-block">
         <header className="market-block-head">

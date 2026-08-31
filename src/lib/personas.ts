@@ -35,7 +35,7 @@ export const personas: Persona[] = [
     img: `${import.meta.env.BASE_URL}characters/prakash.png`,
     tone: "teal",
     stage: "primary",
-    objectiveId: "terms",
+    objectiveId: "courses",
     youIf: [
       "you apply for IPOs on MeroShare",
       "you’re waiting to see if you got kitta",

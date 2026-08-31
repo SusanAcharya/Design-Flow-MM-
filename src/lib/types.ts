@@ -20,6 +20,10 @@ export type Route =
   | "portfolio"
   | "ai"
   | "learn"
+  | "course"
+  | "my-learning"
+  | "certificates"
+  | "course-faq"
   | "more"
   | "search"
   | "stock"
@@ -57,7 +61,13 @@ export type Plan = "free" | "plus" | "pro";
 export type SubIntent = "consult";
 export type PlanCycle = "monthly" | "annual";
 export type MarketSession = "open" | "closed";
+/** Which way the index closed — a studio switch for reviewing the green day. */
+export type MarketTrend = "up" | "down";
 export type MarketTab = "Overview" | "Movers" | "Sectors" | "Floor sheet" | "Events";
+export type CourseTab = "Lectures" | "Details" | "Reviews";
+export type GreedZoneId = "fear" | "cautious" | "neutral" | "warm" | "greed";
+/** Studio switch: "auto" reads the open stock, a zone id forces that reading. */
+export type GreedPick = "auto" | GreedZoneId;
 export type StockTab = "Overview" | "Financials" | "Analysis" | "Floor sheet" | "Events";
 export type PortfolioTab = "Overview" | "Holdings" | "Allocation" | "Activity" | "Income" | "Analytics";
 

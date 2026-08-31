@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { UserAvatar } from "../ds/UserAvatar";
 import { TickerMark } from "../ds/TickerMark";
+import { MitraMark } from "../ds/MitraMark";
 import { Button, SearchField } from "../ds/primitives";
 import { Icon, type IconName } from "../ds/Icon";
 import {
@@ -297,7 +298,7 @@ function NavigationSheet() {
             aria-current={current === tab.id ? "page" : undefined}
             onClick={() => routeTo(tab.id)}
           >
-            <Icon name={tab.icon} size={18} />
+            {tab.icon === "tulkey" ? <MitraMark size={18} /> : <Icon name={tab.icon} size={18} />}
             <span>{tab.label}</span>
           </button>
         ))}

@@ -1,7 +1,7 @@
 import { ObjectivePath } from "../ds/ObjectivePath";
 import { Badge, Button, Overline } from "../ds/primitives";
 import { Icon } from "../ds/Icon";
-import { getObjective, homeObjectiveId, pathProgress } from "../lib/objectives";
+import { getObjective, homeObjectiveId, pathProgress, type Objective } from "../lib/objectives";
 import { getPersona, personas } from "../lib/personas";
 import { useApp } from "../lib/state";
 import { useEffect, useRef } from "react";
@@ -36,17 +36,8 @@ function MoreWays() {
         </span>
         <Icon name="chev" size={15} />
       </button>
-      <button
-        type="button"
-        className="obj-more-row"
-        onClick={() => go("lesson", { lesson: "What is a kitta?" })}
-      >
-        <span className="ico-soft" aria-hidden><Icon name="book" size={18} /></span>
-        <span className="obj-more-copy">
-          <strong>Gyan</strong>
-        </span>
-        <Icon name="chev" size={15} />
-      </button>
+      {/* Gyan used to sit here too, but the dictionary is one tap away in
+          Explore and Courses now covers "more than one sitting" properly. */}
       <button
         type="button"
         className="obj-more-row"
@@ -123,6 +114,30 @@ function VideoPlaceholder({ label, duration }: { label: string; duration: string
   );
 }
 
+/** The closing sitting: the rest of the app, named once. Nothing to set up. */
+function OverviewList({ items }: { items: NonNullable<Objective["overview"]> }) {
+  const { go } = useApp();
+  return (
+    <section className="obj-more">
+      {items.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className="obj-more-row"
+          onClick={() => go(item.route)}
+        >
+          <span className="ico-soft" aria-hidden><Icon name={item.icon} size={18} /></span>
+          <span className="obj-more-copy">
+            <strong>{item.title}</strong>
+            <small>{item.blurb}</small>
+          </span>
+          <Icon name="chev" size={15} />
+        </button>
+      ))}
+    </section>
+  );
+}
+
 /** Sits under the video: the page where you can see the lesson for yourself. */
 function LessonCta({ line, ctaLabel, route }: { line: string; ctaLabel: string; route: Route }) {
   const { go } = useApp();
@@ -137,19 +152,6 @@ function LessonCta({ line, ctaLabel, route }: { line: string; ctaLabel: string; 
 }
 
 /** The whole path, one tap away from any sitting. */
-function AllObjectives({ learned, total }: { learned: number; total: number }) {
-  const { go } = useApp();
-  return (
-    <button type="button" className="obj-all" onClick={() => go("objectives")}>
-      <span className="obj-all-copy">
-        <strong>All objectives</strong>
-        <small>{learned} of {total} done</small>
-      </span>
-      <Icon name="chev" size={15} />
-    </button>
-  );
-}
-
 export function ObjectiveScreen() {
   const {
     back,
@@ -233,7 +235,18 @@ export function ObjectiveScreen() {
 
       <div className="obj-body">
         <div className="obj-main">
-          {o.kind === "learn" ? (
+          {o.kind === "overview" ? (
+            <>
+              <div className="pad" style={{ paddingTop: 2, paddingBottom: 12 }}>
+                <ul className="obj-recap plain">
+                  {o.points.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
+                {o.overview && <OverviewList items={o.overview} />}
+              </div>
+            </>
+          ) : o.kind === "learn" ? (
             <>
               <div className="pad" style={{ paddingTop: 4, paddingBottom: 12 }}>
                 <VideoPlaceholder label={o.videoLabel ?? o.title} duration={o.duration} />
@@ -248,9 +261,6 @@ export function ObjectiveScreen() {
                   <LessonCta {...o.lessonCta} />
                 </div>
               )}
-              <div className="pad" style={{ paddingBottom: 12 }}>
-                <AllObjectives learned={progress.learned} total={progress.total} />
-              </div>
             </>
           ) : (
             <>
@@ -276,15 +286,12 @@ export function ObjectiveScreen() {
                   </section>
                 </div>
               )}
-              <div className="pad" style={{ paddingTop: 12 }}>
-                <AllObjectives learned={progress.learned} total={progress.total} />
-              </div>
             </>
           )}
         </div>
 
         <div className="obj-side">
-          {isFeature && (
+          {o.kind !== "learn" && (
             <div className="pad" style={{ paddingTop: 4, paddingBottom: 8 }}>
               <TulkeyAside line={o.tulkeyLine} />
             </div>
@@ -294,25 +301,23 @@ export function ObjectiveScreen() {
             <p className="pad t-body-xs muted">Next: {progress.later[0].title}</p>
           )}
 
-          {isNow && o.kind === "learn" && (
+          {isNow && (o.kind === "learn" || o.kind === "overview") && (
             <div className="pad" style={{ paddingTop: 10 }}>
               <section className="obj-act">
                 <Button variant="primary" size="lg" block onClick={() => completeObjective()}>
-                  I’ve watched it
+                  {o.kind === "overview" ? "Got it — finish objectives" : "I’ve watched it"}
                 </Button>
-                <button type="button" className="text-link obj-act-back" onClick={back}>
-                  Back to Home
-                </button>
               </section>
             </div>
           )}
 
-          <div className="pad" style={{ paddingTop: 16 }}>
-            <MoreWays />
-          </div>
-
+          {/* One quiet way back to the path. The library, the consultation and
+              the hide-on-Home switch live on the path screen — a single sitting
+              had four competing buttons and no clear next move. */}
           <div className="pad" style={{ paddingTop: 14, paddingBottom: 28 }}>
-            <HideObjectivesHint afterHide={() => go("home")} />
+            <button type="button" className="text-link" onClick={() => go("objectives")}>
+              All objectives · {progress.learned} of {progress.total} done ›
+            </button>
           </div>
         </div>
       </div>

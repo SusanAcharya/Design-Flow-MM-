@@ -1,20 +1,6 @@
-<!-- @license lucide-static v1.34.0 - ISC -->
-<svg
-  class="lucide lucide-landmark"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="#000"
-  stroke-width="1.8"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M10 18v-7" />
-  <path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z" />
-  <path d="M14 18v-7" />
-  <path d="M18 18v-7" />
-  <path d="M3 22h18" />
-  <path d="M6 18v-7" />
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 9.4C4.5 8.3 5.2 8.1 6 7.6L11.2 4.4C11.7 4.1 12.3 4.1 12.8 4.4L18 7.6C18.8 8.1 19.5 8.3 20 9.4" />
+  <path d="M7.2 10.4V16.6M10.4 10.4V16.6M13.6 10.4V16.6M16.8 10.4V16.6" />
+  <path d="M4.6 17H19.4" />
+  <path d="M3.6 19.6H20.4" />
 </svg>

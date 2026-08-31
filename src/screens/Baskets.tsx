@@ -3,6 +3,7 @@ import { Icon } from "../ds/Icon";
 import { BasketMark } from "../ds/BasketMark";
 import { TickerMark } from "../ds/TickerMark";
 import { Chip, Explain, SearchField } from "../ds/primitives";
+import { ListHead, sectorTone } from "../ds/desk";
 import { basketLeads, basketRows, getBasketRow, nepse } from "../lib/data";
 import { npr, pct } from "../lib/format";
 import { useApp } from "../lib/state";
@@ -35,8 +36,39 @@ function basketSheet(basket: BasketRow) {
   };
 }
 
+/* The sort a basket was built on, said as a rule rather than a jargon key.
+   It is the one thing that explains why these names and not others. */
+const leadRule: Record<BasketLead, string> = {
+  move: "Sorted by today’s move, biggest first",
+  turnover: "Sorted by turnover, busiest first",
+  offHigh: "Sorted by distance below the 52-week high",
+  nearHigh: "Sorted by closeness to the 52-week high",
+  offLow: "Sorted by distance above the 52-week low",
+  nearLow: "Sorted by closeness to the 52-week low",
+};
+
+/** The same column said as a phrase, so a row reads as a sentence. */
+const leadPhrase: Record<BasketLead, string> = {
+  move: "today",
+  turnover: "traded today",
+  offHigh: "off its 52-week high",
+  nearHigh: "off its 52-week high",
+  offLow: "above its 52-week low",
+  nearLow: "above its 52-week low",
+};
+
+/** And as a column name, for the header that says what the ranking is on. */
+const leadColumn: Record<BasketLead, string> = {
+  move: "today’s move",
+  turnover: "turnover",
+  offHigh: "distance off the 52-week high",
+  nearHigh: "distance off the 52-week high",
+  offLow: "distance above the 52-week low",
+  nearLow: "distance above the 52-week low",
+};
+
 export function BasketsScreen() {
-  const { back, go, viewport, plan, fulfillObjective } = useApp();
+  const { back, go, viewport, plan } = useApp();
   const [openId, setOpenId] = useState<string | null>(() => {
     const linked = rawParam("basket");
     return linked && getBasketRow(linked) ? linked : null;
@@ -49,7 +81,6 @@ export function BasketsScreen() {
       go("subscription");
       return;
     }
-    fulfillObjective("baskets");
     setOpenId(basket.id);
   };
 
@@ -104,36 +135,35 @@ function BasketList({ onOpen }: { onOpen: (basket: BasketRow) => void }) {
   return (
     <>
       <div className="desk-head-row">
-      <div className="desk-tabs pad">
-        <div className="home-feed-tabs duo" role="tablist" aria-label="Basket audience">
-          {(["traders", "investors"] as Audience[]).map((id) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={audience === id}
-              className={audience === id ? "on" : ""}
-              onClick={() => setAudience(id)}
-            >
-              {id === "traders" ? "For traders" : "For investors"}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="desk-controls">
-        <div className="pad" style={{ paddingTop: 8, paddingBottom: 4 }}>
-          <SearchField placeholder="Search baskets" value={query} onChange={setQuery} />
+        <div className="desk-tabs pad">
+          <div className="home-feed-tabs duo" role="tablist" aria-label="Basket audience">
+            {(["traders", "investors"] as Audience[]).map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={audience === id}
+                className={audience === id ? "on" : ""}
+                onClick={() => setAudience(id)}
+              >
+                {id === "traders" ? "For traders" : "For investors"}
+              </button>
+            ))}
+          </div>
         </div>
 
-      <div className="broker-sort">
-        {sorts.map((item) => (
-          <Chip key={item.id} selected={sort === item.id} onClick={() => setSort(item.id)}>
-            {item.label}
-          </Chip>
-        ))}
-      </div>
-      </div>
+        <div className="desk-controls">
+          <div className="pad" style={{ paddingTop: 8, paddingBottom: 4 }}>
+            <SearchField placeholder="Search baskets" value={query} onChange={setQuery} />
+          </div>
+          <div className="broker-sort">
+            {sorts.map((item) => (
+              <Chip key={item.id} selected={sort === item.id} onClick={() => setSort(item.id)}>
+                {item.label}
+              </Chip>
+            ))}
+          </div>
+        </div>
       </div>
 
       <section className="market-block">
@@ -141,14 +171,15 @@ function BasketList({ onOpen }: { onOpen: (basket: BasketRow) => void }) {
           <h2>{rows.length} baskets</h2>
           <span className="t-body-xs muted">{nepse.date} close</span>
         </header>
-        <div className="market-block-body">
-          <div className="quote-list">
+        <div className="market-block-body bkt-body">
+          <div className="bkt-grid">
+            <ListHead cols={[null, "Basket", "Average move"]} />
             {rows.map((row) => (
-              <BasketListRow key={row.id} row={row} plan={plan} onOpen={onOpen} />
+              <BasketCard key={row.id} row={row} plan={plan} onOpen={onOpen} />
             ))}
           </div>
-          {rows.length === 0 && <p className="foot-note">No basket matches that name.</p>}
         </div>
+        {rows.length === 0 && <p className="foot-note">No basket matches that name.</p>}
       </section>
 
       <div className="market-helps">
@@ -169,7 +200,10 @@ function BasketList({ onOpen }: { onOpen: (basket: BasketRow) => void }) {
   );
 }
 
-function BasketListRow({
+/* The shelf, not the shelf's contents. Cover art, the filter in one line, and
+   the two numbers that decide whether to open it — the group's shape, its
+   sectors and its members all wait on the other side of the tap. */
+function BasketCard({
   row,
   plan,
   onOpen,
@@ -179,96 +213,65 @@ function BasketListRow({
   onOpen: (basket: BasketRow) => void;
 }) {
   const shut = locked(row, plan);
+  const down = row.changePct < 0;
+
   return (
-    <button type="button" className="quote-list-row basket-row" onClick={() => onOpen(row)}>
-      <span className={`basket-stack${shut ? " shut" : ""}`} aria-hidden>
-        {row.quotes.slice(0, 3).map((quote) => (
-          <TickerMark key={quote.symbol} symbol={quote.symbol} size="sm" />
-        ))}
-      </span>
-      <span className="quote-id">
-        <span className="t-ticker">
+    <button type="button" className={`bkt-card${shut ? " shut" : ""}`} onClick={() => onOpen(row)}>
+      <BasketMark id={row.id} />
+      <span className="bkt-id">
+        <span className="bkt-title">
           {row.title}
           {row.fresh && <span className="basket-tag">New</span>}
           {shut && <span className="basket-tag lock">Plus</span>}
         </span>
         <small>{row.note}</small>
       </span>
-      <span className="quote-list-meta">
-        <b className={row.changePct < 0 ? "c-down" : "c-up"}>{pct(row.changePct)}</b>
-        <em className="muted">{row.count} names</em>
+      <span className="bkt-move">
+        <b className={down ? "c-down" : "c-up"}>{pct(row.changePct)}</b>
+        <em>{row.count} names</em>
       </span>
     </button>
   );
 }
 
-/* One card per company: who it is, what it costs, where that sits in the year,
-   and the numbers behind the sort. */
-function MemberCard({
+/* One company inside a basket. The lead bar is drawn on the whole basket's
+   scale, so the column that put these names on the list can be compared down
+   the page instead of read one row at a time. */
+function MemberRow({
   quote,
   rank,
-  lead,
+  leadId,
   onOpen,
 }: {
   quote: ListedQuote;
   rank: number;
-  lead: (typeof basketLeads)[BasketLead];
+  leadId: BasketLead;
   onOpen: () => void;
 }) {
-  const span = quote.weekHigh - quote.weekLow || 1;
-  const at = Math.min(98, Math.max(2, ((quote.ltp - quote.weekLow) / span) * 100));
+  const lead = basketLeads[leadId];
   const down = quote.changePct < 0;
-  const showLead = lead.unit === "pct" && lead.label !== "% Chg";
+  const value = lead.value(quote);
+  const reading = lead.unit === "cr" ? `${npr(value, 1)} Cr` : pct(value, 1);
+  const phrase = leadPhrase[leadId];
 
   return (
-    <button type="button" className="bk-card" onClick={onOpen}>
-      <span className="bk-card-head">
-        <span className="bk-rank">{rank}</span>
-        <TickerMark symbol={quote.symbol} />
-        <span className="bk-id">
-          <strong>{quote.symbol}</strong>
-          <small>{quote.name}</small>
-        </span>
-        <span className="bk-px">
-          <b>{npr(quote.ltp, 2)}</b>
-          <em className={down ? "c-down" : "c-up"}>{pct(quote.changePct)}</em>
-        </span>
+    <button type="button" className="bkm-row" onClick={onOpen}>
+      <span className="bkm-rank">{rank}</span>
+      <TickerMark symbol={quote.symbol} />
+      <span className="bkm-id">
+        <strong>{quote.symbol}</strong>
+        <small>{quote.name}</small>
       </span>
 
-      <span className="bk-range">
-        <span className="bk-range-cap">
-          <small>52W low</small>
-          <b>{npr(quote.weekLow, 2)}</b>
-        </span>
-        <span className="bk-range-track">
-          <i className="bk-range-fill" style={{ width: `${at}%` }} />
-          <i className="bk-range-dot" style={{ left: `${at}%` }} />
-        </span>
-        <span className="bk-range-cap end">
-          <small>52W high</small>
-          <b>{npr(quote.weekHigh, 2)}</b>
-        </span>
+      <span className="bkm-px">
+        <b>{npr(quote.ltp, 2)}</b>
+        <em className={down ? "c-down" : "c-up"}>{pct(quote.changePct)}</em>
       </span>
 
-      <span className="bk-facts">
-        <span>
-          <small>Day</small>
-          <b>{npr(quote.low, 2)}–{npr(quote.high, 2)}</b>
-        </span>
-        <span>
-          <small>Turnover</small>
-          <b>{quote.turnover}</b>
-        </span>
-        <span>
-          <small>Volume</small>
-          <b>{quote.volume}</b>
-        </span>
-        {showLead && (
-          <span>
-            <small>{lead.label}</small>
-            <b>{pct(lead.value(quote), 1)}</b>
-          </span>
-        )}
+      {/* The one column that put this name on the list, said in words. Day
+          range, turnover and volume all live on the company's own page. */}
+      <span className="bkm-lead">
+        <b>{reading}</b> {phrase}
       </span>
     </button>
   );
@@ -276,52 +279,150 @@ function MemberCard({
 
 function BasketDetail({ basket }: { basket: BasketRow }) {
   const { go, openSheet } = useApp();
-  const lead = basketLeads[basket.lead];
+
+  /* What the basket actually holds, by sector, biggest slice first. */
+  const mix = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const quote of basket.quotes) {
+      counts.set(quote.sector, (counts.get(quote.sector) ?? 0) + 1);
+    }
+    return [...counts.entries()]
+      .map(([name, count]) => ({ name, count, pct: (count / basket.count) * 100 }))
+      .sort((a, b) => b.count - a.count);
+  }, [basket]);
+
+  /* Both ends of the day, named — the rail's two extremes are the only two
+     dots worth spelling out. */
+  const byMove = useMemo(
+    () => [...basket.quotes].sort((a, b) => a.changePct - b.changePct),
+    [basket],
+  );
+  const low = byMove[0];
+  const high = byMove[byMove.length - 1];
 
   return (
     <>
-      {/* The bar above already carries the name — the head only says what the filter is. */}
-      <div className="basket-head">
-        <BasketMark id={basket.id} />
-        <p className="t-body-s muted">{basket.note}</p>
-      </div>
+      <section className="bkt-hero">
+        <div className="bkt-hero-id">
+          <BasketMark id={basket.id} />
+          <div>
+            <p className="t-body-s">{basket.note}</p>
+            <p className="bkt-rule">
+              <Icon name="sliders" size={13} />
+              {leadRule[basket.lead]}
+            </p>
+          </div>
+        </div>
 
-      <div className="basket-stats">
-        <div>
-          <b className={basket.changePct < 0 ? "c-down" : "c-up"}>{pct(basket.changePct)}</b>
-          <small>Average move</small>
+        <div className="bkt-hero-figs">
+          <div>
+            <b className={basket.changePct < 0 ? "c-down" : "c-up"}>{pct(basket.changePct)}</b>
+            <small>Average move</small>
+          </div>
+          <div>
+            <b>{basket.count}</b>
+            <small>Names</small>
+          </div>
+          <div>
+            <b>
+              <span className="c-up">{basket.up}</span> / <span className="c-down">{basket.down}</span>
+            </b>
+            <small>Up / down</small>
+          </div>
         </div>
-        <div>
-          <b>{basket.count}</b>
-          <small>Names</small>
-        </div>
-        <div>
-          <b>{basket.up} / {basket.down}</b>
-          <small>Up / down</small>
-        </div>
+      </section>
+
+      <div className="bkt-panels">
+        <section className="market-block">
+          <header className="market-block-head">
+            <h2>How the group sat today</h2>
+            <span className="t-body-xs muted">{nepse.date} close</span>
+          </header>
+          <div className="market-block-body">
+            <div className="bkt-shape">
+              <dl className="bkt-shape-ends">
+                <div>
+                  <dt>Lowest</dt>
+                  <dd className={low && low.changePct < 0 ? "c-down" : "c-up"}>
+                    {low?.symbol} {pct(low?.changePct ?? 0)}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Highest</dt>
+                  <dd className={high && high.changePct < 0 ? "c-down" : "c-up"}>
+                    {high?.symbol} {pct(high?.changePct ?? 0)}
+                  </dd>
+                </div>
+              </dl>
+              <p className="bkt-shape-read">
+                {basket.up} of {basket.count} rose.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="market-block">
+          <header className="market-block-head">
+            <h2>What is inside</h2>
+            <span className="t-body-xs muted">{mix.length} {mix.length === 1 ? "sector" : "sectors"}</span>
+          </header>
+          <div className="market-block-body">
+            <div className="bkt-mix">
+              {/* A single-sector basket has nothing to divide, and a full-width
+                  band of one colour only says what the legend already says. */}
+              {mix.length > 1 && (
+                <div className="bkt-mix-bar" aria-hidden>
+                  {mix.map((slice) => (
+                    <i key={slice.name} style={{ flexGrow: slice.count, background: sectorTone(slice.name) }} />
+                  ))}
+                </div>
+              )}
+              <ul className="bkt-mix-legend">
+                {mix.map((slice) => (
+                  <li key={slice.name}>
+                    <i style={{ background: sectorTone(slice.name) }} />
+                    <span>{slice.name}</span>
+                    <b>{slice.count}</b>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
       </div>
 
       <section className="market-block">
         <header className="market-block-head">
           <h2>In this basket</h2>
-          <span className="t-body-xs muted">{nepse.date} close</span>
+          <span className="t-body-xs muted">Ranked on {leadColumn[basket.lead]}</span>
         </header>
-        <div className="bk-cards">
-          {basket.quotes.map((quote, index) => (
-            <MemberCard
-              key={quote.symbol}
-              quote={quote}
-              rank={index + 1}
-              lead={lead}
-              onOpen={() => go("stock", { stock: quote.symbol })}
-            />
-          ))}
+        <div className="market-block-body bkt-body">
+          <div className="bkm-list">
+            <ListHead cols={[null, null, "Company", "Last price · today"]} />
+            {basket.quotes.map((quote, index) => (
+              <MemberRow
+                key={quote.symbol}
+                quote={quote}
+                rank={index + 1}
+                leadId={basket.lead}
+                onOpen={() => go("stock", { stock: quote.symbol })}
+              />
+            ))}
+          </div>
         </div>
       </section>
+
+      <p className="foot-note">
+        Every row shows its {leadColumn[basket.lead]} — the one column that ranked this list.
+        Green and red only ever mean today’s move.
+      </p>
 
       <div className="market-helps">
         <Explain onClick={() => openSheet(basketSheet(basket))}>How this list is built</Explain>
       </div>
+      <p className="foot-note">
+        A filter over prints that already happened. Never a call to buy or sell.
+      </p>
     </>
   );
 }

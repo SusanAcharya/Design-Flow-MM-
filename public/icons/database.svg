@@ -1,17 +1,7 @@
-<!-- @license lucide-static v1.34.0 - ISC -->
-<svg
-  class="lucide lucide-database"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="#000"
-  stroke-width="1.8"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <ellipse cx="12" cy="5" rx="9" ry="3" />
-  <path d="M3 5V19A9 3 0 0 0 21 19V5" />
-  <path d="M3 12A9 3 0 0 0 21 12" />
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <ellipse cx="12" cy="6.2" rx="7.2" ry="2.6" />
+  <path d="M4.8 6.2V17.8" />
+  <path d="M19.2 6.2V17.8" />
+  <path d="M4.8 12C4.8 13.4 8 14.6 12 14.6C16 14.6 19.2 13.4 19.2 12" />
+  <path d="M4.8 17.8C4.8 19.2 8 20.4 12 20.4C16 20.4 19.2 19.2 19.2 17.8" />
 </svg>

@@ -2,3 +2,7 @@ node_modules
 dist
 .DS_Store
 *.local
+
+# Design working files, not shipped with the app
+icon-concepts/
+PRODUCT-DESIGN.md

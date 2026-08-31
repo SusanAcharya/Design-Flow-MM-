@@ -12,7 +12,7 @@ export function activeTab(route: Route, origin?: Route): Route {
   if (route === "stock" || route === "ipo" || route === "market-desk") return "market";
   if (route === "holding") return "portfolio";
   if (route === "search" || route === "more") return "discover";
-  if (route === "learn" || route === "lesson") return "ai";
+  if (route === "learn" || route === "lesson" || route === "course" || route === "my-learning" || route === "certificates" || route === "course-faq") return "ai";
   if (route === "alerts" || route === "notifications" || route === "watchlist" || route === "brokers" || route === "baskets" || route === "profile" || route === "subscription" || route === "happening") return "home";
   if (tabIds.includes(route)) return route;
   return "home";
@@ -33,6 +33,8 @@ export const jumpDestinations: {
   { id: "broker-analysis", label: "Broker analysis", icon: "handshake", route: "brokers", brokerDesk: "analysis" },
   { id: "news", label: "News", icon: "news", route: "market", marketTab: "Events" },
   { id: "courses", label: "Courses", icon: "learn", route: "learn" },
+  { id: "my-learning", label: "My learning", icon: "book", route: "my-learning" },
+  { id: "certificates", label: "Certificates", icon: "ticket", route: "certificates" },
   { id: "objectives", label: "Objectives", icon: "clipboard", route: "objectives" },
   { id: "subscription", label: "Subscription", icon: "coin", route: "subscription" },
   { id: "tools", label: "View all tools", icon: "sliders", route: "more" },

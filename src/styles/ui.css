@@ -458,9 +458,9 @@ body {
 }
 .brand-row { display: flex; align-items: center; gap: 10px; padding: 0 10px; }
 .brand-mark {
-  width: 32px; height: 32px; border-radius: 10px;
-  background: var(--accent-base); color: var(--text-on-accent);
-  display: grid; place-items: center; font-weight: 600; font-size: 15px;
+  width: 32px; height: 32px; border-radius: 50%;
+  object-fit: cover;
+  flex: none;
 }
 .rail-nav { display: flex; flex-direction: column; gap: 4px; }
 .rail-item {
@@ -2526,6 +2526,9 @@ button.home-card:hover,
   gap: 4px;
 }
 
+/* Mitra's own face rides the FAB, so the plate stays neutral in both themes —
+   the dark accent is green, and a green mascot on it disappears. The accent
+   survives in the glow, which is what marks it as the primary action. */
 .home-fab {
   position: absolute;
   right: 16px;
@@ -2533,12 +2536,36 @@ button.home-card:hover,
   z-index: 24;
   width: 56px;
   height: 56px;
+  padding: 0;
   border-radius: 50%;
+  overflow: hidden;
   display: grid;
-  place-items: center;
-  background: var(--accent-base);
-  color: var(--text-on-accent);
-  box-shadow: 0 8px 24px color-mix(in srgb, var(--accent-base) 45%, transparent);
+  place-items: end center;
+  background: var(--bg-raised);
+  box-shadow:
+    0 0 0 1px var(--border-subtle),
+    0 8px 24px color-mix(in srgb, var(--accent-base) 32%, transparent);
+}
+.home-fab:active { transform: scale(0.96); }
+.home-fab .mitra-mark { margin-bottom: -2px; }
+
+/* The one nav glyph that is a picture, not a mask. It can't take a tint, so it
+   desaturates when the tab is off and comes back to full colour when it's on. */
+.mitra-mark {
+  display: block;
+  flex: none;
+  object-fit: contain;
+}
+.tab .mitra-mark,
+.rail-item .mitra-mark,
+.drawer-nav .mitra-mark {
+  filter: saturate(0.12) opacity(0.7);
+  transition: filter 0.16s ease;
+}
+.tab.on .mitra-mark,
+.rail-item.on .mitra-mark,
+.drawer-nav .on .mitra-mark {
+  filter: none;
 }
 .device.web .home-fab {
   right: 28px;
@@ -3883,18 +3910,30 @@ button.happen-row {
   background: #f4f4f2;
 }
 .nepse-hero {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: 8px;
   width: 100%;
-  padding: 12px 14px 10px;
+  padding: 12px calc(var(--mitra-w) + 18px) 10px 14px;
   border-radius: 16px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   color: inherit;
   text-align: left;
   cursor: pointer;
+}
+/* Mitra cheers or worries with the index, standing on the card's floor.
+   Capped so the stretched web card doesn't blow her up to its full height. */
+.nepse-hero-mitra {
+  position: absolute;
+  right: 8px;
+  bottom: 6px;
+  height: min(var(--mitra-h), calc(100% - 12px));
+  width: auto;
+  pointer-events: none;
+  user-select: none;
 }
 [data-theme="dark"] .nepse-hero {
   background: #111111;
@@ -3929,6 +3968,7 @@ button.happen-row {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-width: 0;
 }
 .nepse-hero-name {
   display: inline-flex;
@@ -3945,8 +3985,20 @@ button.happen-row {
   gap: 8px;
   font-size: 11.5px;
   color: var(--text-tertiary);
+  min-width: 0;
+}
+/* The date gives way first; the time and session badge must always read. */
+.nepse-hero-stamp {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Mitra's column costs the head row its width, so the phone keeps the time
+   and drops the date. The wider web card shows both. */
+.nepse-hero-date { display: none; }
+.device.web .nepse-hero-date { display: inline; }
+.device.web .nepse-hero-date::after { content: " · "; }
 .nepse-hero-line {
   align-items: center;
   gap: 8px;
@@ -3964,15 +4016,45 @@ button.happen-row {
 .nepse-hero-pill.down { background: var(--down-soft); color: var(--down-text); }
 .nepse-hero-pill.up { background: var(--up-soft); color: var(--up-text); }
 .nepse-hero-state {
+  flex: none;
   padding: 3px 8px;
   border-radius: 8px;
   font-size: 10.5px;
   font-weight: 700;
   letter-spacing: 0.5px;
+  white-space: nowrap;
   background: var(--bg-inset);
   color: var(--text-tertiary);
 }
 .nepse-hero-state.open { background: var(--up-soft); color: var(--up-text); }
+/* Breadth is web-only — the phone card has no height to spare for it. */
+.nepse-breadth {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.nepse-breadth-bar {
+  display: flex;
+  gap: 3px;
+  height: 5px;
+}
+.nepse-breadth-bar > * {
+  display: block;
+  min-width: 3px;
+  height: 100%;
+  border-radius: 999px;
+}
+.nepse-breadth-bar i { background: var(--up-base); }
+.nepse-breadth-bar b { background: var(--down-base); }
+.nepse-breadth-bar em { background: var(--border-strong); }
+.nepse-breadth-legend {
+  display: flex;
+  gap: 14px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.nepse-breadth-legend strong { font-weight: 650; }
 .nepse-hero .sparkline {
   width: 100%;
   height: 40px;
@@ -6921,26 +7003,6 @@ button.happen-row {
 .baskets-desk .desk-tabs {
   padding-top: 10px;
 }
-.basket-row {
-  grid-template-columns: 56px minmax(0, 1fr) auto;
-}
-.basket-stack {
-  display: flex;
-  align-items: center;
-}
-.basket-stack .ticker-mark.sm {
-  width: 24px;
-  height: 24px;
-  border-radius: 8px;
-  margin-left: -8px;
-  box-shadow: 0 0 0 2px var(--bg-inset);
-}
-.basket-stack .ticker-mark.sm:first-child {
-  margin-left: 0;
-}
-.basket-stack.shut {
-  opacity: 0.5;
-}
 .basket-tag {
   margin-left: 7px;
   padding: 2px 6px;
@@ -6956,50 +7018,6 @@ button.happen-row {
 .basket-tag.lock {
   background: var(--accent-soft);
   color: var(--accent-soft-text);
-}
-.basket-head {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 20px 4px;
-}
-.basket-head p {
-  margin: 0;
-  min-width: 0;
-}
-.basket-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2px;
-  margin: 10px 16px 0;
-  padding: 12px 6px;
-  border-radius: 20px;
-  background: var(--bg-inset);
-}
-.basket-stats div {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-.basket-stats b {
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.4px;
-  font-variant-numeric: tabular-nums;
-}
-.basket-stats small {
-  font-size: 11px;
-  color: var(--text-tertiary);
-}
-.device.web .basket-head {
-  padding-left: 0;
-  padding-right: 0;
-}
-.device.web .basket-stats {
-  margin-left: 0;
-  margin-right: 0;
-  max-width: 420px;
 }
 .split-cell {
   display: block;
@@ -7249,8 +7267,7 @@ button.happen-row {
   color: inherit;
   cursor: pointer;
 }
-.quote-row,
-.broker-row {
+.quote-row {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -7437,7 +7454,7 @@ button.happen-row {
   height: 100%;
   justify-content: space-between;
   gap: 14px;
-  padding: 20px 22px 18px;
+  padding: 20px calc(var(--mitra-w) + 22px) 18px 22px;
 }
 .device.web .nepse-hero-value { font-size: 32px; letter-spacing: -1px; }
 /* The index card owns a whole column on web, so the tape stretches to fit. */
@@ -9955,11 +9972,6 @@ button.happen-row {
   background: #fff;
   border-right-color: var(--border-subtle);
 }
-.device.web[data-theme="light"] .brand-mark {
-  border-radius: 50%;
-  background: var(--bg-inverse);
-  color: var(--text-inverse);
-}
 .device.web[data-theme="light"] .rail-item.on {
   background: var(--bg-inverse);
   border-color: var(--bg-inverse);
@@ -11741,7 +11753,6 @@ button.happen-row {
   margin-left: 28px;
   margin-right: 28px;
 }
-.device.web .broker-file,
 .device.web .broker-sort,
 .device.web .broker-views {
   padding-left: 28px;
@@ -11812,28 +11823,6 @@ button.happen-row {
   text-transform: uppercase;
 }
 
-.broker-split {
-  display: flex;
-  gap: 3px;
-  height: 4px;
-  border-radius: 999px;
-  overflow: hidden;
-}
-.broker-split.lg {
-  height: 6px;
-  margin: 12px 0 6px;
-}
-.quote-id .broker-split {
-  margin-top: 6px;
-  max-width: 132px;
-}
-.broker-split i {
-  min-width: 4px;
-  height: 100%;
-  border-radius: 999px;
-}
-.broker-split i.up { background: var(--up-base); }
-.broker-split i.down { background: var(--down-base); }
 .broker-pick-in {
   position: relative;
 }
@@ -11874,18 +11863,6 @@ button.happen-row {
 .broker-pick-menu button.on {
   background: var(--accent-soft);
   color: var(--accent-soft-text);
-}
-.broker-file {
-  padding: 12px 20px 8px;
-}
-.broker-file-id {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.broker-file .hero-num {
-  margin-top: 0;
 }
 
 .profile-screen {
@@ -12269,154 +12246,7 @@ button.happen-row {
 [data-theme="dark"] .bone { background: #1e1e1e; }
 .pf-zero-card .alloc-strip.ghost .alloc-bar i { opacity: 0.22; }
 
-/* ── Basket members ─────────────────────────────────────────────────────────
-   A card per company: identity and price on top, the 52-week position as a
-   line you can read at a glance, then the numbers behind the sort. */
-.bk-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.bk-card {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  width: 100%;
-  padding: 14px;
-  border-radius: 18px;
-  text-align: left;
-  color: inherit;
-  background: var(--bg-inset);
-  border: 1px solid transparent;
-  transition: border-color 0.16s ease;
-}
-[data-theme="dark"] .bk-card { background: #141414; }
-.bk-card:hover { border-color: var(--border-default); }
-.bk-card-head {
-  display: grid;
-  grid-template-columns: auto 36px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-}
-.bk-rank {
-  min-width: 16px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-  font-variant-numeric: tabular-nums;
-}
-.bk-id { min-width: 0; }
-.bk-id strong {
-  display: block;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.15px;
-}
-.bk-id small {
-  display: block;
-  margin-top: 1px;
-  font-size: 11.5px;
-  color: var(--text-tertiary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.bk-px {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  font-variant-numeric: tabular-nums;
-}
-.bk-px b { font-size: 14.5px; font-weight: 650; letter-spacing: -0.25px; }
-.bk-px em { font-style: normal; font-size: 12.5px; font-weight: 600; }
 
-.bk-range {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-}
-.bk-range-cap small {
-  display: block;
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.bk-range-cap b {
-  display: block;
-  margin-top: 2px;
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-secondary);
-}
-.bk-range-cap.end { text-align: right; }
-.bk-range-track {
-  position: relative;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--bg-sunken);
-}
-[data-theme="dark"] .bk-range-track { background: #242424; }
-.bk-range-fill {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--border-strong);
-  opacity: 0.55;
-}
-.bk-range-dot {
-  position: absolute;
-  top: 50%;
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--text-primary);
-  box-shadow: 0 0 0 3px var(--bg-inset);
-}
-[data-theme="dark"] .bk-range-dot { box-shadow: 0 0 0 3px #141414; }
-
-.bk-facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-subtle);
-}
-.bk-facts > span { min-width: 0; }
-.bk-facts small {
-  display: block;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.bk-facts b {
-  display: block;
-  margin-top: 3px;
-  font-size: 12.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-primary);
-  white-space: nowrap;
-}
-.device.web .bk-cards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.device.web .bk-facts {
-  /* Three facts or four — either fills the row evenly, no dead cell. */
-  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
-}
 
 /* ── Web rail ───────────────────────────────────────────────────────────────
    The rail carries what the mobile drawer carries: tabs, the named places,
@@ -12479,9 +12309,18 @@ button.happen-row {
 
 /* ── Web layout pass ────────────────────────────────────────────────────────
    Columns that ran out of content left holes; these fill them. */
-/* Index card: the tape keeps a fixed band; the meta sits at the foot. */
-.device.web .nepse-hero { justify-content: space-between; gap: 10px; }
-.device.web .nepse-hero .sparkline { flex: none; height: 96px; }
+/* Index card: this column stretches to match the feed beside it, and
+   space-between used to pour all that slack into three empty gaps. The tape
+   takes it instead — a taller chart is the thing worth growing here. */
+.device.web .nepse-hero { justify-content: flex-start; gap: 16px; }
+.device.web .nepse-hero .sparkline {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 120px;
+  max-height: 260px;
+}
+/* Breadth and meta close the card; meta stays pinned to the foot. */
+.device.web .nepse-meta { margin-top: 2px; }
 /* Market overview: tools sit under the index, the update list runs beside both. */
 .device.web .market-web-pulse { grid-column: 1; grid-row: 2; }
 .device.web .market-web-tools { grid-column: 1 / -1; grid-row: 3; min-width: 0; }
@@ -14020,8 +13859,11 @@ button.happen-row {
   margin-top: 16px;
 }
 .device.web .sub-card { padding: 22px 20px 20px; }
-.device.web .sub-char img { width: 148px; height: 164px; }
-.device.web .sub-char::before { width: 150px; height: 150px; }
+/* Scoped to the plan card. Unscoped, this also hit the checkout summary row
+   and the Done step — it outranks their own sizing, so the character blew out
+   of the row and its disc bled off the left edge. */
+.device.web .sub-card .sub-char img { width: 148px; height: 164px; }
+.device.web .sub-card .sub-char::before { width: 150px; height: 150px; }
 .device.web .sub-table th,
 .device.web .sub-table td { padding: 11px 16px; }
 .device.web .sub-steps,
@@ -14257,10 +14099,6 @@ button.happen-row {
 .device.web .desk-head-row .desk-controls { flex: 1; padding-left: 0; min-width: 320px; }
 .device.web .desk-head-row .desk-controls > .pad { max-width: none; }
 
-/* The four highlights are four columns, not three and an orphan. */
-.device.web .broker-desk .market-block-body > .quote-list.brk-highlights {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
 
 /* Jump tiles keep their size instead of stretching across 1440. */
 .device.web .jump-rail {
@@ -14578,53 +14416,6 @@ button.happen-row {
   gap: 10px;
   margin-bottom: 10px;
 }
-.greed-score {
-  font-size: 12.5px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 999px;
-  border: 0;
-  background: var(--bg-inset);
-  color: var(--text-secondary);
-  white-space: nowrap;
-}
-.greed-score.s-fear,
-.greed-score.s-cautious { background: var(--down-soft); color: var(--down-text); }
-.greed-score.s-neutral { background: var(--bg-inset); color: var(--text-secondary); }
-.greed-score.s-warm,
-.greed-score.s-greed { background: var(--up-soft); color: var(--up-text); }
-.greed-track {
-  position: relative;
-  height: 8px;
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    var(--down-base) 0%,
-    #e08700 34%,
-    #b9c34a 55%,
-    var(--up-base) 100%
-  );
-}
-.greed-mark {
-  position: absolute;
-  top: 50%;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--bg-surface);
-  border: 3px solid var(--text-primary);
-  transform: translate(-50%, -50%);
-}
-[data-theme="dark"] .greed-mark { background: #131313; border-color: #ffffff; }
-.greed-ticks {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 7px;
-  font-size: 10.5px;
-  letter-spacing: 0.3px;
-  color: var(--text-tertiary);
-}
-/* A short card: header, track, two ends. Nothing else. */
 .greed-card { align-self: start; }
 
 /* Web: the read sits as two cards side by side under the chart. */
@@ -14830,14 +14621,11 @@ button.stock-key:active { background: var(--bg-inset); }
   justify-content: flex-start;
   background: var(--bg-canvas);
 }
+/* On the phone this is just the mark, the name and the promise, on the app's
+   own background. Web turns it back into the split-screen panel below. */
 .auth-hero {
   position: relative;
-  min-height: 168px;
-  padding: 20px 24px 24px;
-  border-radius: 0 0 28px 28px;
-  background: linear-gradient(150deg, var(--accent-base) 0%, color-mix(in srgb, var(--accent-base) 62%, #050505) 100%);
-  color: #ffffff;
-  overflow: hidden;
+  padding: 26px 22px 4px;
 }
 .auth-hero-brand {
   display: flex;
@@ -14845,37 +14633,24 @@ button.stock-key:active { background: var(--bg-inset); }
   gap: 10px;
 }
 .auth-mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 13px;
-  display: grid;
-  place-items: center;
-  background: rgba(255, 255, 255, 0.16);
-  color: #ffffff;
-  font-size: 19px;
-  font-weight: 800;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
 }
 .auth-hero-brand strong {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 750;
   letter-spacing: -0.3px;
 }
-.auth-hero-art {
-  position: absolute;
-  right: 10px;
-  bottom: 0;
-  height: 126px;
-  width: auto;
-  opacity: 0.95;
-  filter: drop-shadow(0 10px 14px rgba(0, 0, 0, 0.25));
-}
+.auth-hero-art { display: none; }
 .auth-hero-line {
-  max-width: 58%;
-  margin-top: 16px;
-  font-size: 19px;
-  font-weight: 700;
-  line-height: 1.25;
-  letter-spacing: -0.3px;
+  margin-top: 10px;
+  font-size: 14.5px;
+  font-weight: 450;
+  line-height: 1.4;
+  color: var(--text-tertiary);
 }
 .auth-hero-points { display: none; }
 
@@ -15112,6 +14887,9 @@ button.stock-key:active { background: var(--bg-inset); }
   flex-direction: column;
   justify-content: safe center;
 }
+/* Web has a whole column to fill, so the brand block becomes the lit panel:
+   a near-black ground with two accent glows, one behind the mark and one on
+   the floor under Mitra — both she and the gold coin need it to read. */
 .device.web .auth-hero {
   width: 100%;
   height: 100%;
@@ -15120,16 +14898,26 @@ button.stock-key:active { background: var(--bg-inset); }
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(62% 78% at 50% 104%, color-mix(in srgb, var(--accent-base) 46%, transparent) 0%, transparent 66%),
+    radial-gradient(54% 66% at 8% 0%, color-mix(in srgb, var(--accent-base) 20%, transparent) 0%, transparent 72%),
+    linear-gradient(158deg, color-mix(in srgb, var(--accent-base) 15%, #070c0a) 0%, #06090800 100%),
+    #070908;
+  color: #ffffff;
 }
 .device.web .auth-hero-art {
-  position: static;
+  display: block;
   height: 260px;
   margin: 28px 0 22px;
   align-self: center;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.3));
 }
 .device.web .auth-hero-line {
-  max-width: none;
   font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #ffffff;
   margin-top: 0;
 }
 .device.web .auth-hero-points {
@@ -15156,6 +14944,32 @@ button.stock-key:active { background: var(--bg-inset); }
   height: 8px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.55);
+}
+
+/* Light mode gets a light panel. The near-black one read as dark-theme leakage
+   next to a white form — murky, and the two halves fought each other. A pale
+   accent wash keeps the split calm, and Mitra and the coin still have ground
+   to sit on because the wash deepens toward her feet. */
+.device.web[data-theme="light"] .auth-hero {
+  background:
+    radial-gradient(62% 55% at 50% 103%, color-mix(in srgb, var(--accent-base) 26%, transparent) 0%, transparent 68%),
+    radial-gradient(54% 48% at 6% -4%, color-mix(in srgb, var(--accent-base) 15%, transparent) 0%, transparent 70%),
+    linear-gradient(158deg, color-mix(in srgb, var(--accent-base) 4%, #ffffff) 0%, color-mix(in srgb, var(--accent-base) 12%, #ffffff) 100%);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-subtle);
+}
+/* A cast shadow, not an accent glow — tinting this one haloed her. */
+.device.web[data-theme="light"] .auth-hero-art {
+  filter: drop-shadow(0 16px 20px rgba(18, 32, 62, 0.16));
+}
+.device.web[data-theme="light"] .auth-hero-line {
+  color: var(--text-primary);
+}
+.device.web[data-theme="light"] .auth-hero-points li {
+  color: var(--text-secondary);
+}
+.device.web[data-theme="light"] .auth-hero-points li::before {
+  background: color-mix(in srgb, var(--accent-base) 60%, transparent);
 }
 .device.web .auth-card {
   width: 100%;
@@ -15292,3 +15106,1735 @@ button.stock-key:active { background: var(--bg-inset); }
   /* Clear of the home indicator on iOS. */
   .tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); height: auto; min-height: 74px; }
 }
+
+/* ── Courses ────────────────────────────────────────────────────────────────
+   The paid side of Learn: a catalogue, one course, what you own, the
+   paperwork. Mobile authors one column; the web rules at the foot of this
+   block promote the lists to grids the way Baskets and Brokers already do. */
+
+.course-filters {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.course-filters::-webkit-scrollbar { display: none; }
+.course-filters .chip { flex: none; }
+
+/* Covers carry the title rather than photography — no invented instructors. */
+.course-cover {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+  flex: none;
+}
+.course-cover.teal { background: var(--deco-teal-soft); color: var(--deco-teal); }
+.course-cover.saffron { background: var(--deco-saffron-soft); color: var(--deco-saffron); }
+.course-cover.violet,
+.course-cover.learn { background: var(--deco-violet-soft); color: var(--deco-violet); }
+.course-cover-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 13px;
+  max-width: 74%;
+}
+.course-cover-copy em {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.course-cover-copy strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.2px;
+}
+.course-cover img {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  height: 76%;
+  width: auto;
+  opacity: 0.92;
+}
+.course-cover.cover-card { aspect-ratio: 16 / 9; width: 100%; }
+.course-cover.cover-hero {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: 18px;
+}
+.course-cover.cover-hero .course-cover-copy { padding: 20px 22px; gap: 8px; }
+.course-cover.cover-hero .course-cover-copy strong { font-size: 21px; }
+.course-cover.cover-hero .course-cover-copy em { font-size: 11px; }
+
+.course-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 14px 10px;
+}
+.course-card {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  width: 100%;
+}
+[data-theme="dark"] .course-card { background: #141414; }
+.course-card:hover { border-color: var(--border-default); }
+.course-card-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.course-card-title {
+  font-size: 14.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.course-card-facts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.course-card-facts i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  flex: none;
+}
+.course-level { display: inline-flex; align-items: center; gap: 5px; }
+.course-level::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-base);
+}
+.course-level.teal::before { background: var(--deco-teal); }
+.course-level.violet::before { background: var(--deco-violet); }
+
+.course-price { display: flex; align-items: baseline; gap: 8px; }
+.course-price b {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.course-price s {
+  font-size: 12.5px;
+  color: var(--down-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.course-owned { display: flex; flex-direction: column; gap: 6px; }
+.course-bar {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+.course-bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent-base); }
+.course-owned em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+/* Free lectures scroll sideways on the phone — four short things, no paywall. */
+.free-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 14px 12px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.free-strip::-webkit-scrollbar { display: none; }
+.free-card {
+  flex: none;
+  width: 208px;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+[data-theme="dark"] .free-card { background: #141414; }
+.free-card:hover { border-color: var(--border-default); }
+.free-card-art {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  min-height: 92px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+}
+.free-card.teal .free-card-art { background: var(--deco-teal-soft); color: var(--deco-teal); }
+.free-card.saffron .free-card-art { background: var(--deco-saffron-soft); color: var(--deco-saffron); }
+.free-card.violet .free-card-art,
+.free-card.learn .free-card-art { background: var(--deco-violet-soft); color: var(--deco-violet); }
+.free-card-art em {
+  font-style: normal;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+.free-card-art strong { font-size: 14px; font-weight: 700; line-height: 1.25; letter-spacing: -0.2px; }
+.free-card-foot { display: flex; align-items: center; gap: 10px; padding: 11px 12px; }
+.free-card-foot strong { display: block; font-size: 12.5px; font-weight: 600; }
+.free-card-foot small { display: block; font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.free-play {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent-base);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.free-play i {
+  width: 0;
+  height: 0;
+  border-left: 8px solid var(--text-on-accent);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  margin-left: 2px;
+}
+
+.course-path-body { padding: 12px 14px; }
+
+.course-links { display: flex; flex-direction: column; }
+.course-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  border-top: 1px solid var(--border-subtle);
+}
+.course-link:first-child { border-top: 0; }
+.course-link > span:nth-child(2) { flex: 1; min-width: 0; }
+.course-link strong { display: block; font-size: 14px; font-weight: 600; }
+.course-link small { display: block; font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.course-link .icon { color: var(--text-tertiary); }
+
+/* ── One course ───────────────────────────────────────────────────────────*/
+
+.course-titling { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; }
+.course-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+.course-rating { display: flex; align-items: center; gap: 8px; }
+.course-rating b { font-size: 14px; font-weight: 700; }
+.course-rating small { font-size: 12px; color: var(--text-tertiary); }
+.course-stars { display: inline-flex; gap: 2px; }
+.course-stars i {
+  width: 11px;
+  height: 11px;
+  background: var(--border-strong);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+}
+.course-stars i.on { background: var(--deco-saffron); }
+
+.lecture-list { display: flex; flex-direction: column; }
+.lecture-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 20px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  border-top: 1px solid var(--border-subtle);
+}
+.lecture-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-base);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.lecture-mark.locked { background: var(--bg-inset); color: var(--text-tertiary); }
+.lecture-play {
+  width: 0;
+  height: 0;
+  border-left: 9px solid currentColor;
+  border-top: 5.5px solid transparent;
+  border-bottom: 5.5px solid transparent;
+  margin-left: 3px;
+}
+.lecture-row.done .lecture-mark { background: var(--up-soft); color: var(--up-text); }
+.lecture-main { flex: 1; min-width: 0; }
+.lecture-main strong { display: block; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.lecture-main small {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 3px;
+}
+.lecture-free,
+.lecture-watched {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.lecture-free { background: var(--accent-soft); color: var(--accent-soft-text); }
+.lecture-watched { background: var(--up-soft); color: var(--up-text); }
+.lecture-row .icon { color: var(--text-tertiary); }
+
+.course-points { display: flex; flex-direction: column; gap: 9px; margin-top: 10px; }
+.course-points li {
+  position: relative;
+  padding-left: 22px;
+  font-size: 14px;
+  line-height: 1.45;
+  list-style: none;
+}
+.course-points li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-base);
+}
+.course-points.quiet li::before { background: var(--border-strong); }
+
+.course-facts {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.course-facts .kv { padding: 11px 14px; }
+.course-facts .kv:first-child { border-top: 0; }
+
+.review-summary { display: flex; align-items: center; gap: 14px; }
+/* Direct child only — a descendant selector also caught .course-stars, which
+   is a span, and stood the five stars up in a column. */
+.review-summary > span { display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.review-summary small { font-size: 12px; color: var(--text-tertiary); }
+.review-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 13px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+.review-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.review-head strong { font-size: 13.5px; font-weight: 650; }
+.review-head small { font-size: 11.5px; color: var(--text-tertiary); }
+
+.course-buy {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 14px 16px 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: var(--bg-inset);
+}
+.course-buy .btn { width: 100%; }
+.course-buy-progress { display: flex; flex-direction: column; gap: 4px; width: 100%; }
+.course-buy-progress b { font-size: 19px; font-weight: 700; letter-spacing: -0.4px; }
+.course-buy-progress small { font-size: 12px; color: var(--text-tertiary); }
+.course-buy-progress .course-bar { margin-top: 6px; height: 6px; }
+
+.course-aside {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 12px 16px 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+}
+.course-aside img { width: 46px; height: auto; flex: none; }
+.course-aside p { flex: 1; min-width: 140px; }
+.course-aside .text-link { color: inherit; font-weight: 600; }
+
+.course-screen .course-link { margin: 12px 16px 0; border-top: 0; border: 1px solid var(--border-subtle); border-radius: 16px; }
+
+/* The buy bar follows you down the phone; web puts it in the side column. */
+.course-dock {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--bg-canvas) 92%, transparent);
+  backdrop-filter: blur(14px);
+  border-top: 1px solid var(--border-subtle);
+}
+.course-dock > span { display: flex; flex-direction: column; gap: 2px; }
+.course-dock small { font-size: 11.5px; color: var(--text-tertiary); }
+
+/* ── Certificates ─────────────────────────────────────────────────────────*/
+
+.cert-grid { display: flex; flex-direction: column; gap: 12px; padding: 4px 14px 10px; }
+.cert-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+[data-theme="dark"] .cert-card { background: #141414; }
+.cert-top { display: flex; align-items: center; justify-content: space-between; }
+.cert-code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+  background: var(--bg-inset);
+  padding: 7px 10px;
+  border-radius: 9px;
+  margin-top: 4px;
+}
+.cert-acts { display: flex; gap: 8px; margin-top: 6px; }
+
+/* ── Questions ────────────────────────────────────────────────────────────*/
+
+.faq-fold { border-top: 1px solid var(--border-subtle); }
+.faq-fold:first-child { border-top: 0; }
+.faq-fold .obj-fold-toggle { padding: 15px 18px; }
+.faq-fold .obj-fold-toggle span { font-size: 14px; font-weight: 600; }
+.faq-answer {
+  padding: 0 18px 16px;
+  color: var(--text-secondary);
+  max-width: 62ch;
+}
+
+/* ── Web ──────────────────────────────────────────────────────────────────*/
+
+.device.web .courses-desk,
+.device.web .course-screen { max-width: 1180px; margin-inline: auto; }
+.device.web .courses-desk .pad,
+.device.web .course-screen .pad { padding-left: 0; padding-right: 0; }
+.device.web .courses-desk .market-block,
+.device.web .course-screen .market-block { margin-left: 0; margin-right: 0; }
+.device.web .courses-desk .market-block-head { padding-left: 28px; padding-right: 28px; }
+.device.web .courses-desk .foot-note,
+.device.web .course-screen .foot-note { padding-left: 0; padding-right: 0; }
+
+/* The flat mobile list becomes a card grid, the Baskets way. */
+.device.web .course-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 6px 28px 14px;
+}
+.device.web .cert-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding: 6px 28px 14px;
+}
+.device.web .free-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: visible;
+  padding: 6px 28px 14px;
+  gap: 14px;
+}
+.device.web .free-card { width: auto; }
+.device.web .course-links { padding: 4px 14px 10px; }
+.device.web .course-link {
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  margin-bottom: 10px;
+}
+.device.web .course-path-body { padding: 16px 28px; }
+.device.web .desk-head-row .course-filters { flex-wrap: wrap; }
+
+/* Course detail: lectures left, the buy decision on the right. */
+.device.web .course-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(300px, 0.7fr);
+  gap: 8px 28px;
+  align-items: start;
+}
+.device.web .course-main,
+.device.web .course-side { min-width: 0; }
+.device.web .course-buy,
+.device.web .course-aside,
+.device.web .course-screen .course-link { margin-left: 0; margin-right: 0; }
+.device.web .course-cover.cover-hero { border-radius: 20px; }
+.device.web .course-cover.cover-hero .course-cover-copy strong { font-size: 26px; }
+.device.web .lecture-row { padding-left: 0; padding-right: 4px; }
+.device.web .course-faq .tab-feed { max-width: 860px; margin-inline: auto; }
+
+/* Courses: corrections to inherited styles.
+   .obj-fold-toggle title-cases its label for the objective path; FAQ questions
+   are written as sentences and must stay that way. */
+.faq-fold .obj-fold-toggle span { text-transform: none; }
+/* Tab counts render through <em>, which is italic by default. */
+.courses-desk .home-feed-tabs em {
+  font-style: normal;
+  margin-left: 4px;
+  color: var(--text-tertiary);
+}
+/* A long course title must not shove the back button off the app bar. */
+.course-screen .app-bar h1 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The sticky buy dock sits over the list, so the last lecture needs clearance. */
+.course-screen .lecture-list { padding-bottom: 8px; }
+.device:not(.web) .course-screen { padding-bottom: 0; }
+/* A 16:9 cover is 545px tall in the web column — too much before the lectures.
+   Cap it the way .video-well is capped on web. */
+.device.web .course-cover.cover-hero { aspect-ratio: auto; height: 260px; }
+.device.web .course-titling { padding-top: 16px; }
+
+/* ── Greed meter ────────────────────────────────────────────────────────────
+   Mitra wears the zone, the number backs her up, and the track is drawn to the
+   real thresholds so the marker lands where the score actually is. */
+
+.greed-explain { margin: 0; }
+
+.greed-read {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.greed-face {
+  width: 76px;
+  height: 76px;
+  flex: none;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--bg-inset);
+}
+/* The disc behind Mitra carries the zone, so the mood reads before the number. */
+.greed-face.z-fear,
+.greed-face.z-cautious { background: var(--down-soft); }
+.greed-face.z-neutral { background: var(--bg-inset); }
+.greed-face.z-warm,
+.greed-face.z-greed { background: var(--up-soft); }
+
+.greed-read-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.greed-line { display: flex; align-items: center; gap: 9px; }
+.greed-num {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+}
+.greed-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.greed-tag.z-fear,
+.greed-tag.z-cautious { background: var(--down-soft); color: var(--down-text); }
+.greed-tag.z-warm,
+.greed-tag.z-greed { background: var(--up-soft); color: var(--up-text); }
+.greed-reads { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+.greed-note { font-size: 12px; color: var(--text-tertiary); line-height: 1.4; }
+
+.greed-scale { display: flex; flex-direction: column; gap: 7px; }
+.greed-zones {
+  position: relative;
+  display: flex;
+  gap: 3px;
+  height: 8px;
+}
+.greed-zones > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  min-width: 6px;
+}
+[data-theme="dark"] .greed-zones > i { background: #242424; }
+/* Only the zone the score falls in is inked — the rest stay a quiet track. */
+.greed-zones > i.z-fear.on,
+.greed-zones > i.z-cautious.on { background: var(--down-base); }
+.greed-zones > i.z-neutral.on { background: var(--text-tertiary); }
+.greed-zones > i.z-warm.on,
+.greed-zones > i.z-greed.on { background: var(--up-base); }
+
+.greed-mark {
+  position: absolute;
+  top: 50%;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 3px solid var(--text-primary);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+[data-theme="dark"] .greed-mark { background: #131313; border-color: #ffffff; }
+
+.greed-ticks {
+  display: flex;
+  gap: 3px;
+  font-size: 10px;
+  letter-spacing: 0.2px;
+  color: var(--text-tertiary);
+}
+.greed-ticks span {
+  min-width: 0;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.greed-ticks span.on { color: var(--text-primary); font-weight: 650; }
+
+.greed-foot {
+  margin-top: 12px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--text-tertiary);
+}
+
+/* Web has the column width for a bigger face and a roomier read. */
+.device.web .greed-card { padding: 18px 20px; }
+.device.web .greed-read { gap: 18px; margin-bottom: 18px; }
+.device.web .greed-face { width: 104px; height: 104px; }
+.device.web .greed-num { font-size: 38px; }
+.device.web .greed-reads { font-size: 15px; }
+.device.web .greed-note { font-size: 12.5px; }
+.device.web .greed-zones { height: 10px; }
+.device.web .greed-ticks { font-size: 11px; }
+
+/* ── NEPSE card: refresh ────────────────────────────────────────────────────
+   The card is a <button>, so refresh has to be a sibling laid over it. The
+   Mitra sizing vars live on this wrapper now and inherit down to the card —
+   the button positions off --mitra-w, and one declaration keeps them in step. */
+.nepse-hero-wrap {
+  position: relative;
+  min-width: 0;
+  --mitra-h: 120px;
+  --mitra-w: 72px;
+}
+.device.web .nepse-hero-wrap {
+  height: 100%;
+  --mitra-h: 200px;
+  --mitra-w: 119px;
+}
+
+.nepse-refresh {
+  position: absolute;
+  top: 8px;
+  right: calc(var(--mitra-w) + 14px);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--text-tertiary);
+  background: var(--bg-inset);
+  cursor: pointer;
+}
+[data-theme="dark"] .nepse-refresh { background: #1e1e1e; }
+.nepse-refresh:hover { color: var(--text-primary); }
+.nepse-refresh.busy { color: var(--accent-base); }
+.nepse-refresh.busy .icon { animation: nepse-spin 0.9s linear infinite; }
+@keyframes nepse-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .nepse-refresh.busy .icon { animation: none; }
+}
+/* Keep the session badge clear of the button it now sits beside. */
+.nepse-hero-head { padding-right: 26px; }
+
+.device.web .nepse-refresh {
+  top: 16px;
+  right: calc(var(--mitra-w) + 18px);
+  width: 32px;
+  height: 32px;
+}
+.device.web .nepse-hero-head { padding-right: 30px; }
+
+/* Sell left of the line, buy right of it, both against the session's biggest
+   single side — so a busy house draws a long bar and a quiet one a short. */
+/* One signed number against the biggest in its column. */
+.net-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 20px;
+  min-width: 0;
+}
+.net-fill {
+  position: absolute;
+  top: 5px;
+  height: 10px;
+  border-radius: var(--radius-xs);
+}
+.net-fill.up { left: 50%; background: var(--up-base); }
+.net-fill.down { right: 50%; background: var(--down-base); }
+.net-axis {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-default);
+}
+.net-bar em {
+  position: absolute;
+  font-style: normal;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Where a price sits in its year, at row scale. */
+/* One session cut into slices — concentration is the reading. */
+/* Today against the same house's own month — the only honest comparison,
+   because houses differ in size. */
+.pace-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pace-row {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.pace-row small {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.pace-track {
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+[data-theme="dark"] .pace-track { background: #1e1e1e; }
+.pace-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-full);
+}
+.pace-fill.now { background: var(--accent-base); }
+.pace-fill.avg { background: var(--border-strong); }
+.pace-row b {
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.pace-read {
+  margin: 2px 0 0;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+
+/* ── Baskets: the list ────────────────────────────────────────────────────
+   A shelf, not its contents. Art, the filter, and the two numbers that decide
+   whether to open it — everything else waits on the other side of the tap. */
+.bkt-grid { display: flex; flex-direction: column; }
+.bkt-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+.bkt-card:first-child { border-top: 0; }
+.bkt-card:hover { background: var(--bg-sunken); }
+[data-theme="dark"] .bkt-card:hover { background: #0a0a0a; }
+.bkt-card .basket-cover { width: 44px; height: 44px; }
+.bkt-card.shut .basket-cover { opacity: 0.55; filter: grayscale(1); }
+.bkt-id { min-width: 0; }
+.bkt-title {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  color: var(--text-primary);
+}
+.bkt-id small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bkt-move {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+.bkt-move b {
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.bkt-move em {
+  font-style: normal;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Baskets: the detail ──────────────────────────────────────────────────*/
+.bkt-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 16px 4px;
+}
+.bkt-hero-id {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.bkt-hero-id > div { min-width: 0; }
+.bkt-hero-id p { margin: 0; }
+.bkt-hero .basket-cover { width: 60px; height: 60px; }
+.bkt-rule {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px !important;
+  padding: 3px 9px 3px 7px;
+  border-radius: var(--radius-full);
+  background: var(--accent-soft);
+  color: var(--accent-soft-text);
+  font-size: 11px;
+  font-weight: 600;
+}
+.bkt-hero-figs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  padding: 13px 6px;
+  border-radius: 18px;
+  background: var(--bg-inset);
+}
+[data-theme="dark"] .bkt-hero-figs { background: #141414; }
+.bkt-hero-figs div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.bkt-hero-figs b {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+}
+.bkt-hero-figs small {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.bkt-shape {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+}
+.bkt-shape-read {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.bkt-shape-read b { font-weight: 700; color: var(--text-primary); }
+
+.bkt-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+}
+.bkt-mix-bar {
+  display: flex;
+  gap: 3px;
+  height: 10px;
+}
+.bkt-mix-bar i {
+  border-radius: var(--radius-xs);
+  min-width: 4px;
+}
+.bkt-mix-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bkt-mix-legend li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.bkt-mix-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  flex: none;
+}
+.bkt-mix-legend b {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Baskets: the members ─────────────────────────────────────────────────
+   Who it is, what it costs, and the one column that put it on the list. Day
+   range, turnover and volume live on the company's page, one tap away. */
+.bkm-list { display: flex; flex-direction: column; }
+.bkm-row {
+  display: grid;
+  grid-template-columns: 18px 36px minmax(0, 1fr) auto;
+  grid-template-areas:
+    "rank mark id px"
+    "lead lead lead lead";
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+.bkm-row:first-child { border-top: 0; }
+.bkm-row:hover { background: var(--bg-sunken); }
+[data-theme="dark"] .bkm-row:hover { background: #0a0a0a; }
+.bkm-rank {
+  grid-area: rank;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.bkm-row .ticker-mark { grid-area: mark; }
+.bkm-id { grid-area: id; min-width: 0; }
+.bkm-id strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.15px;
+}
+.bkm-id small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bkm-px {
+  grid-area: px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.bkm-px b { font-size: 14px; font-weight: 650; letter-spacing: -0.25px; }
+.bkm-px em { font-style: normal; font-size: 12px; font-weight: 600; }
+/* The ranking column, said in words. It reads as a sentence because the
+   number alone never says which column ranked the row. */
+.bkm-lead {
+  grid-area: lead;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+}
+.bkm-lead b {
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Brokers: choosing one ───────────────────────────────────────────────
+   Who they are, how busy, which way they leaned. The split, the settlement
+   terms and the month's pace all wait on the profile. */
+.brk-grid { display: flex; flex-direction: column; }
+.brk-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  padding: 12px 14px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+.brk-card:first-child { border-top: 0; }
+.brk-card:hover { background: var(--bg-sunken); }
+[data-theme="dark"] .brk-card:hover { background: #0a0a0a; }
+.brk-id { min-width: 0; }
+.brk-id strong {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+.brk-id small {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brk-turn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+.brk-turn b {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.brk-turn em {
+  font-style: normal;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+/* ── Brokers: most active today ───────────────────────────────────────────*/
+.brk-tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 4px 14px 0;
+}
+.brk-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px 13px 13px;
+  border-radius: 16px;
+  text-align: left;
+  color: inherit;
+  background: var(--bg-inset);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.16s ease;
+}
+[data-theme="dark"] .brk-tile { background: #141414; }
+.brk-tile:hover { border-color: var(--border-default); }
+.brk-tile.t-up { background: var(--up-soft); }
+.brk-tile.t-down { background: var(--down-soft); }
+.brk-tile-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.brk-tile-top small {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brk-tile > b {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.25px;
+}
+.brk-tile-sub {
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.brk-tile em {
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+
+/* ── Brokers: the ranked list ────────────────────────────────────────────
+   Rank, house, how much, which way. Opening one shows its split, its month's
+   pace and the names it traded. */
+.brk-rank-list { display: flex; flex-direction: column; }
+.brk-rank-row {
+  display: grid;
+  grid-template-columns: 16px 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 11px 14px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-top: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+.brk-rank-row:first-child { border-top: 0; }
+.brk-rank-row:hover { background: var(--bg-sunken); }
+[data-theme="dark"] .brk-rank-row:hover { background: #0a0a0a; }
+.brk-rank-no {
+  font-style: normal;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.brk-rank-id { min-width: 0; }
+.brk-rank-id strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.brk-rank-id small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brk-rank-num {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.brk-rank-num b { font-size: 13.5px; font-weight: 700; }
+.brk-rank-num em { font-style: normal; font-size: 11.5px; font-weight: 600; }
+
+/* ── Brokers: one house's day ─────────────────────────────────────────────*/
+.brk-flowcard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 12px 14px 0;
+  padding: 14px;
+  border-radius: 18px;
+  background: var(--bg-inset);
+}
+[data-theme="dark"] .brk-flowcard { background: #141414; }
+.brk-flowcard > header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.brk-flowcard > header b {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  font-variant-numeric: tabular-nums;
+}
+/* Bought and sold at their true proportions, with the money written inside —
+   the split bar was a stripe; this is a reading. */
+.brk-scale {
+  display: flex;
+  gap: 4px;
+  height: 54px;
+}
+.brk-scale i {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 74px;
+  padding: 0 11px;
+  border-radius: var(--radius-md);
+  font-style: normal;
+  overflow: hidden;
+}
+.brk-scale i.up { background: var(--up-soft); color: var(--up-text); }
+.brk-scale i.down {
+  background: var(--down-soft);
+  color: var(--down-text);
+  align-items: flex-end;
+  text-align: right;
+}
+.brk-scale b {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.brk-scale small {
+  font-size: 10.5px;
+  font-weight: 600;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+.brk-scale-read {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.brk-scale-read b { font-weight: 700; }
+
+.brk-traded {
+  display: flex;
+  flex-direction: column;
+  padding: 0 14px;
+  --row-line: var(--border-subtle);
+}
+.brk-traded-row {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) minmax(60px, 1.1fr) auto;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  padding: 11px 8px 11px 0;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+.brk-traded-row:last-child { border-bottom: 0; }
+.brk-traded-row:hover { background: var(--bg-inset); }
+.brk-traded-id { min-width: 0; }
+.brk-traded-id strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+.brk-traded-id small {
+  display: block;
+  margin-top: 1px;
+  font-size: 11.5px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.brk-traded-viz {
+  display: flex;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--bg-inset);
+  overflow: hidden;
+}
+[data-theme="dark"] .brk-traded-viz { background: #1e1e1e; }
+.brk-traded-row:hover .brk-traded-viz { background: var(--bg-sunken); }
+.brk-traded-bar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  min-width: 3px;
+}
+.brk-traded-bar.buy { background: var(--up-base); }
+.brk-traded-bar.sell { background: var(--down-base); }
+.brk-traded-num {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.brk-traded-num b { font-size: 13px; font-weight: 650; }
+.brk-traded-num em { font-style: normal; font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
+.brk-traded-num em.c-up, .brk-traded-num em.c-down { color: inherit; }
+
+/* ── Brokers: who stood where in one stock ────────────────────────────────*/
+.brk-net-read {
+  margin: 0;
+  padding: 8px 16px 4px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+.brk-net-read b { font-weight: 700; color: var(--text-primary); }
+.brk-net {
+  display: flex;
+  flex-direction: column;
+  padding: 0 14px;
+  --row-line: var(--border-subtle);
+}
+.brk-net-head,
+.brk-net-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) 92px;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+}
+.brk-net-head {
+  padding: 8px 8px 8px 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.brk-net-head .num { text-align: right; }
+.brk-net-axis-cap {
+  display: flex;
+  justify-content: space-between;
+}
+.brk-net-axis-cap em { font-style: normal; }
+.brk-net-row {
+  padding: 10px 8px 10px 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+}
+.brk-net-row:last-child { border-bottom: 0; }
+.brk-net-row:hover { background: var(--bg-inset); }
+.brk-net-id {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.brk-net-num {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.brk-net-num b { font-size: 12.5px; font-weight: 650; }
+.brk-net-num em { font-style: normal; font-size: 11.5px; font-weight: 600; }
+
+/* ── Brokers: the tape ────────────────────────────────────────────────────*/
+.brk-tape {
+  display: flex;
+  flex-direction: column;
+  padding: 0 14px;
+  --row-line: var(--border-subtle);
+}
+.brk-tape-head,
+.brk-tape-row {
+  display: grid;
+  /* The buyer/seller pair needs its header on one line; the stock column
+     only ever holds a mark and a short symbol, so the room comes from there. */
+  grid-template-columns: minmax(0, 0.85fr) 96px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+}
+.brk-tape-head {
+  padding: 8px 8px 8px 0;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.brk-tape-head .num { text-align: right; }
+.brk-tape-row {
+  position: relative;
+  padding: 10px 8px;
+  margin: 0 -8px;
+  transition: background 0.14s ease;
+  color: inherit;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: pointer;
+  overflow: hidden;
+}
+.brk-tape-row:last-child { border-bottom: 0; }
+/* Trade size drawn behind the row, so a big print does not read like a small
+   one just because both fit on one line. */
+.brk-tape-row > span { position: relative; }
+.brk-tape-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.brk-tape-id b { font-size: 13px; font-weight: 700; }
+.brk-tape-hands {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.brk-tape-hands .icon { color: var(--text-tertiary); flex: none; }
+.brk-tape-hands i {
+  font-style: normal;
+  min-width: 26px;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.brk-tape-hands .buyer { background: var(--up-soft); color: var(--up-text); }
+.brk-tape-hands .seller { background: var(--down-soft); color: var(--down-text); }
+.brk-tape-hands i.on { box-shadow: 0 0 0 1.5px currentColor; }
+.brk-tape-qty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  font-variant-numeric: tabular-nums;
+}
+.brk-tape-qty b { font-size: 12.5px; font-weight: 650; }
+.brk-tape-qty em { font-style: normal; font-size: 10.5px; color: var(--text-tertiary); }
+.brk-tape-amt {
+  font-size: 12.5px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 52px;
+}
+.brk-tape-row.lite { grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr) auto; }
+
+/* ── Brokers: the profile ─────────────────────────────────────────────────*/
+.brk-file {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px 16px 6px;
+}
+.brk-file-id {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.brk-file-id > div { min-width: 0; flex: 1; }
+.brk-file-id p { margin: 0; }
+.brk-rank-tag {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  background: var(--bg-inset);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.brk-file-fig p { margin: 0; }
+.brk-file-fig .hero-num { margin-top: 0; }
+
+.brk-pace {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+}
+.brk-pace-cells {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+.brk-pace-cells small {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.brk-pace-cells b {
+  display: block;
+  margin-top: 3px;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.brk-service {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 16px;
+}
+.brk-service > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 12px;
+  border-radius: 14px;
+  background: var(--bg-surface);
+}
+[data-theme="dark"] .brk-service > div { background: #050505; }
+.brk-service .icon { color: var(--accent-base); }
+.brk-service b {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.brk-service small {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--text-tertiary);
+}
+
+/* ── Web: both desks use the room they have ───────────────────────────────
+   The lists run two-up; the reading panels sit side by side. Anything inside
+   a block body already has the body's padding, so it is not padded twice. */
+.device.web .bkt-grid,
+.device.web .brk-grid,
+.device.web .brk-rank-list,
+.device.web .bkm-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  padding: 0 6px;
+}
+/* In two columns the second row of cells starts a column too, so its top
+   rule has to go the same way the first one does. */
+.device.web .bkt-grid > :nth-child(4),
+.device.web .brk-grid > :nth-child(4),
+.device.web .brk-rank-list > :nth-child(4),
+.device.web .bkm-list > :nth-child(4) { border-top: 0; }
+
+.device.web .brk-traded,
+.device.web .brk-net,
+.device.web .brk-tape { padding-left: 20px; padding-right: 20px; }
+.device.web .brk-tiles {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.device.web .bkt-hero,
+.device.web .brk-net-read,
+.device.web .brk-file {
+  padding-left: 28px;
+  padding-right: 28px;
+}
+.device.web .brk-flowcard { margin-left: 28px; margin-right: 28px; max-width: 780px; }
+.device.web .brk-file .brk-scale { max-width: 660px; }
+.device.web .brk-traded { max-width: 900px; }
+.device.web .brk-net { max-width: 940px; }
+
+/* The two reading panels sit side by side once there is room for them. */
+.device.web .bkt-panels,
+.device.web .brk-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 28px;
+  align-items: start;
+}
+.device.web .bkt-panels .market-block-head,
+.device.web .brk-panels .market-block-head { padding-left: 4px; padding-right: 4px; }
+.device.web .bkt-panels > section:first-child,
+.device.web .brk-panels > section:first-child { margin-left: 28px; margin-right: 0; }
+.device.web .bkt-panels > section:last-child,
+.device.web .brk-panels > section:last-child { margin-left: 0; margin-right: 28px; }
+.device.web .brk-panels .foot-note { padding-left: 4px; padding-right: 4px; }
+
+/* The hero reads as one band rather than a column of thirds. */
+.device.web .bkt-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  align-items: center;
+  gap: 28px;
+}
+.device.web .bkt-hero .basket-cover { width: 72px; height: 72px; }
+.device.web .brk-file {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  grid-template-areas: "id fig" "scale scale";
+  align-items: center;
+  gap: 8px 28px;
+}
+.device.web .brk-file-id { grid-area: id; }
+.device.web .brk-file-fig { grid-area: fig; text-align: right; }
+.device.web .brk-file .brk-scale { grid-area: scale; }
+
+/* Rows sit on the inset ground now, so hover lifts toward the canvas rather
+   than toward the same colour the row already stands on. */
+.brk-traded-row:hover,
+.brk-net-row:hover,
+.brk-tape-row:hover { background: var(--bg-sunken); }
+[data-theme="dark"] .brk-traded-row:hover,
+[data-theme="dark"] .brk-net-row:hover,
+[data-theme="dark"] .brk-tape-row:hover { background: #0a0a0a; }
+.brk-traded-viz { background: var(--bg-surface); }
+[data-theme="dark"] .brk-traded-viz { background: #050505; }
+.brk-traded-row:hover .brk-traded-viz { background: var(--bg-canvas); }
+
+/* ── Column headers ───────────────────────────────────────────────────────
+   Every list that stacks two numbers in one cell says which is which. The
+   header inherits its own list's grid, so the labels sit over the columns
+   they name rather than near them. */
+.list-head {
+  padding: 9px 14px 8px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.list-head > span:last-child { text-align: right; }
+.bkt-grid .list-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 13px; }
+.brk-grid .list-head { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 13px; }
+.brk-rank-list .list-head { display: grid; grid-template-columns: 16px 28px minmax(0, 1fr) auto; gap: 11px; }
+.bkm-list .list-head { display: grid; grid-template-columns: 18px 36px minmax(0, 1fr) auto; gap: 10px; }
+.brk-traded .list-head { display: grid; grid-template-columns: 28px minmax(0, 1fr) minmax(60px, 1.1fr) auto; gap: 11px; padding-left: 0; padding-right: 8px; }
+.bkt-grid .list-head + .bkt-card,
+.brk-grid .list-head + .brk-card,
+.brk-rank-list .list-head + .brk-rank-row,
+.bkm-list .list-head + .bkm-row { border-top: 0; }
+/* One header per column: the second copy shows only where the list actually
+   runs two-up, so its labels land over the column they name. */
+.list-head + .list-head { display: none; }
+.device.web .bkt-grid > .list-head + .list-head,
+.device.web .brk-grid > .list-head + .list-head,
+.device.web .brk-rank-list > .list-head + .list-head,
+.device.web .bkm-list > .list-head + .list-head { display: grid; }
+.device.web .bkt-grid > .list-head + .list-head + .bkt-card,
+.device.web .brk-grid > .list-head + .list-head + .brk-card,
+.device.web .brk-rank-list > .list-head + .list-head + .brk-rank-row,
+.device.web .bkm-list > .list-head + .list-head + .bkm-row { border-top: 0; }
+
+/* A state, not a caption for the number above it. */
+.side-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 10.5px;
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: 0.2px;
+}
+.side-tag.up { background: var(--up-soft); color: var(--up-text); }
+.side-tag.down { background: var(--down-soft); color: var(--down-text); }
+.bkt-shape-ends {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+}
+.bkt-shape-ends dt {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.bkt-shape-ends dd {
+  margin: 3px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.bkt-shape-read { margin-top: 2px !important; }
+
+/* The turnover figure and the day's direction are two facts, so the tag reads
+   as a state beside the number rather than as its caption. */
+.brk-turn em.side-tag,
+.brk-rank-num em.side-tag { margin-top: 3px; }
+.brk-traded-num em.side-tag { margin-top: 3px; }

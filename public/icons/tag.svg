@@ -1,16 +1,4 @@
-<!-- @license lucide-static v1.34.0 - ISC -->
-<svg
-  class="lucide lucide-tag"
-  xmlns="http://www.w3.org/2000/svg"
-  width="24"
-  height="24"
-  viewBox="0 0 24 24"
-  fill="none"
-  stroke="#000"
-  stroke-width="1.8"
-  stroke-linecap="round"
-  stroke-linejoin="round"
->
-  <path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z" />
-  <circle cx="7.5" cy="7.5" r=".5" fill="#000" />
+<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12.4 3 H4.8 A1.8 1.8 0 0 0 3 4.8 V12.4 A1.8 1.8 0 0 0 3.53 13.67 L10.33 20.47 A1.8 1.8 0 0 0 12.87 20.47 L20.47 12.87 A1.8 1.8 0 0 0 20.47 10.33 L13.67 3.53 A1.8 1.8 0 0 0 12.4 3 Z" />
+  <circle cx="7.7" cy="7.7" r="1.2" fill="#000" stroke="none" />
 </svg>
